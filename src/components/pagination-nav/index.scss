@@ -1,0 +1,17 @@
+.com-pagination-nav {
+  padding-bottom: 32px;
+  background-color: var(--supos-pagination-color);
+  border-radius: 20px;
+  //border: 1px solid var(--supos-shadow-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .cds--popover {
+    display: none !important;
+  }
+
+  .cds--btn--ghost:hover {
+    background-color: transparent !important;
+  }
+}

@@ -1,0 +1,42 @@
+import { ComLayout, ComContent, Board, ComDrawer, AuthButton } from '@/components';
+import { Flex } from 'antd';
+import { FC, useRef, useState } from 'react';
+import DeployForm from '@/pages/app-management/components/DeployForm';
+import { PageProps } from '@/common-types';
+import { useTranslate } from '@/hooks';
+import { ButtonPermission } from '@/common-types/button-permission';
+const Module: FC<PageProps> = ({ location }) => {
+  const formatMessage = useTranslate();
+
+  const { state } = location || {};
+  const [show, setShow] = useState(false);
+  const boardCodeRef = useRef(null);
+  const getHtmlContent = () => {
+    return boardCodeRef.current;
+  };
+  return (
+    <ComLayout>
+      <ComContent
+        title={
+          <Flex justify="flex-end" align="center" style={{ height: '100%' }}>
+            <AuthButton
+              auth={ButtonPermission['appGui.deploy']}
+              style={{ width: 102 }}
+              type="primary"
+              onClick={() => setShow((pre) => !pre)}
+            >
+              {formatMessage('appGui.deploy')}
+            </AuthButton>
+          </Flex>
+        }
+      >
+        <Board boardCodeRef={boardCodeRef} />
+      </ComContent>
+      <ComDrawer title=" " open={show} onClose={() => setShow(false)}>
+        <DeployForm show={show} setShow={setShow} getHtmlContent={getHtmlContent} appName={state?.appName} />
+      </ComDrawer>
+    </ComLayout>
+  );
+};
+
+export default Module;

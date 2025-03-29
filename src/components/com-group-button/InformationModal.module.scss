@@ -1,0 +1,62 @@
+.information-modal {
+  :global {
+    // 调整弹窗容器
+    .ant-modal {
+      top: 50px !important;
+      max-width: 500px;
+      margin: 0 auto;
+
+      &-content {
+        // background: var(--supos-modal-color);
+        height: 70vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      &-body {
+        flex: 1;
+        padding: 0;
+        overflow-y: auto;
+
+        .cds--pagination {
+          background-color: var(--supos-promodal-bg-pg-color);
+
+          .cds--pagination__text {
+            color: var(--supos-text-color);
+          }
+
+          .cds--pagination__button,
+          .cds--pagination__button:hover {
+            background: none !important;
+          }
+
+          .cds--pagination__button,
+          .cds--btn--ghost.cds--pagination__button {
+            border-inline-start: 1px solid var(--cds-border-subtle-01, #c6c6c6) !important;
+          }
+
+          .cds--pagination__button:focus,
+          .cds--btn--ghost:focus.cds--pagination__button {
+            outline: 2px solid var(--supos-theme-color) !important;
+            border-color: var(--supos-theme-color) !important;
+          }
+
+          .cds--btn--ghost:active {
+            color: var(--supos-theme-color) !important;
+          }
+
+          .cds--btn--ghost:focus {
+            outline: 2px solid var(--supos-theme-color) !important;
+            border-color: var(--supos-theme-color) !important;
+            box-shadow: inset 0 0 0 1px var(--cds-button-focus-color, var(--supos-theme-color));
+          }
+        }
+      }
+    }
+
+    // 隐藏全屏相关元素
+    .header-controls .control-button[aria-label='fullscreen'] {
+      display: none;
+    }
+  }
+}

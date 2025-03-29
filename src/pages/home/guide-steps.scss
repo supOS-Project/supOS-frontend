@@ -1,0 +1,39 @@
+.guide-home-classes.shepherd-element {
+  .shepherd-text {
+    padding: 10px;
+  }
+
+  .shepherd-footer {
+    flex-direction: column;
+    padding: 4px 80px 16px;
+
+    .home-guide-exit,
+    .home-guide-exit:hover {
+      color: var(--supos-theme-color);
+    }
+  }
+
+  .guide-home-logo {
+    width: 100%;
+    height: auto;
+  }
+
+  .guide-home-title {
+    text-align: center;
+    font-weight: bold;
+    color: #000;
+    padding: 10px 0;
+    font-size: 16px;
+  }
+
+  .guide-home-content {
+    text-align: center;
+    font-size: 12px;
+    line-height: 18px;
+    padding: 0 50px;
+  }
+}
+
+.guide-home-topBar-classes.shepherd-element {
+  margin-left: -10px !important;
+}

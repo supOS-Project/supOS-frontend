@@ -1,0 +1,21 @@
+# 检查当前分支是否为 master
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+# 检查最新的提交信息中是否包含 "skip-version"
+skip_version=$(git log -1 --pretty=%B | grep -c "skip-version")
+
+if [ "$branch" = "master" ] && [ "$skip_version" -eq 0 ]; then
+  echo "当前分支为 master 且提交信息不包含 'skip-version'，自动增加版本号..."
+
+  # 使用 npm version 命令增加版本号，并推送标签和提交
+  npm version patch -m "chore: bump version to %s"
+
+  if [ $? -eq 0 ]; then
+    # 如果 npm version 成功，推送更改并将标签推送到 Gitee
+    git push origin master --follow-tags
+  else
+    echo "版本更新失败，未推送更改"
+  fi
+else
+  echo "跳过版本更新"
+fi

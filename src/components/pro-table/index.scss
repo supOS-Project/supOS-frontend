@@ -1,0 +1,78 @@
+.resizable-table {
+  .ant-table-thead {
+    .ant-table-cell {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      .react-resizable-line {
+        background-color: #ccc;
+        position: absolute;
+        inset-inline-end: -5px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1;
+        width: 7px;
+        height: 60%;
+        cursor: col-resize;
+        transition: opacity 0.2s;
+
+        &:hover {
+          opacity: 1;
+          background-color: #666;
+        }
+      }
+    }
+  }
+
+  .ant-table-tbody {
+    > tr > td {
+      height: 40px;
+      padding: 8px 16px;
+    }
+  }
+
+  .ant-table {
+    scrollbar-color: auto; /* 重置默认颜色控制 */
+  }
+
+  /* 针对Antd5的Table组件 */
+  .ant-table-content .ant-table-body::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+  }
+
+  .ant-table-content .ant-table-body::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: #d3d3d3;
+  }
+
+  .ant-table-content .ant-table-body::-webkit-scrollbar-track {
+    margin: 4px 0;
+    border-radius: 8px;
+  }
+
+  table {
+    width: 100% !important;
+  }
+
+  .ant-pagination-item,
+  .ant-pagination-options-quick-jumper,
+  .ant-pagination-options-quick-jumper input {
+    background-color: var(--supos-header-bg-color) !important;
+  }
+
+  .ant-pagination-item-active,
+  .ant-pagination-options-quick-jumper input:focus-within {
+    border-color: var(--supos-theme-color) !important;
+  }
+
+  .ant-pagination-item-active a {
+    color: var(--supos-theme-color) !important;
+  }
+}
+
+.ant-table-cell.ant-table-cell-scrollbar .react-resizable-line {
+  display: none !important;
+}

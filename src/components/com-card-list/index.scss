@@ -1,0 +1,157 @@
+.com-card-list {
+  overflow: auto;
+  display: flex;
+  place-content: flex-start flex-start;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 34px;
+  padding: 32px 74px 16px;
+
+  .com-card {
+    width: 287px;
+    height: 300px;
+    border-radius: 3px;
+    box-shadow: 0 4px 4px 0 var(--supos-shadow-color);
+  }
+
+  .com-add {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--supos-uns-button-color);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--supos-card-hover-color);
+    }
+  }
+
+  .com-item-card {
+    background-color: var(--supos-uns-button-color);
+    display: flex;
+    flex-direction: column;
+
+    .com-card-header {
+      height: 57px;
+      width: 100%;
+      display: flex;
+      padding: 0 17px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--crl-border-color);
+      gap: 4px;
+      overflow: hidden;
+
+      .header-content {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+        gap: 12px;
+        justify-content: flex-start;
+        align-items: center;
+      }
+
+      .name {
+        flex: 1;
+        color: var(--supos-text-color);
+        font-size: 20px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+
+      .delete-icon {
+        cursor: pointer;
+        color: #c6c6c6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+
+    .com-card-content {
+      flex: 1;
+      padding: 14px;
+    }
+
+    .com-card-footer {
+      height: 37px;
+      width: 100%;
+      display: flex;
+      border-top: 1px solid var(--crl-border-color);
+    }
+
+    &:hover {
+      background-color: var(--supos-card-hover-color);
+      color: var(--supos-theme-color);
+
+      .delete-icon {
+        color: var(--supos-theme-color);
+      }
+    }
+  }
+}
+
+.view-list {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+
+  .view-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    color: var(--supos-view-item);
+    gap: 20px;
+    line-height: 18px;
+
+    .text {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2; /* 限制为两行 */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-all;
+    }
+  }
+}
+
+.footer-operation {
+  display: flex;
+  width: 100%;
+
+  .item {
+    flex: 1;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    color: var(--common-color);
+    transition: background-color 0.3s; /* 添加过渡效果 */
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .item:hover {
+    color: var(--hover-color);
+    font-weight: 600;
+  }
+
+  .item:active {
+    color: var(--active-color);
+    font-weight: 600;
+  }
+
+  .item:not(:last-child)::after {
+    content: '';
+    display: block;
+    width: 1px;
+    height: 100%;
+    background-color: var(--crl-border-color);
+    position: absolute;
+    top: 0;
+    right: -0.5px;
+  }
+}

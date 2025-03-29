@@ -1,0 +1,31 @@
+.importConfigWrap {
+  :global {
+    .cds--modal-container {
+      background-color: var(--supos-bg-color);
+      width: 700px !important;
+      // min-height: 400px !important;
+      position: relative !important;
+      max-block-size: 100% !important;
+
+      .cds--modal-content {
+        padding: 20px;
+        mask-image: none;
+        outline: none;
+
+        #configForm_json {
+          border: 1px solid #d9d9d9;
+          border-radius: 3px;
+        }
+
+        .cm-editor {
+          outline: none !important;
+        }
+      }
+    }
+
+    .cds--modal-header__label {
+      font-size: 18px;
+      color: var(--supos-text-color);
+    }
+  }
+}

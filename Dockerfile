@@ -1,0 +1,53 @@
+# 使用官方 Node.js 镜像
+FROM node:18-alpine AS builder
+
+ARG REACT_APP_HOMEPAGE_KEYCLOAK_REALMS
+ARG REACT_APP_HOMEPAGE_KEYCLOAK_CLIENTID
+ARG REACT_APP_OS_LANG
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制项目文件
+COPY . .
+
+# 安装 pnpm
+RUN npm install -g pnpm
+
+# 安装依赖
+RUN pnpm install
+
+ENV REACT_APP_HOMEPAGE_KEYCLOAK_REALMS=${REACT_APP_HOMEPAGE_KEYCLOAK_REALMS}
+ENV REACT_APP_HOMEPAGE_KEYCLOAK_CLIENTID=${REACT_APP_HOMEPAGE_KEYCLOAK_CLIENTID}
+ENV REACT_APP_OS_LANG=${REACT_APP_OS_LANG}
+
+RUN echo "REACT_APP_OS_LANG is $REACT_APP_OS_LANG"
+
+# 生成生产构建
+RUN pnpm run build
+
+# 使用轻量级的 Node.js 镜像来运行构建后的文件
+FROM node:18-alpine
+
+# 设置工作目录
+WORKDIR /app
+
+# 只复制构建后的文件
+COPY --from=builder /app/build ./build
+COPY . .
+
+# 安装 serve 和 concurrently
+RUN npm install -g serve concurrently
+
+# 设置后端工作目录
+WORKDIR /app/.docker-node
+
+RUN npm install -g pnpm
+
+RUN pnpm install
+
+# 暴露端口
+EXPOSE 3000 4000
+
+# 启动命令
+CMD ["concurrently", "serve -s ../build -l 3000", "node index.js"]

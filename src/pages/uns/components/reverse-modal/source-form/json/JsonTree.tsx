@@ -1,0 +1,148 @@
+import {
+  useState,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  Dispatch,
+  SetStateAction,
+  MutableRefObject,
+} from 'react';
+import { Form } from 'antd';
+import { ComTree } from '@/components';
+import type { TreeProps, TreeDataNode } from 'antd';
+import _ from 'lodash';
+
+export interface JsonTreeRefProps {
+  checkedKeys: string[];
+}
+export interface JsonTreeProps {
+  ref: MutableRefObject<JsonTreeRefProps>;
+  treeData: TreeNode[];
+  setTreeData: Dispatch<SetStateAction<TreeNode[]>>;
+  selectedInfo?: TreeNode;
+  setSelectedInfo: Dispatch<SetStateAction<TreeNode | undefined>>;
+}
+
+export interface FieldItem {
+  name: string;
+  type: string;
+  displayName?: string;
+  remark?: string;
+  unique?: boolean;
+}
+
+export interface TreeNode extends TreeDataNode {
+  name: string;
+  dataPath: string;
+  newDataPath?: string;
+  children?: TreeNode[];
+  type: number;
+  description?: string;
+  tags?: string[];
+  save2db?: boolean;
+  mainKey?: number;
+  fields?: FieldItem[];
+  parentDataPath?: string;
+}
+
+const JsonForm = forwardRef<JsonTreeRefProps | undefined, JsonTreeProps>(
+  ({ treeData, setTreeData, selectedInfo, setSelectedInfo }, ref) => {
+    const form = Form.useFormInstance();
+    const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
+    const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+
+    const currentNode = Form.useWatch('currentNode', form) || form.getFieldValue('currentNode');
+
+    useImperativeHandle(ref, () => ({
+      checkedKeys: checkedKeys,
+    }));
+
+    const onSelect: TreeProps['onSelect'] = (selectedKeys, info) => {
+      form.validateFields().then(() => {
+        form.setFieldsValue({
+          currentNode: undefined,
+        });
+        setSelectedKeys(selectedKeys as string[]);
+        setSelectedInfo((selectedKeys.length ? info?.selectedNodes[0] : undefined) as TreeNode);
+      });
+    };
+
+    useEffect(() => {
+      form.setFieldsValue({
+        currentNode: selectedInfo || undefined,
+      });
+      if (!selectedInfo) setSelectedKeys([]);
+    }, [selectedInfo]);
+
+    const onCheck: TreeProps['onCheck'] = (checkedKeysValue) => {
+      setCheckedKeys(checkedKeysValue as string[]);
+    };
+
+    const updateChildrenNewDataPaths = (node: TreeNode, parentNames: string[]) => {
+      node.newDataPath = [...parentNames, node.name].join('.');
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child) => updateChildrenNewDataPaths(child, [...parentNames, node.name]));
+      }
+    };
+
+    const replaceNodeInTree = (tree: TreeNode[], targetDataPath: string, newNode: TreeNode): TreeNode[] => {
+      const traverse = (nodes: TreeNode[], parentNames: string[] = []): boolean => {
+        for (let i = 0; i < nodes.length; i++) {
+          const children = nodes[i].children;
+          if (nodes[i].dataPath === targetDataPath) {
+            // 更新新节点的 children 以保持原有结构，并更新 newDataPath
+            newNode.children = nodes[i].children || [];
+
+            // 使用扩展运算符合并对象，但不覆盖 children，以便后续更新 newDataPath
+            nodes[i] = { ...nodes[i], ...newNode, children: newNode.children };
+
+            // 更新替换后的节点及其子节点的 newDataPath
+            updateChildrenNewDataPaths(nodes[i], parentNames);
+
+            return true;
+          } else if (children && children.length > 0) {
+            // 显式检查 nodes[i].children 是否存在且为非空数组
+            if (traverse(children, [...parentNames, nodes[i].name])) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      // 创建树的副本以避免直接修改原始数据
+      const treeCopy = _.cloneDeep(tree) as TreeNode[];
+
+      // 开始从根节点进行遍历和替换操作
+      traverse(treeCopy);
+
+      return treeCopy;
+    };
+
+    useEffect(() => {
+      if (currentNode) {
+        const newTreeData = replaceNodeInTree(treeData, selectedKeys?.[0], currentNode);
+        setTreeData(newTreeData);
+      }
+    }, [currentNode, selectedKeys]);
+
+    return (
+      <div className="json-tree">
+        <ComTree
+          ibmStyle={false}
+          defaultExpandAll
+          checkable
+          blockNode
+          showIcon
+          treeData={treeData}
+          fieldNames={{ title: 'name', key: 'dataPath' }}
+          selectedKeys={selectedKeys}
+          checkedKeys={checkedKeys}
+          onSelect={onSelect}
+          onCheck={onCheck}
+        />
+      </div>
+    );
+  }
+);
+export default JsonForm;

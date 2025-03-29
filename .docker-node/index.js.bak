@@ -1,0 +1,38 @@
+const express = require('express');
+const { CopilotRuntime, OpenAIAdapter, copilotRuntimeNodeHttpEndpoint } = require('@copilotkit/runtime');
+const OpenAI = require('openai');
+const path = require('path');
+
+const app = express();
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_SERVER_PORT = process.env.OPENAI_SERVER_PORT || 4000;
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY || '',
+});
+
+// 提供静态文件服务
+app.use(express.static(path.join(__dirname, '../build')));
+const serviceAdapter = new OpenAIAdapter({ openai, model: 'gpt-4o' });
+
+app.use('/copilotkit', (req, res, next) => {
+  const runtime = new CopilotRuntime();
+  const handler = copilotRuntimeNodeHttpEndpoint({
+    endpoint: '/copilotkit',
+    runtime,
+    serviceAdapter,
+  });
+  return handler(req, res, next);
+});
+
+// 所有其他请求返回index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build/index.html'));
+});
+
+app.listen(OPENAI_SERVER_PORT, (err) => {
+  if (err) {
+    console.error('Failed to start server:', err);
+  } else {
+    console.log(`Listening at :${OPENAI_SERVER_PORT}/copilotkit`);
+  }
+});

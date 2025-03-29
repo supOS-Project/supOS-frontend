@@ -1,0 +1,83 @@
+.inline-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px; /* 减小整体高度 */
+
+  .error,
+  .finished {
+    .inline-loading-spinner {
+      opacity: 0;
+    }
+
+    .inline-loading-error {
+      opacity: 1;
+    }
+  }
+
+  &-animation {
+    position: relative;
+    width: 16px; /* 调整loading图标尺寸 */
+    height: 16px; /* 调整loading图标尺寸 */
+  }
+
+  &-spinner {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    transition: opacity 0.15s ease-in;
+  }
+
+  .ods-loading_svg {
+    animation: rotate 1s linear infinite;
+  }
+
+  .ods-loading_background {
+    fill: none;
+    stroke: #dde1e6;
+    stroke-width: 14px;
+  }
+
+  .ods-loading_stroke {
+    fill: none;
+    stroke: var(--supos-theme-color);
+    stroke-width: 14px;
+    stroke-linecap: round;
+    stroke-dasharray: 125.6;
+    stroke-dashoffset: 75.36;
+  }
+
+  &-checkmark,
+  &-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80%;
+    height: 80%;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.15s ease-in;
+    fill: #24a148;
+  }
+
+  &-error {
+    fill: #da1e28;
+  }
+
+  &-text {
+    font-size: 0.875rem;
+    color: var(--cds-text-secondary, #525252);
+    font-weight: 400;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}

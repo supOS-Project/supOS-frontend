@@ -1,0 +1,18 @@
+.com-code-snippet {
+  width: 100%;
+
+  .code-snippet-wrapper {
+    background: var(--supos-switchwrap-active-bg-color);
+    padding: 12px !important;
+    min-width: 100%;
+
+    .cds--snippet-container {
+      width: 100%;
+    }
+  }
+}
+
+.com-copy-code-snippet.cds--snippet.cds--snippet--multi .cds--popover-container {
+  inset-block-start: 0.8rem;
+  inset-inline-end: 1.5rem;
+}

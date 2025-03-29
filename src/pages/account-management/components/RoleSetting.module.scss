@@ -1,0 +1,25 @@
+.role-setting {
+  :global {
+    .ant-tabs-nav-operations,
+    .ant-tabs-nav-wrap {
+      background-color: var(--supos-uns-button-color);
+    }
+
+    .ant-tabs-nav-list {
+      padding: 0 12px;
+    }
+
+    .cds--modal-container {
+      background-color: var(--supos-modal-color);
+      width: 420px;
+    }
+  }
+}
+
+.use-add-modal {
+  :global {
+    .ant-input-affix-wrapper .anticon.ant-input-password-icon {
+      color: var(--supos-text-color);
+    }
+  }
+}

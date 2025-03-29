@@ -1,0 +1,6 @@
+/node_modules
+/build
+/dist
+/server/node_modules
+/src/theme/*.scss
+/src/index.scss
