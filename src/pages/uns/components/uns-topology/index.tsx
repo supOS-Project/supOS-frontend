@@ -367,7 +367,7 @@ const TopologyChart = (datas: any) => {
     });
     graphRef.current.fromJSON(data);
     // 位置设置 靠左，修正了原代码中graph变量未定义的问题，使用graphRef.current
-    graphRef.current.positionPoint({ x: 0, y: 0 }, '8%', '12%');
+    graphRef.current.positionPoint({ x: 266, y: 0 }, '8%', '12%');
     const clickFn = ({ cell }: any) => {
       switch (cell.id) {
         case 'nodeRed':
@@ -407,15 +407,15 @@ const TopologyChart = (datas: any) => {
 
   useEffect(() => {
     if (size && containerRef.current && wrapperRef.current) {
-      const height = size.height - 80;
-      wrapperRef.current.style.height = `${height}px`;
+      const height = Math.max(size.height - 80, 400);
+      wrapperRef.current.style.height = `${height + 20}px`;
 
-      containerRef.current.style.height = `${height}px`;
+      containerRef.current.style.height = `${height + 20}px`;
 
       if (graphRef.current) {
         setTimeout(() => {
           graphRef.current.resize(size.width, height);
-          graphRef.current.positionPoint({ x: 0, y: 0 }, '8%', '12%');
+          graphRef.current.positionPoint({ x: 266, y: 0 }, '8%', '12%');
         }, 0);
       }
     }

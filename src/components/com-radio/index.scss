@@ -2,6 +2,7 @@
   .ant-radio-group {
     .ant-radio-wrapper {
       cursor: pointer;
+      margin-inline-end: 0;
 
       .ant-radio-input:focus + .ant-radio-inner {
         outline: 2px solid var(--supos-theme-color);
@@ -38,6 +39,10 @@
             background-color: var(--supos-icon-disabled-color);
           }
         }
+      }
+
+      .ant-radio-label {
+        user-select: none;
       }
 
       .radio-description {

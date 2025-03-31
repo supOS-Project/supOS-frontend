@@ -2,23 +2,12 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 24px; /* 减小整体高度 */
-
-  .error,
-  .finished {
-    .inline-loading-spinner {
-      opacity: 0;
-    }
-
-    .inline-loading-error {
-      opacity: 1;
-    }
-  }
+  height: 24px;
 
   &-animation {
     position: relative;
-    width: 16px; /* 调整loading图标尺寸 */
-    height: 16px; /* 调整loading图标尺寸 */
+    width: 16px;
+    height: 16px;
   }
 
   &-spinner {
@@ -46,23 +35,6 @@
     stroke-linecap: round;
     stroke-dasharray: 125.6;
     stroke-dashoffset: 75.36;
-  }
-
-  &-checkmark,
-  &-error {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 80%;
-    height: 80%;
-    opacity: 0;
-    transform: translate(-50%, -50%);
-    transition: opacity 0.15s ease-in;
-    fill: #24a148;
-  }
-
-  &-error {
-    fill: #da1e28;
   }
 
   &-text {

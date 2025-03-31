@@ -9,7 +9,7 @@ import { useRoutesContext } from '@/contexts/routes-context.ts';
 
 const SqlQuery: FC<any> = ({ instanceInfo, currentPath }) => {
   const formatMessage = useTranslate();
-  const { dashboardType, dataBaseType } = useRoutesContext();
+  const { dataBaseType } = useRoutesContext();
   const [activeTab, setActiveTab] = useState('');
   const [list, setList] = useState<string[]>([]);
   const getSQL = () => {
@@ -38,19 +38,18 @@ const SqlQuery: FC<any> = ({ instanceInfo, currentPath }) => {
     switch (type) {
       case 1:
         list = dataBaseType?.includes('tdengine')
-          ? ['Grafana', 'TDengine', formatMessage('uns.upload'), formatMessage('uns.fetch')]
-          : ['Grafana', formatMessage('uns.upload'), formatMessage('uns.fetch')];
+          ? [formatMessage('uns.upload'), formatMessage('uns.dbInfo')]
+          : [formatMessage('uns.upload')];
         break;
       case 2:
-        list = ['Grafana', 'GraphQL', formatMessage('uns.upload'), formatMessage('uns.fetch')];
+        list = [formatMessage('uns.upload')];
         break;
       default:
-        list = ['Grafana', formatMessage('uns.upload'), formatMessage('uns.fetch')];
+        list = [formatMessage('uns.upload')];
         break;
     }
-    const _l = dashboardType?.includes('grafana') ? list : list.slice(1);
-    setList(_l);
-    setActiveTab(_l?.[0] ?? '');
+    setList(list);
+    setActiveTab(list?.[0] ?? '');
   };
   return (
     <>
@@ -86,7 +85,7 @@ const SqlQuery: FC<any> = ({ instanceInfo, currentPath }) => {
         <UploadData instanceInfo={instanceInfo} />
       ) : activeTab === formatMessage('uns.fetch') ? (
         <FetchData instanceInfo={instanceInfo} />
-      ) : activeTab === 'TDengine' ? (
+      ) : activeTab === formatMessage('uns.dbInfo') ? (
         <TDengineData />
       ) : (
         <GraphiQLWrap alias={instanceInfo.alias || ''} />

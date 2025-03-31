@@ -78,11 +78,7 @@ const Module = () => {
     id: 'uns_step7',
     modalOverlayOpeningPadding: 0,
     title: I18nStore.getIntl('uns.guide7Title'),
-    text: `
-    ${I18nStore.getIntl('uns.guide7Text1')}
-    <br />
-    ${I18nStore.getIntl('uns.guide7Text2')}
-    `,
+    text: I18nStore.getIntl('uns.guide7Text1'),
     attachTo: {
       element: '#uns_create_modal_top',
       on: 'left',

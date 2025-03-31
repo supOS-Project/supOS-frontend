@@ -1,6 +1,5 @@
 import { useState, useEffect, FC, CSSProperties, useRef } from 'react';
 import { getModelInfo, editModel } from '@/apis/inter-api/uns';
-import FloatTreemap from '@/pages/uns/components/FloatTreemap';
 import { formatTimestamp, hasPermission } from '@/utils';
 import { useTranslate } from '@/hooks';
 import { Collapse, App, theme, Typography } from 'antd';
@@ -20,14 +19,13 @@ const panelStyle: CSSProperties = {
 
 const Module: FC<any> = (props) => {
   const { message } = App.useApp();
-  const { currentPath, treeData, changeCurrentPath, nodeValue } = props;
+  const { currentPath, nodeValue } = props;
   const documentListRef = useRef();
   const formatMessage = useTranslate();
   const [activeList, setActiveList] = useState<string[]>(['detail', 'definition', 'document']);
   const { token } = theme.useToken();
 
   const [modelInfo, setModelInfo] = useState<any>({});
-  const [open, setOpen] = useState(false);
 
   const getModel = (topic: any) => {
     getModelInfo({ topic })
@@ -156,10 +154,7 @@ const Module: FC<any> = (props) => {
   ];
   return (
     <div className="topicDetailWrap">
-      <div
-        className="topicDetailContent"
-        style={{ paddingBottom: treeData.length > 0 ? (open ? '670px' : '70px') : '20px' }}
-      >
+      <div className="topicDetailContent">
         <div className="detailTitle">
           <Folder
             size={20}
@@ -189,9 +184,6 @@ const Module: FC<any> = (props) => {
           />
         </div>
       </div>
-      {treeData.length > 0 && (
-        <FloatTreemap treeData={treeData} changeCurrentPath={changeCurrentPath} open={open} setOpen={setOpen} />
-      )}
     </div>
   );
 };

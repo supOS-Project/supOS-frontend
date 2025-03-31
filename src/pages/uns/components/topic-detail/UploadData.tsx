@@ -24,10 +24,7 @@ const UploadData: FC<any> = ({ instanceInfo }) => {
       type: item.type,
     };
   });
-  const jsObj = {
-    _source_: {},
-    _resource_: fromPairs(map(fieldExampleList, (item) => [item.key, item.value])),
-  };
+  const jsObj = fromPairs(map(fieldExampleList, (item) => [item.key, item.value]));
   const jscode = `
   const mqtt = require('mqtt');
 
@@ -44,12 +41,16 @@ const UploadData: FC<any> = ({ instanceInfo }) => {
 
   client.on('connect', function () {
     console.log('Connected');
-    client.publish('${instanceInfo.topic}', JSON.stringify(${JSON.stringify(jsObj)}));
+    client.subscribe('${instanceInfo.topic}', function (err) {
+      console.log(err)
+      if (!err) {
+        client.publish('${instanceInfo.topic}', JSON.stringify(${JSON.stringify(jsObj)}));
+      }
+    });
   });
-
+  
   client.on('message', function (topic, message) {
-    console.log(message.toString());
-    client.end();
+    console.log(topic, message.toString());
   });
   
 `;
@@ -86,6 +87,24 @@ ${fieldExampleList?.map((item: any) => `        resource.put("${item.key}", ${it
             options.setConnectionTimeout(10);
             options.setAutomaticReconnect(true);
 
+            //${formatMessage('uns.mqttConnect')}
+            client.setCallback(new MqttCallback() {
+                @Override
+                public void connectionLost(Throwable cause) {
+                    System.out.println("Connection to MQTT broker lost!");
+                }
+
+                @Override
+                public void messageArrived(String topic, MqttMessage message) throws Exception {
+                    System.out.printf("Message arrived. Topic: %s Message: %s%n", topic, new String(message.getPayload()));
+                }
+
+                @Override
+                public void deliveryComplete(IMqttDeliveryToken token) {
+                    System.out.println("Delivery is complete!");
+                }
+            });
+            
             //${formatMessage('uns.ConnectToMQTTServer')}
             System.out.println("Connecting to broker: " + broker);
             IMqttToken token = client.connect(options);

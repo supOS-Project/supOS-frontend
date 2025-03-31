@@ -386,7 +386,7 @@ const CopilotContext: FC<{ children: ReactNode; copilotCatRef: any }> = ({ child
     ],
     // 阻止回答
     followUp: false,
-    // disabled: true,
+    disabled: true,
     handler: (args) => {
       console.log('uns页 时序型：', args, currentPage);
       if (args) {

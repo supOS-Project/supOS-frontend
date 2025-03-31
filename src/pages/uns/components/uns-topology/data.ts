@@ -1,54 +1,54 @@
 export const data = {
   nodes: [
-    {
-      id: 'modbus',
-      shape: 'modbus',
-      x: 0,
-      y: -8,
-      data: {},
-    },
-    {
-      id: 'api',
-      shape: 'api',
-      x: 0,
-      y: 48,
-      data: {},
-    },
-    {
-      id: 'opcua',
-      shape: 'opcua',
-      x: 0,
-      y: 104,
-      data: {},
-    },
-    {
-      id: 'opcda',
-      shape: 'opcda',
-      x: 0,
-      y: 160,
-      data: {},
-    },
-    {
-      id: 'relation',
-      shape: 'relation',
-      x: 0,
-      y: 216,
-      data: {},
-    },
-    {
-      id: 'icmp',
-      shape: 'icmp',
-      x: 0,
-      y: 272,
-      data: {},
-    },
-    {
-      id: 'unknown',
-      shape: 'unknown',
-      x: 0,
-      y: 328,
-      data: {},
-    },
+    // {
+    //   id: 'modbus',
+    //   shape: 'modbus',
+    //   x: 0,
+    //   y: -8,
+    //   data: {},
+    // },
+    // {
+    //   id: 'api',
+    //   shape: 'api',
+    //   x: 0,
+    //   y: 48,
+    //   data: {},
+    // },
+    // {
+    //   id: 'opcua',
+    //   shape: 'opcua',
+    //   x: 0,
+    //   y: 104,
+    //   data: {},
+    // },
+    // {
+    //   id: 'opcda',
+    //   shape: 'opcda',
+    //   x: 0,
+    //   y: 160,
+    //   data: {},
+    // },
+    // {
+    //   id: 'relation',
+    //   shape: 'relation',
+    //   x: 0,
+    //   y: 216,
+    //   data: {},
+    // },
+    // {
+    //   id: 'icmp',
+    //   shape: 'icmp',
+    //   x: 0,
+    //   y: 272,
+    //   data: {},
+    // },
+    // {
+    //   id: 'unknown',
+    //   shape: 'unknown',
+    //   x: 0,
+    //   y: 328,
+    //   data: {},
+    // },
     {
       id: 'nodeRed',
       shape: 'nodeRed',
@@ -99,135 +99,135 @@ export const data = {
     },
   ],
   edges: [
-    {
-      shape: 'edge',
-      source: 'modbus',
-      target: 'nodeRed',
-      vertices: [
-        { x: 180, y: 14 },
-        { x: 180, y: 180 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: { name: 'circle', r: 2 },
-          targetMarker: { name: 'circle', r: 2 },
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {},
-        },
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'api',
-      target: 'nodeRed',
-      vertices: [
-        { x: 180, y: 70 },
-        { x: 180, y: 180 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: { name: 'circle', r: 2 },
-          targetMarker: { name: 'circle', r: 2 },
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {},
-        },
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'opcua',
-      target: 'nodeRed',
-      vertices: [
-        { x: 180, y: 126 },
-        { x: 180, y: 180 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: { name: 'circle', r: 2 },
-          targetMarker: { name: 'circle', r: 2 },
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {},
-        },
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'opcda',
-      target: 'nodeRed',
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: { name: 'circle', r: 2 },
-          targetMarker: { name: 'circle', r: 2 },
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {},
-        },
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'relation',
-      target: 'nodeRed',
-      vertices: [
-        { x: 180, y: 238 },
-        { x: 180, y: 180 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: { name: 'circle', r: 2 },
-          targetMarker: { name: 'circle', r: 2 },
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {},
-        },
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'icmp',
-      target: 'nodeRed',
-      vertices: [
-        { x: 180, y: 294 },
-        { x: 180, y: 180 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: { name: 'circle', r: 2 },
-          targetMarker: { name: 'circle', r: 2 },
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {},
-        },
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'unknown',
-      target: 'nodeRed',
-      vertices: [
-        { x: 180, y: 350 },
-        { x: 180, y: 180 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: { name: 'circle', r: 2 },
-          targetMarker: { name: 'circle', r: 2 },
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {},
-        },
-      },
-    },
+    // {
+    //   shape: 'edge',
+    //   source: 'modbus',
+    //   target: 'nodeRed',
+    //   vertices: [
+    //     { x: 180, y: 14 },
+    //     { x: 180, y: 180 },
+    //   ],
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: { name: 'circle', r: 2 },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {},
+    //     },
+    //   },
+    // },
+    // {
+    //   shape: 'edge',
+    //   source: 'api',
+    //   target: 'nodeRed',
+    //   vertices: [
+    //     { x: 180, y: 70 },
+    //     { x: 180, y: 180 },
+    //   ],
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: { name: 'circle', r: 2 },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {},
+    //     },
+    //   },
+    // },
+    // {
+    //   shape: 'edge',
+    //   source: 'opcua',
+    //   target: 'nodeRed',
+    //   vertices: [
+    //     { x: 180, y: 126 },
+    //     { x: 180, y: 180 },
+    //   ],
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: { name: 'circle', r: 2 },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {},
+    //     },
+    //   },
+    // },
+    // {
+    //   shape: 'edge',
+    //   source: 'opcda',
+    //   target: 'nodeRed',
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: { name: 'circle', r: 2 },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {},
+    //     },
+    //   },
+    // },
+    // {
+    //   shape: 'edge',
+    //   source: 'relation',
+    //   target: 'nodeRed',
+    //   vertices: [
+    //     { x: 180, y: 238 },
+    //     { x: 180, y: 180 },
+    //   ],
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: { name: 'circle', r: 2 },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {},
+    //     },
+    //   },
+    // },
+    // {
+    //   shape: 'edge',
+    //   source: 'icmp',
+    //   target: 'nodeRed',
+    //   vertices: [
+    //     { x: 180, y: 294 },
+    //     { x: 180, y: 180 },
+    //   ],
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: { name: 'circle', r: 2 },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {},
+    //     },
+    //   },
+    // },
+    // {
+    //   shape: 'edge',
+    //   source: 'unknown',
+    //   target: 'nodeRed',
+    //   vertices: [
+    //     { x: 180, y: 350 },
+    //     { x: 180, y: 180 },
+    //   ],
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: { name: 'circle', r: 2 },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {},
+    //     },
+    //   },
+    // },
     {
       shape: 'edge',
       source: 'nodeRed',

@@ -58,6 +58,8 @@ const DevPage = () => {
         </Button>
         <ComCheckbox label="123" />
         <InlineLoading status="active" description="Loading data..." />
+        <InlineLoading status="error" description="Loading data..." />
+        <InlineLoading status="finished" description="Loading data..." />
       </ComContent>
     </ComLayout>
   );

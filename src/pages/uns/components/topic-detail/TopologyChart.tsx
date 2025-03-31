@@ -93,7 +93,7 @@ const Apps = (data: any) => {
       })}
     >
       <ApplicationWeb size={28} />
-      {I18nStore.getIntl('common.apps', 'APPs')}
+      Grafana
     </div>
   );
 };
@@ -395,17 +395,17 @@ const markupLine = {
 
 const data = {
   nodes: [
-    {
-      id: 'modbus1',
-      shape: 'modbus1',
-      x: 0,
-      y: 0,
-      data: {
-        name: '',
-        protocol: {},
-        active: false,
-      },
-    },
+    // {
+    //   id: 'modbus1',
+    //   shape: 'modbus1',
+    //   x: 0,
+    //   y: 0,
+    //   data: {
+    //     name: '',
+    //     protocol: {},
+    //     active: false,
+    //   },
+    // },
     {
       id: 'nodeRed1',
       shape: 'nodeRed1',
@@ -446,19 +446,19 @@ const data = {
     },
   ],
   edges: [
-    {
-      shape: 'edge',
-      source: 'modbus1',
-      target: 'nodeRed1',
-      id: 'pushOriginalData',
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: { ...commonLine },
-      },
-      label: {
-        position: 0,
-      },
-    },
+    // {
+    //   shape: 'edge',
+    //   source: 'modbus1',
+    //   target: 'nodeRed1',
+    //   id: 'pushOriginalData',
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: { ...commonLine },
+    //   },
+    //   label: {
+    //     position: 0,
+    //   },
+    // },
     {
       shape: 'edge',
       source: 'nodeRed1',
@@ -501,17 +501,17 @@ const data = {
 // 临时处理，后续这块要重构
 const data1 = {
   nodes: [
-    {
-      id: 'modbus1',
-      shape: 'modbus1',
-      x: 0,
-      y: 0,
-      data: {
-        name: '',
-        protocol: {},
-        active: false,
-      },
-    },
+    // {
+    //   id: 'modbus1',
+    //   shape: 'modbus1',
+    //   x: 0,
+    //   y: 0,
+    //   data: {
+    //     name: '',
+    //     protocol: {},
+    //     active: false,
+    //   },
+    // },
     {
       id: 'mqtt1',
       shape: 'mqtt1',
@@ -542,19 +542,19 @@ const data1 = {
     },
   ],
   edges: [
-    {
-      shape: 'edge',
-      source: 'modbus1',
-      target: 'mqtt1',
-      id: 'pushOriginalData',
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: { ...commonLine },
-      },
-      label: {
-        position: 0,
-      },
-    },
+    // {
+    //   shape: 'edge',
+    //   source: 'modbus1',
+    //   target: 'mqtt1',
+    //   id: 'pushOriginalData',
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: { ...commonLine },
+    //   },
+    //   label: {
+    //     position: 0,
+    //   },
+    // },
     {
       shape: 'edge',
       source: 'mqtt1',
@@ -594,23 +594,23 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   const navigate = useNavigate();
   function findDate({ dataType, withSave2db, withFlow }: any) {
     const _data = !withFlow ? data1 : data;
-    _data.nodes[3].data.dataType = dataType;
+    // _data.nodes[3].data.dataType = dataType;
     if (dataType == 3) {
       return Object.assign({}, _data, {
-        nodes: _data.nodes.slice(2),
-        edges: _data.edges.slice(2),
+        nodes: _data.nodes.slice(1),
+        edges: _data.edges.slice(1),
       });
-    }
-    if (!withFlow) {
-      // return Object.assign({}, data, {
-      //   nodes: data.nodes.splice(1, 1),
-      //   edges: data.edges.splice(1, 1),
-      // });
     }
     if (!withSave2db) {
       return Object.assign({}, _data, {
         nodes: _data.nodes.slice(0, -2),
         edges: _data.edges.slice(0, -2),
+      });
+    }
+    if (withSave2db && !dashboardType?.includes('grafana')) {
+      return Object.assign({}, _data, {
+        nodes: _data.nodes.slice(0, -1),
+        edges: _data.edges.slice(0, -1),
       });
     }
     return _data;
@@ -807,7 +807,7 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
       }
     };
     graphRef.current = graphInstance;
-    graphInstance.positionPoint({ x: 0, y: 0 }, 40, '40%');
+    graphInstance.positionPoint({ x: 210, y: 0 }, 40, '40%');
     return graphInstance;
   };
 
