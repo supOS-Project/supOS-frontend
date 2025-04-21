@@ -88,7 +88,7 @@ const Module = ({ successCallBack, currentPath }: any) => {
               initialValue={false}
               style={{ marginBottom: 0 }}
             >
-              <ComCheckbox label={formatMessage('uns.autoFlow')} />
+              <ComCheckbox label={formatMessage('uns.deleteAutoFlow')} />
             </Form.Item>
             {dashboardType?.includes('grafana') && (
               <Form.Item
@@ -98,7 +98,7 @@ const Module = ({ successCallBack, currentPath }: any) => {
                 initialValue={true}
                 style={{ marginBottom: 0 }}
               >
-                <ComCheckbox label={formatMessage('uns.autoDashboard')} />
+                <ComCheckbox label={formatMessage('uns.deleteAutoDashboard')} />
               </Form.Item>
             )}
           </>

@@ -498,88 +498,6 @@ const data = {
   ],
 };
 
-// 临时处理，后续这块要重构
-const data1 = {
-  nodes: [
-    // {
-    //   id: 'modbus1',
-    //   shape: 'modbus1',
-    //   x: 0,
-    //   y: 0,
-    //   data: {
-    //     name: '',
-    //     protocol: {},
-    //     active: false,
-    //   },
-    // },
-    {
-      id: 'mqtt1',
-      shape: 'mqtt1',
-      x: 210,
-      y: 0,
-      data: {
-        active: false,
-      },
-    },
-    {
-      id: 'tdEngine1',
-      shape: 'tdEngine1',
-      x: 420,
-      y: 0,
-      data: {
-        dataType: 1,
-        active: false,
-      },
-    },
-    {
-      id: 'apps1',
-      shape: 'apps1',
-      x: 630,
-      y: 0,
-      data: {
-        active: false,
-      },
-    },
-  ],
-  edges: [
-    // {
-    //   shape: 'edge',
-    //   source: 'modbus1',
-    //   target: 'mqtt1',
-    //   id: 'pushOriginalData',
-    //   attrs: {
-    //     // line 是选择器名称，选中的边的 path 元素
-    //     line: { ...commonLine },
-    //   },
-    //   label: {
-    //     position: 0,
-    //   },
-    // },
-    {
-      shape: 'edge',
-      source: 'mqtt1',
-      target: 'tdEngine1',
-      id: 'pullMqttOrDataPersistence', //pullMqtt从mqtt拉数据或dataPersistence数据持久化
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: { ...commonLine },
-      },
-      label: {
-        position: 0,
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'tdEngine1',
-      target: 'apps1',
-      id: 'apps12',
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: { ...commonLine },
-      },
-    },
-  ],
-};
 const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   const graphRef = useRef<any>(null);
   const { dashboardType } = useRoutesContext();
@@ -592,8 +510,8 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   const [activeInfo, setActiveInfo] = useState<any>();
   const [errorState, setErrorState] = useState<any>(false);
   const navigate = useNavigate();
-  function findDate({ dataType, withSave2db, withFlow }: any) {
-    const _data = !withFlow ? data1 : data;
+  function findDate({ dataType, withSave2db }: any) {
+    const _data = data;
     // _data.nodes[3].data.dataType = dataType;
     if (dataType == 3) {
       return Object.assign({}, _data, {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { App, Radio, Drawer, Splitter, Breadcrumb } from 'antd';
 import { useDeepCompareEffect } from 'ahooks';
 import { ChevronDown, ChevronUp, Copy, TreeView as TreeViewIcon } from '@carbon/icons-react';
@@ -382,8 +382,20 @@ const Module = () => {
     }
   }, [treeData]);
 
-  useEffect(() => {
-    setUnusedTopicPanelSize([splitterWrapRef.current?.offsetHeight - panelCloseSize, panelCloseSize]);
+  useLayoutEffect(() => {
+    const updatePanelSize = () => {
+      if (splitterWrapRef.current) {
+        setUnusedTopicPanelSize([splitterWrapRef.current.offsetHeight - panelCloseSize, panelCloseSize]);
+      }
+    };
+    updatePanelSize();
+    const resizeObserver = new ResizeObserver(updatePanelSize);
+    if (splitterWrapRef.current) {
+      resizeObserver.observe(splitterWrapRef.current);
+    }
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, []);
 
   // 查找并返回从根节点到指定路径节点的所有父节点的path

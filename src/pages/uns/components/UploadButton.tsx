@@ -48,7 +48,7 @@ const UploadButton = ({ alias, documentListRef, auth }: { auth?: string; alias: 
         style={{ border: '1px solid #C6C6C6', background: 'var(--supos-uns-button-color)' }}
         icon={<Upload />}
       >
-        {formatMessage('uns.upload')}
+        {formatMessage('common.upload')}
       </AuthButton>
       <ProModal
         aria-label=""

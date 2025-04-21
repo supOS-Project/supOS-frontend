@@ -44,7 +44,7 @@ const Step2: FC<any> = () => {
         </Form.Item>
         <Divider style={{ borderColor: '#c6c6c6' }} />
         {dataType !== 3 && (
-          <Form.Item name="addFlow" label={formatMessage('uns.autoFlow')} valuePropName="checked" initialValue={true}>
+          <Form.Item name="addFlow" label={formatMessage('uns.mockData')} valuePropName="checked" initialValue={true}>
             <ComCheckbox />
           </Form.Item>
         )}
