@@ -796,7 +796,7 @@ const Module = () => {
                 }
               }}
             >
-              {formatMessage('uns.otherTopic', 'Unused Topics')}
+              {formatMessage('uns.otherTopic', 'Raw Topics')}
               {unusedTopicPanelSize[1] === panelCloseSize ? <ChevronUp /> : <ChevronDown />}
             </div>
             <div style={{ height: 'calc(100% - 48px)', padding: '8px 14px 0' }}>

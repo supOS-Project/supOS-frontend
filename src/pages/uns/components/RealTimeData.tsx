@@ -104,15 +104,17 @@ const RealTimeData: FC<IProps> = ({ topic, showType }) => {
                 return (
                   <div key={updateTime}>
                     <div className="realTimeDataPanel">
-                      <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+                      <div style={{ overflow: 'auto', padding: '16px', maxHeight: '400px' }}>
                         {isError(attempt(JSON.parse, payload)) ? (
                           payload
                         ) : (
                           <pre>{JSON.stringify(JSON.parse(payload), null, 2)}</pre>
                         )}
                       </div>
-                      <div className="realTimeList-copy" data-clipboard-text={payload}>
-                        <Copy />
+                      <div className="realTimeList-copy-overlap">
+                        <div className="realTimeList-copy" data-clipboard-text={payload}>
+                          <Copy />
+                        </div>
                       </div>
                     </div>
                     <p style={{ margin: '7px 0 0', lineHeight: '16px', fontSize: '12px' }}>
