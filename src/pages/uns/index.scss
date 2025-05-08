@@ -521,13 +521,23 @@
       line-height: 16px;
       border-left: 4px solid var(--supos-theme-color);
       max-height: 400px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      position: relative;
+
+      .realTimeList-copy-overlap {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+      }
 
       .realTimeList-copy {
-        padding: 16px;
+        padding: 8px;
         cursor: pointer;
+        background-color: var(--supos-tag-color);
+        display: flex;
+
+        &:hover {
+          background-color: #e8e8e8;
+        }
       }
     }
   }
