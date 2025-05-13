@@ -1,6 +1,6 @@
 import { FC, useState, useEffect, useRef } from 'react';
 import { FolderAdd, Download } from '@carbon/icons-react';
-import { Upload, Button, App } from 'antd';
+import { Upload, Button, App, Dropdown } from 'antd';
 import { importExcel } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 import { ProModal, InlineLoading } from '@/components';
@@ -41,7 +41,7 @@ const Module: FC<any> = (props) => {
 
   const beforeUpload = (file: any) => {
     const fileType = file.name.split('.').pop();
-    if (['xlsx'].includes(fileType)) {
+    if (['xlsx', 'json'].includes(fileType.toLowerCase())) {
       setFileList([file]);
     } else {
       message.warning(formatMessage('uns.theFileFormatOnlySupportsXlsx'));
@@ -150,17 +150,27 @@ const Module: FC<any> = (props) => {
       title={
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span>{formatMessage('common.import')}</span>
-          <a download="template" href="/inter-api/supos/uns/excel/template/download">
-            <Button
-              color="default"
-              variant="filled"
-              icon={<Download />}
-              iconPosition="end"
-              style={{ padding: '4px 10px', color: 'var(--supos-text-color) !important' }}
-            >
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  label: 'EXCEL',
+                  key: 'excel',
+                  extra: <Download style={{ verticalAlign: 'middle' }} />,
+                },
+                {
+                  label: 'JSON',
+                  key: 'json',
+                  extra: <Download style={{ verticalAlign: 'middle' }} />,
+                },
+              ],
+              onClick: (e) => window.open(`/inter-api/supos/uns/excel/template/download?fileType=${e.key}`, '_self'),
+            }}
+          >
+            <Button color="default" variant="filled" iconPosition="end" style={{ padding: '4px 10px' }}>
               {formatMessage('common.downloadTemplate')}
             </Button>
-          </a>
+          </Dropdown>
         </div>
       }
       width={460}
@@ -180,7 +190,7 @@ const Module: FC<any> = (props) => {
             ref={uploadRef}
             className="uploadWrap"
             action=""
-            accept=".xlsx"
+            accept=".xlsx,.json"
             maxCount={1}
             beforeUpload={beforeUpload}
             fileList={fileList}

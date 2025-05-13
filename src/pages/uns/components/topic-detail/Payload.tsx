@@ -13,7 +13,7 @@ const Payload: FC<any> = ({ websocketData }) => {
     <table className="customTable" border={1} cellSpacing="1">
       <thead>
         <tr>
-          <td style={{ width: '30%' }}>{formatMessage('uns.keyName')}</td>
+          <td style={{ width: '30%' }}>{formatMessage('uns.key')}</td>
           <td style={{ width: '30%' }}>{formatMessage('uns.value')}</td>
           <td>{formatMessage('common.latestUpdate')}</td>
         </tr>

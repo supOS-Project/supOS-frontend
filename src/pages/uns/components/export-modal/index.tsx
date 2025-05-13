@@ -1,6 +1,6 @@
 import { FC, useState, useImperativeHandle } from 'react';
 import { ProModal, ComCheckbox } from '@/components';
-import { Button, Form, App } from 'antd';
+import { Button, Form, App, Select, Flex } from 'antd';
 import SearchSelect from '@/pages/uns/components/use-create-modal/components/SearchSelect';
 import { exportExcel } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
@@ -18,17 +18,21 @@ const Module: FC<any> = (props) => {
   const save = async () => {
     const values = await form.validateFields();
     console.log('values', values);
-    const { models, instances, all } = values;
+    const { models, instances, all, fileType } = values;
     if (models.length === 0 && instances.length === 0 && !all) {
       message.warning(formatMessage('uns.pleaseSelectTheInstanceToExport'));
       return;
     }
-    const _instances = instances.length
-      ? instances.filter((instance: string) => !models.some((model: string) => instance.startsWith(model)))
-      : [];
+    const _instances =
+      instances.length > 0
+        ? instances.filter((instance: string) => !models.some((model: string) => instance.startsWith(model)))
+        : [];
     setLoading(true);
     try {
-      const filePath = await exportExcel(all ? { exportType: 'ALL' } : { models, instances: _instances });
+      const filePath = await exportExcel({
+        fileType,
+        ...(all ? { exportType: 'ALL' } : { models, instances: _instances }),
+      });
       if (filePath) {
         window.open(`/inter-api/supos/uns/excel/download?path=${filePath}`, '_self');
         message.success(formatMessage('uns.exportSuccessful'));
@@ -73,14 +77,36 @@ const Module: FC<any> = (props) => {
         initialValues={{ models: [], instances: [], all: false }}
         disabled={loading}
       >
-        <Form.Item name="all" label={formatMessage('uns.downloadAll')} valuePropName="checked">
-          <ComCheckbox
-            onChange={() => {
-              form.setFieldsValue({ models: [], instances: [] });
-            }}
-            disabled={loading}
-          />
-        </Form.Item>
+        <Flex>
+          <Form.Item
+            name="all"
+            label={formatMessage('uns.downloadAll')}
+            valuePropName="checked"
+            labelCol={{ span: 12 }}
+            style={{ width: '50%' }}
+          >
+            <ComCheckbox
+              onChange={() => {
+                form.setFieldsValue({ models: [], instances: [] });
+              }}
+              disabled={loading}
+            />
+          </Form.Item>
+          <Form.Item
+            name="fileType"
+            label={formatMessage('uns.fileType')}
+            initialValue={'excel'}
+            labelCol={{ span: 12 }}
+            style={{ width: '50%' }}
+          >
+            <Select
+              options={[
+                { label: 'EXCEL', value: 'excel' },
+                { label: 'JSON', value: 'json' },
+              ]}
+            />
+          </Form.Item>
+        </Flex>
         <Form.Item label={formatMessage('uns.model')} name="models">
           <SearchSelect
             placeholder={formatMessage('uns.exportFolderTip')}
