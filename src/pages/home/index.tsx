@@ -12,6 +12,7 @@ import { guideSteps } from './guide-steps';
 import { observer } from 'mobx-react-lite';
 import { queryExamples, installExample, unInstallExample } from '@/apis/inter-api/example';
 import { Code, Pin, TemperatureWater } from '@carbon/icons-react';
+import { useThemeContext } from '@/contexts/theme-context';
 const { Title, Paragraph } = Typography;
 
 // example 返回的数据结构
@@ -39,8 +40,9 @@ const Index = () => {
   const navigate = useNavigate();
   const [exampleDataSource, setExampleDataSource] = useState<RoutesProps[]>([]);
   const [loadingViews, setLoadingViews] = useState<string[]>([]);
+  const themeStore = useThemeContext();
 
-  useGuideSteps(guideSteps(navigate, { appTitle: routesStore.systemInfo.appTitle }));
+  useGuideSteps(guideSteps(navigate, { appTitle: routesStore.systemInfo.appTitle }, themeStore));
 
   // 获取example列表
   const getExamples = (open = true) => {

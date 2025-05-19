@@ -7,6 +7,10 @@
     flex-direction: column;
     padding: 4px 80px 16px;
 
+    .home-guide-next {
+      margin: 0;
+    }
+
     .home-guide-exit,
     .home-guide-exit:hover {
       color: var(--supos-theme-color);

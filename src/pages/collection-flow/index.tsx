@@ -16,12 +16,13 @@ import flowDark from '@/assets/collection-flow/flow-dark.svg';
 import { useNavigate } from 'react-router-dom';
 import { addFlow, copyFlow, deleteFlow, editFlow, flowPage } from '@/apis/inter-api/flow';
 import { TransformFieldNameOutData, validInputPattern, getSearchParamsString } from '@/utils';
-import { usePagination, useTranslate } from '@/hooks';
+import { useGuideSteps, usePagination, useTranslate } from '@/hooks';
 import { PageProps } from '@/common-types.ts';
 import { useActivate } from '@/contexts/tabs-lifecycle-context';
 import ThemeStore from '@/stores/theme-store';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
 import { Search } from '@carbon/icons-react';
+import { guideSteps } from './guide-steps';
 
 const CollectionFlow: FC<PageProps> = ({ title }) => {
   const formatMessage = useTranslate();
@@ -31,6 +32,9 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
   const [form] = Form.useForm();
   const [searchForm] = Form.useForm();
   const [show, setShow] = useState(false);
+
+  useGuideSteps(guideSteps());
+
   const { loading, pagination, data, reload, refreshRequest, setSearchParams } = usePagination({
     fetchApi: flowPage,
   });

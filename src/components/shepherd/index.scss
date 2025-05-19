@@ -27,6 +27,10 @@
     margin-bottom: 24px !important;
   }
 
+  &.no-attach {
+    margin: 0 !important;
+  }
+
   &.shepherd-has-title .shepherd-content .shepherd-header {
     background: #fff;
     padding: 16px 20px 0;
@@ -101,4 +105,31 @@
 .shepherd-modal-overlay-container {
   z-index: 10000 !important;
   pointer-events: auto !important;
+}
+
+.guide-video-classes.shepherd-element {
+  max-width: 900px;
+
+  .shepherd-text {
+    padding: 16px;
+  }
+
+  .guide-video {
+    width: 100%;
+    height: auto;
+  }
+
+  .video-title {
+    font-size: 26px;
+    font-weight: 600;
+    text-align: center;
+    color: #000;
+    margin: 10px;
+  }
+
+  .video-info {
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
 }

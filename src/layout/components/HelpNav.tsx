@@ -21,11 +21,14 @@ const HelpNav = () => {
 
   const dropdownItems = useMemo(() => {
     const guideGroupChildren = [
-      {
-        key: '/home',
-      },
+      // {
+      //   key: '/home',
+      // },
       {
         key: '/uns',
+      },
+      {
+        key: '/collection-flow',
       },
     ];
     const groupChildren: ItemType[] = [];
