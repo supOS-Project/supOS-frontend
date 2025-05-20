@@ -11,8 +11,9 @@ import { MenuTypeEnum } from '@/stores/theme-store';
 /**
  * 使用 新人引导 步骤
  * @param steps 初始化步骤数据
+ * @param startStepId 指定起始的步骤id
  */
-export const useGuideSteps = (steps: any[] = []) => {
+export const useGuideSteps = (steps: any[] = [], startStepId?: string) => {
   const themeStore = useThemeContext();
   const pathname = useLocation().pathname;
   const tour = useRef(shepherd()).current;
@@ -74,7 +75,13 @@ export const useGuideSteps = (steps: any[] = []) => {
           }
         }
         tour.addSteps(availableSteps);
-        tour.start();
+        // 如果存在指定起始的stepId，则从指定的步骤开始
+        // 否则从第一个步骤开始
+        if (startStepId) {
+          tour.show(startStepId);
+        } else {
+          tour.start();
+        }
         tour.on('cancel', () => {
           tour.complete();
         });

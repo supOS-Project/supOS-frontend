@@ -81,14 +81,13 @@ const OverviewList: FC<MenuListProps> = ({ list, type, customOptRender, loadingV
             </Paragraph>
             <Flex wrap gap={18}>
               {item?.children?.map?.((c) => {
+                // 新手导航 id
+                let unsMenuId;
+                if (c?.menu?.url === '/uns') {
+                  unsMenuId = 'home_route_uns';
+                }
                 return (
-                  <div
-                    // 新手导航 id
-                    // id={`home_route_${c?.key?.replace(/\s/g, '')}`}
-                    key={c.key}
-                    className={styles['menu-item']}
-                    onClick={() => handleClickItem(c)}
-                  >
+                  <div id={unsMenuId} key={c.key} className={styles['menu-item']} onClick={() => handleClickItem(c)}>
                     <Spin spinning={(loadingViews || []).includes(c.key as string)}>
                       <Item
                         item={c}

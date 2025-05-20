@@ -26,8 +26,6 @@ import { Loading } from '@/components';
 
 import './index.scss';
 import { useGuideSteps } from '@/hooks';
-// import I18nStore from '@/stores/i18n-store';
-// import { some } from 'lodash';
 import useUnsGlobalWs from '@/pages/uns/useUnsGlobalWs.ts';
 import { useMediaSize } from '@/hooks';
 import { useUnsTreeMapContext } from '@/UnsTreeMapContext';
@@ -36,7 +34,7 @@ import UnusedTopicTree from './components/uns-tree/UnusedTopicTree';
 import { getExternalTreeData } from '@/apis/inter-api/external';
 import ComText from '@/components/com-text';
 import { guideSteps } from './guide-steps';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const panelCloseSize = 48;
 const panelOpenSize = 500;
@@ -72,248 +70,9 @@ const Module = () => {
   const exportRef = useRef<any>(null);
   const unusedTopicTreeRef = useRef<any>(null);
   const splitterWrapRef = useRef<any>(null);
-  const navigate = useNavigate();
+  const location = useLocation();
 
-  useGuideSteps(guideSteps(navigate));
-
-  // 新手导航步骤
-  // const unsStep7: any = {
-  //   id: 'uns_step7',
-  //   modalOverlayOpeningPadding: 0,
-  //   title: I18nStore.getIntl('uns.guide7Title'),
-  //   text: I18nStore.getIntl('uns.guide7Text1'),
-  //   attachTo: {
-  //     element: '#uns_create_modal_top',
-  //     on: 'left',
-  //   },
-  //   buttons: [
-  //     {
-  //       action() {
-  //         setMockNextStep(1);
-  //         return tour.back();
-  //       },
-  //       text: I18nStore.getIntl('global.tipBack'),
-  //       classes: 'prev-class',
-  //     },
-  //     {
-  //       action() {
-  //         setModalClose();
-  //         return tour.complete();
-  //       },
-  //       text: I18nStore.getIntl('global.tipDone'),
-  //     },
-  //   ],
-  // };
-
-  // const unsStep6: any = {
-  //   id: 'uns_step6',
-  //   title: I18nStore.getIntl('uns.guide6Title'),
-  //   modalOverlayOpeningPadding: 0,
-  //   text: `
-  //   ${I18nStore.getIntl('uns.guide6Text1')}
-  //   <br />
-  //   ${I18nStore.getIntl('uns.guide6Text2')}
-  //   `,
-  //   attachTo: {
-  //     element: '#uns_create_modal_top',
-  //     on: 'auto',
-  //   },
-  //   buttons: [
-  //     {
-  //       action() {
-  //         setModalClose();
-  //         return tour.back();
-  //       },
-  //       text: I18nStore.getIntl('global.tipBack'),
-  //       classes: 'prev-class',
-  //     },
-  //     {
-  //       action() {
-  //         setMockNextStep(2);
-  //         if (!some(tour.steps, (step) => step.id === unsStep7.id)) {
-  //           tour.addStep(unsStep7);
-  //         }
-  //         return tour.next();
-  //       },
-  //       text: I18nStore.getIntl('global.tipNext'),
-  //     },
-  //   ],
-  // };
-
-  // const unsStep5: any = {
-  //   id: 'uns_step5',
-  //   title: I18nStore.getIntl('uns.guide5Title'),
-  //   text: `
-  //   ${I18nStore.getIntl('uns.guide5Text1')}
-  //   `,
-  //   attachTo: {
-  //     element: '#uns_create_file_btn',
-  //     on: 'auto',
-  //   },
-  //   buttons: [
-  //     {
-  //       action() {
-  //         setOptionOpen('addFolder', currentPath);
-  //         setTimeout(() => {
-  //           return tour.back();
-  //         }, 500);
-  //       },
-  //       text: I18nStore.getIntl('global.tipBack'),
-  //       classes: 'prev-class',
-  //     },
-  //     {
-  //       action() {
-  //         setOptionOpen('addFile', currentPath);
-  //         if (!some(tour.steps, (step) => step.id === unsStep6.id)) {
-  //           tour.addStep(unsStep6);
-  //         }
-  //         setTimeout(() => {
-  //           return tour.next();
-  //         }, 500);
-  //       },
-  //       text: I18nStore.getIntl('global.tipNext'),
-  //     },
-  //   ],
-  // };
-
-  // const unsStep4: any = {
-  //   id: 'uns_step4',
-  //   modalOverlayOpeningPadding: 0,
-  //   title: I18nStore.getIntl('uns.guide4Title'),
-  //   text: `
-  //   ${I18nStore.getIntl('uns.guide4Text1')}
-  //   <br/>
-  //   ${I18nStore.getIntl('uns.guide4Text2')}
-  //   `,
-  //   attachTo: {
-  //     element: '#uns_create_modal_bottom',
-  //     on: 'auto',
-  //   },
-  //   buttons: [
-  //     {
-  //       action() {
-  //         return tour.back();
-  //       },
-  //       text: I18nStore.getIntl('global.tipBack'),
-  //       classes: 'prev-class',
-  //     },
-  //     {
-  //       action() {
-  //         setModalClose();
-  //         if (!some(tour.steps, (step) => step.id === unsStep5.id)) {
-  //           tour.addStep(unsStep5);
-  //         }
-  //         return tour.next();
-  //       },
-  //       text: I18nStore.getIntl('global.tipNext'),
-  //     },
-  //   ],
-  // };
-
-  // const unsStep3: any = {
-  //   id: 'uns_step3',
-  //   title: I18nStore.getIntl('uns.guide3Title'),
-  //   modalOverlayOpeningPadding: 0,
-  //   text: `
-  //     ${I18nStore.getIntl('uns.guide3Text1')}
-  //   `,
-  //   attachTo: {
-  //     element: '#uns_create_modal_top',
-  //     on: 'left',
-  //   },
-  //   buttons: [
-  //     {
-  //       action() {
-  //         // 上一步 关闭新增弹窗
-  //         setModalClose();
-  //         return tour.back();
-  //       },
-  //       text: I18nStore.getIntl('global.tipBack'),
-  //       classes: 'prev-class',
-  //     },
-  //     {
-  //       action() {
-  //         if (!some(tour.steps, (step) => step.id === unsStep4.id)) {
-  //           tour.addStep(unsStep4);
-  //         }
-  //         return tour.next();
-  //       },
-  //       text: I18nStore.getIntl('global.tipNext'),
-  //     },
-  //   ],
-  // };
-
-  // 新手导航
-  // const { tour } = useGuideSteps([
-  //   {
-  //     id: 'uns_step1',
-  //     title: I18nStore.getIntl('uns.guide1Title'),
-  //     text: `
-  //     ${I18nStore.getIntl('uns.guide1Text1', { appTitle: routesStore.systemInfo.appTitle })}
-  //     <ul class="user-guide-list">
-  //       <li>${I18nStore.getIntl('uns.guide1Text2')}</li>
-  //       <li>${I18nStore.getIntl('uns.guide1Text3')}</li>
-  //       <li>${I18nStore.getIntl('uns.guide1Text4')}</li>
-  //     </ul>
-  //     `,
-  //     attachTo: {
-  //       element: '#uns_left_tree',
-  //       on: 'right-start',
-  //     },
-  //     buttons: [
-  //       {
-  //         action() {
-  //           return tour.complete();
-  //         },
-  //         text: I18nStore.getIntl('global.tipExit'),
-  //         classes: 'prev-class',
-  //       },
-  //       {
-  //         action() {
-  //           return tour.next();
-  //         },
-  //         text: I18nStore.getIntl('global.tipNext'),
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 'uns_step2',
-  //     title: I18nStore.getIntl('uns.guide2Title'),
-  //     text: `
-  //       ${I18nStore.getIntl('uns.guide2Text1')}
-  //     `,
-  //     attachTo: {
-  //       element: '#uns_create_folder_btn',
-  //       on: 'auto',
-  //     },
-  //     buttons: [
-  //       {
-  //         action() {
-  //           return tour.back();
-  //         },
-  //         text: I18nStore.getIntl('global.tipBack'),
-  //         classes: 'prev-class',
-  //       },
-  //       {
-  //         action() {
-  //           // 下一步是新建文件夹，需打开新增弹弹窗
-  //           setOptionOpen('addFolder', currentPath);
-  //           // 下一步，增加需展示的步骤(弹窗后需定位到下一步元素进行导航，所以在此处动态添加)
-  //           if (!some(tour.steps, (step) => step.id === unsStep3.id)) {
-  //             tour.addStep(unsStep3);
-  //           }
-  //           setTimeout(() => {
-  //             return tour.next();
-  //           }, 500);
-  //         },
-  //         text: I18nStore.getIntl('global.tipNext'),
-  //       },
-  //     ],
-  //   },
-  // ]);
-  // tour.on('cancel', () => {
-  //   setModalClose();
-  // });
+  useGuideSteps(guideSteps(), location?.state?.stepId);
 
   useClipboard(copyPathRef, currentTreeMapType === 'all' ? currentPath : currentUnusedTopicPath);
 
@@ -743,7 +502,6 @@ const Module = () => {
         <Splitter.Panel min={120} size={unusedTopicPanelSize[0]}>
           <Loading spinning={loading}>
             <Radio.Group
-              id="uns_left_tree"
               onChange={(e) => {
                 setShowType(null);
                 setTreeType(e.target.value);

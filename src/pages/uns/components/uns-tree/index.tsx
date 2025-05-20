@@ -411,7 +411,7 @@ const UnsTree: FC<UnsTreeProps> = ({
         {treeType === 'treemap' ? (
           <>
             <AuthWrapper auth={ButtonPermission['uns.addFile']}>
-              <div className="treeOperateIconWrap" id="uns_create_file_btn">
+              <div className="treeOperateIconWrap">
                 <span title={formatMessage('uns.newFile')}>
                   <ComPopupGuide
                     stepName="openFileNewModal"

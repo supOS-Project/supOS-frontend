@@ -1,5 +1,5 @@
 .shepherd-custom-classes.shepherd-element {
-  z-index: 10000 !important;
+  z-index: 10001 !important;
   border-radius: 3px;
   box-shadow: 0 6px 12px 0 rgb(0 0 0 / 20%);
 
@@ -73,6 +73,16 @@
       &:hover {
         background-color: #fff !important;
         color: rgb(0 0 0 / 40%);
+      }
+    }
+
+    &.back-class {
+      background-color: rgb(29 119 254 / 10%);
+      color: var(--supos-theme-color);
+
+      &:hover {
+        background-color: rgb(29 119 254 / 20%);
+        color: var(--supos-theme-color);
       }
     }
 

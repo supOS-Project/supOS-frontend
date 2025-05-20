@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Dropdown } from 'antd';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useRoutesContext } from '@/contexts/routes-context';
 import { find, map } from 'lodash';
 import { storageOpt } from '@/utils';
@@ -15,30 +15,39 @@ const HelpNav = () => {
   const navigate = useNavigate();
   const { TabsContext } = useTabsContext();
   const routesStore = useRoutesContext();
-  const pathname = useLocation().pathname;
   const userRoute = routesStore.pickedRoutes;
   const formatMessage = useTranslate();
+  const unsRoutePath = '/uns';
 
   const dropdownItems = useMemo(() => {
-    const guideGroupChildren = [
-      // {
-      //   key: '/home',
-      // },
-      {
-        key: '/uns',
-      },
-      {
-        key: '/collection-flow',
-      },
-    ];
+    // const guideGroupChildren = [
+    //   // {
+    //   //   key: '/home',
+    //   // },
+    //   {
+    //     key: '/uns',
+    //   },
+    //   {
+    //     key: '/collection-flow',
+    //   },
+    // ];
     const groupChildren: ItemType[] = [];
-    guideGroupChildren.forEach((item) => {
-      const route = find(userRoute, (route) => route?.menu?.url === item.key && route?.menu?.picked);
-      if (route) {
-        groupChildren.push({ ...item, label: route.showName });
-      }
-    });
+    // guideGroupChildren.forEach((item) => {
+    //   const route = find(userRoute, (route) => route?.menu?.url === item.key && route?.menu?.picked);
+    //   if (route) {
+    //     groupChildren.push({ ...item, label: route.showName });
+    //   }
+    // });
 
+    const route = find(userRoute, (route) => route?.menu?.url === unsRoutePath && route?.menu?.picked);
+    if (route) {
+      groupChildren.push(
+        ...[
+          { key: 'uns_step1', label: formatMessage('global.userGuideLabel1', 'Data Modeling') },
+          { key: 'uns_step2', label: formatMessage('global.userGuideLabel2', 'Data Connection') },
+        ]
+      );
+    }
     const items: ItemType[] = [
       {
         key: 'tips',
@@ -78,15 +87,12 @@ const HelpNav = () => {
       }
       storageOpt.set(
         SUPOS_USER_GUIDE_ROUTES,
-        map(currentUserGuideRoute, (route) => (route?.menu?.url === key ? { ...route, isVisited: false } : route))
+        map(currentUserGuideRoute, (route) =>
+          route?.menu?.url === unsRoutePath ? { ...route, isVisited: false } : route
+        )
       );
-      if (key === pathname) {
-        navigate(key);
-        TabsContext?.current?.onRefreshTab?.(key);
-      } else {
-        navigate(key);
-        TabsContext?.current?.onRefreshTab?.(key);
-      }
+      navigate(unsRoutePath, { state: { stepId: key } });
+      TabsContext?.current?.onRefreshTab?.(unsRoutePath);
     }
   };
 

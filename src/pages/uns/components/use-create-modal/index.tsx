@@ -652,12 +652,6 @@ const useOptionModal = ({
                 labelAlign="left"
                 labelWrap
               >
-                {/* 用于新手导航定位: 弹窗的上下两部分定位 */}
-                <div style={{ position: 'absolute', left: 0, height: '68%', width: 0 }} id="uns_create_modal_top"></div>
-                <div
-                  style={{ position: 'absolute', left: 0, top: '40%', height: '50%', width: 0 }}
-                  id="uns_create_modal_bottom"
-                ></div>
                 {getStepContent()}
               </Form>
               <Divider style={{ borderColor: '#c6c6c6' }} />

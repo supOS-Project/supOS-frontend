@@ -38,6 +38,18 @@
   }
 }
 
-.guide-home-topBar-classes.shepherd-element {
-  margin-left: -10px !important;
+.guide-home-uns-classes.shepherd-element.shepherd-has-title {
+  width: 180px;
+
+  .shepherd-content .shepherd-header {
+    padding: 20px;
+  }
+
+  .shepherd-footer {
+    justify-content: center;
+  }
 }
+
+// .guide-home-topBar-classes.shepherd-element {
+//   margin-left: -10px !important;
+// }

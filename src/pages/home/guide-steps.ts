@@ -12,7 +12,7 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
 ) => {
   return [
     {
-      id: 'home-logo',
+      id: 'home_start',
       cancelIcon: {
         enabled: false,
       },
@@ -26,8 +26,7 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
       buttons: [
         {
           action() {
-            navigate('/uns');
-            return this.complete();
+            return this.next();
           },
           text: I18nStore.getIntl('home.guide1Next'),
           classes: 'home-guide-next',
@@ -38,6 +37,34 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
           },
           text: I18nStore.getIntl('home.guide1Exit'),
           classes: 'home-guide-exit prev-class',
+        },
+      ],
+    },
+    {
+      id: 'home_uns',
+      classes: 'guide-home-uns-classes',
+      cancelIcon: {
+        enabled: false,
+      },
+      title: I18nStore.getIntl('home.guideUnsTitle'),
+      attachTo: {
+        element: '#home_route_uns',
+        on: 'right',
+      },
+      buttons: [
+        {
+          action() {
+            return this.complete();
+          },
+          text: I18nStore.getIntl('home.guide1Exit'),
+          classes: 'prev-class',
+        },
+        {
+          action() {
+            navigate('/uns');
+            return this.complete();
+          },
+          text: I18nStore.getIntl('global.tipNext'),
         },
       ],
     },
