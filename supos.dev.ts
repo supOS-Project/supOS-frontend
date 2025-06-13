@@ -1,11 +1,15 @@
 import dotenv from 'dotenv';
 import colors from 'picocolors';
+// import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export interface DevInfo {
   BASE_URL: string;
   API_PROXY_URL: string;
   SINGLE_API_PROXY_URL: string;
   SINGLE_API_PROXY_LIST: string;
+  VITE_ASSET_PREFIX: string;
+  VITE_REMOTE_PREFIX: string;
+  VITE_ENABLE_LOCAL_REMOTE: string;
 }
 
 export const parseConfig = (config: any) => {
@@ -49,6 +53,8 @@ export const getProxy = (
       target: baseUrl,
       changeOrigin: true,
       ws: true,
+      // vpn代理
+      // agent: new HttpsProxyAgent('http://127.0.0.1:7897'),
     };
   });
   // 给iframe加个代理
@@ -77,9 +83,23 @@ export const getDevInfo = (): DevInfo => {
 export const logDevInfo = (info: DevInfo) => {
   const isProdCli = process.env.NODE_ENV === 'production';
   if (isProdCli) return;
-  const { API_PROXY_URL, SINGLE_API_PROXY_URL, SINGLE_API_PROXY_LIST } = info;
+  const {
+    API_PROXY_URL,
+    SINGLE_API_PROXY_URL,
+    SINGLE_API_PROXY_LIST,
+    VITE_ASSET_PREFIX,
+    VITE_REMOTE_PREFIX,
+    VITE_ENABLE_LOCAL_REMOTE,
+  } = info;
   console.log('---------- 开发信息 ----------');
   console.log(colors.gray('接口代理'), API_PROXY_URL, '\n');
   console.log(colors.gray('特殊接口代理'), SINGLE_API_PROXY_URL, '\n');
   console.log(colors.gray('特殊接口List'), SINGLE_API_PROXY_LIST, '\n');
+  console.log(colors.gray('host-dev地址'), VITE_ASSET_PREFIX, '\n');
+  console.log(colors.gray('remote-dev地址'), VITE_REMOTE_PREFIX, '\n');
+  console.log(colors.gray('是否启用本地模块联邦'), VITE_ENABLE_LOCAL_REMOTE, '\n');
+
+  if (!VITE_ASSET_PREFIX) {
+    console.error(colors.red('VITE_ASSET_PREFIX 未配置'));
+  }
 };

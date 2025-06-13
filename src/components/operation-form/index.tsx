@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react';
+import { CSSProperties, FC, ReactNode } from 'react';
 import { Button, Divider, Flex, Form, FormInstance, FormProps, Typography } from 'antd';
 import RenderFormItem, { RenderFormItemProps } from '../operation-form/render-form-item';
 import { useTranslate } from '@/hooks';
@@ -15,6 +15,11 @@ export interface OperationFormProps {
   formItemOptions: RenderFormItemProps[];
   title?: ReactNode;
   loading?: boolean;
+  style?: CSSProperties;
+  footer?: ReactNode;
+  buttonConfig?: {
+    block?: boolean;
+  };
 }
 
 const OperationForm: FC<OperationFormProps> = ({
@@ -25,14 +30,23 @@ const OperationForm: FC<OperationFormProps> = ({
   formItemOptions,
   title,
   loading,
+  style,
+  footer,
+  buttonConfig,
 }) => {
   const formatMessage = useTranslate();
-
+  const buttonStyle = buttonConfig?.block
+    ? {
+        height: 40,
+      }
+    : {
+        height: 30,
+      };
   return (
     <Form
       labelAlign={'left'}
       className={'operation-form'}
-      style={{ padding: '20px 40px', overflow: 'hidden' }}
+      style={{ padding: '20px 40px', overflow: 'hidden', ...style }}
       colon={false}
       labelCol={{ span: 11 }}
       wrapperCol={{ span: 13 }}
@@ -50,20 +64,35 @@ const OperationForm: FC<OperationFormProps> = ({
         }
         return <RenderFormItem key={item.name || uuidv4()} {...item} />;
       })}
-
-      <Flex justify="flex-end" gap="10px">
-        <Button
-          style={{ width: 76, height: 30, backgroundColor: 'rgba(0, 0, 0, 0.04)', color: 'var(--supos-text-color)' }}
-          color="default"
-          variant="filled"
-          onClick={onCancel}
-        >
-          {formatMessage('common.cancel')}
-        </Button>
-        <Button style={{ width: 76, height: 30 }} type="primary" variant="solid" onClick={onSave} loading={loading}>
-          {formatMessage('common.save')}
-        </Button>
-      </Flex>
+      {footer ? (
+        footer
+      ) : (
+        <Flex gap="10px" justify="end">
+          <Button
+            style={{
+              ...buttonStyle,
+              backgroundColor: 'var(--supos-uns-button-color)',
+              color: 'var(--supos-text-color)',
+            }}
+            color="default"
+            variant="filled"
+            onClick={onCancel}
+            block={buttonConfig?.block}
+          >
+            {formatMessage('common.cancel')}
+          </Button>
+          <Button
+            style={buttonStyle}
+            type="primary"
+            variant="solid"
+            onClick={onSave}
+            loading={loading}
+            block={buttonConfig?.block}
+          >
+            {formatMessage('common.save')}
+          </Button>
+        </Flex>
+      )}
     </Form>
   );
 };

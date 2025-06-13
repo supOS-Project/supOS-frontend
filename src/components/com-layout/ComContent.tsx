@@ -3,10 +3,9 @@ import { Button, Tooltip } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { DrillBack } from '@carbon/icons-react';
 import classNames from 'classnames';
-import { useThemeContext } from '@/contexts/theme-context';
 import { useTranslate } from '@/hooks';
-import { observer } from 'mobx-react-lite';
 import styles from './index.module.scss';
+import { useThemeStore } from '@/stores/theme-store.ts';
 
 export interface ComContentProps {
   border?: boolean;
@@ -38,16 +37,16 @@ const ComContent: FC<ComContentProps> = ({
   className,
 }) => {
   const navigate = useNavigate();
-  const themeStore = useThemeContext();
-  const noTitle = mustShowTitle || !themeStore.isTop;
-  const noBack = mustHasBack || !themeStore.isTop;
+  const isTop = useThemeStore((state) => state.isTop);
+  const noTitle = mustShowTitle || !isTop;
+  const noBack = mustHasBack || !isTop;
   const formatMessage = useTranslate();
 
   return (
     <div className={classNames(styles['com-content'], className)} style={wrapperStyle}>
       {noTitle && title && (
         <div
-          style={{ paddingLeft: hasPadding && !themeStore.isTop ? 300 : 25, ...(border ? {} : { border: 'none' }) }}
+          style={{ paddingLeft: hasPadding && !isTop ? 300 : 25, ...(border ? {} : { border: 'none' }) }}
           className="title"
         >
           <div style={{ flex: 1 }}>{title}</div>
@@ -68,4 +67,4 @@ const ComContent: FC<ComContentProps> = ({
   );
 };
 
-export default observer(ComContent);
+export default ComContent;

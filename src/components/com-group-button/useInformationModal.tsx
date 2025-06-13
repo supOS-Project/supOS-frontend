@@ -2,9 +2,8 @@ import { useRef, useState } from 'react';
 import ComSelect from '../com-select';
 import ProModal from '../pro-modal';
 import { AuthButton } from '../auth';
-import { App, Empty, Flex, Tag } from 'antd';
+import { App, Empty, Flex, Tag, Pagination, type PaginationProps } from 'antd';
 import { useTranslate, usePagination } from '@/hooks';
-import ComPagination from '../com-pagination';
 import styles from './InformationModal.module.scss';
 import { confirmAlarm, getAlarmList } from '@/apis/inter-api/alarm.ts';
 import { getAlertForSelect } from '@/apis/inter-api/uns.ts';
@@ -13,8 +12,8 @@ import InfoList from '../com-group-button/InfoList.tsx';
 import Loading from '../loading';
 import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames';
-import { formatTimestamp } from '@/utils';
-import { ComRadio } from '@/components';
+import ComRadio from '../com-radio/index.tsx';
+import { formatTimestamp } from '@/utils/format.ts';
 
 const useInformationModal = ({ onCallBack }: any) => {
   const navigate = useNavigate();
@@ -23,6 +22,7 @@ const useInformationModal = ({ onCallBack }: any) => {
   const payload = useRef<any>();
   const [status, setStatus] = useState<string | undefined>(undefined);
   const formatMessage = useTranslate();
+  // topic 的id
   const [topicValue, setTopicValue] = useState();
   const {
     data: originData,
@@ -31,18 +31,17 @@ const useInformationModal = ({ onCallBack }: any) => {
     reload,
     loading,
   } = usePagination({
-    initPageSize: 6,
+    initPageSize: 10,
     fetchApi: getAlarmList,
-    simple: false,
     firstNotGetData: true,
   });
 
   const data = originData?.map?.((item: any) => {
-    const { field, topic } = JSON.parse(item.refers || '[]')?.[0] || {};
+    const { field, path } = JSON.parse(item.refers || '[]')?.[0] || {};
     return {
       ...item,
       field,
-      topic,
+      path,
     };
   });
 
@@ -58,10 +57,10 @@ const useInformationModal = ({ onCallBack }: any) => {
   const onOpen = (data: any) => {
     payload.current = data;
     setSearchParams({
-      topic: data.topic,
+      unsId: data.unsId,
       readStatus: undefined,
     });
-    setTopicValue(data.topic);
+    setTopicValue(data.unsId);
     setOpen(true);
     navigate('', { replace: true, state: {} });
   };
@@ -70,19 +69,21 @@ const useInformationModal = ({ onCallBack }: any) => {
     setOpen(false);
     setStatus(undefined);
   };
-
+  const showTotal: PaginationProps['showTotal'] = (total) =>
+    `${formatMessage('common.total')}  ${total}  ${formatMessage('common.items')}`;
   const Dom = (
     <ProModal
       open={open}
       onCancel={onClose}
       size="xs"
-      title={formatMessage('alert.alert')}
+      title={formatMessage('Alert.alert')}
       className={classNames(styles['information-modal'])}
     >
       <Loading spinning={loading}>
         <Flex vertical style={{ height: '100%', overflow: 'hidden' }}>
           <Flex align="center" gap={10} wrap justify={'flex-start'} style={{ padding: '10px 1rem' }}>
             <ComSelect
+              key={topicValue}
               isRequest={open}
               variant="filled"
               style={{ width: 150 }}
@@ -92,7 +93,7 @@ const useInformationModal = ({ onCallBack }: any) => {
                 setTopicValue(v);
                 setSearchParams({
                   readStatus: status ? status !== 'pending' : undefined,
-                  topic: v,
+                  unsId: v,
                 });
               }}
               api={() => getAlertForSelect({ page: 1, pageSize: 10000, type: 5 })}
@@ -100,8 +101,8 @@ const useInformationModal = ({ onCallBack }: any) => {
             <Flex flex={1}>
               <ComRadio
                 options={[
-                  { label: formatMessage('information.pending'), value: 'pending' },
-                  { label: formatMessage('information.processed'), value: 'processed' },
+                  { label: formatMessage('common.unconfirmed'), value: 'pending' },
+                  { label: formatMessage('common.confirmed'), value: 'processed' },
                 ]}
                 value={status}
                 onClick={(e) => {
@@ -110,13 +111,13 @@ const useInformationModal = ({ onCallBack }: any) => {
                     if (prevState === val) {
                       setSearchParams({
                         readStatus: undefined,
-                        topic: topicValue,
+                        unsId: topicValue,
                       });
                       return undefined;
                     }
                     setSearchParams({
-                      readStatus: false,
-                      topic: topicValue,
+                      readStatus: val !== 'pending',
+                      unsId: topicValue,
                     });
                     return val;
                   });
@@ -136,7 +137,7 @@ const useInformationModal = ({ onCallBack }: any) => {
                   onOk: () => {
                     confirmAlarm({
                       confirmType: 2,
-                      topic: topicValue,
+                      unsId: topicValue,
                     }).then(() => {
                       onCallBack?.();
                       reload();
@@ -144,14 +145,14 @@ const useInformationModal = ({ onCallBack }: any) => {
                     });
                   },
                   afterClose: () => {},
-                  okText: formatMessage('appSpace.confirm'),
+                  okText: formatMessage('common.confirm'),
                   cancelButtonProps: {
                     // style: { color: '#000' },
                   },
                 });
               }}
             >
-              {formatMessage('information.confirmAll')}
+              {formatMessage('common.confirmAll')}
             </AuthButton>
           </Flex>
           {data?.length > 0 ? (
@@ -173,19 +174,19 @@ const useInformationModal = ({ onCallBack }: any) => {
                             justifyContent: 'center',
                           }}
                         >
-                          {formatMessage('information.new')}
+                          {formatMessage('common.new')}
                         </Tag>
                       )}
 
                       {item.ruleName}
                     </span>
                   ),
-                  extra: <span>{formatMessage('alert.alert')}</span>,
+                  extra: <span>{formatMessage('Alert.alert')}</span>,
                   children: (
                     <div>
                       <div
                         style={{ opacity: item.readStatus ? 0.8 : 1 }}
-                      >{`【${item.topic}】.【${item.field}】${formatMessage('rule.in')} ${formatTimestamp(item.createAt)} ${item.isAlarm ? formulaObj?.[item?.condition || '>'] + '【' + item.limitValue + '】' : formatMessage('rule.alertCancel')}，${formatMessage('rule.currentValue')}【${item.currentValue}】${item.isAlarm ? '，' + formatMessage('rule.deal') : ''}`}</div>
+                      >{`【${item.path}】.【${item.field}】${formatMessage('rule.in')} ${formatTimestamp(item.createAt)} ${item.isAlarm ? formulaObj?.[item?.condition || '>'] + '【' + item.limitValue + '】' : formatMessage('rule.alertCancel')}，${formatMessage('rule.currentValue')}【${item.currentValue}】${item.isAlarm ? '，' + formatMessage('rule.deal') : ''}`}</div>
                       <Flex justify="flex-end" style={{ marginTop: 4 }}>
                         {!item.readStatus || (item.canHandler && !item.readStatus) ? (
                           <AuthButton
@@ -200,7 +201,7 @@ const useInformationModal = ({ onCallBack }: any) => {
                                 onOk: () => {
                                   confirmAlarm({
                                     confirmType: 1,
-                                    topic: item.topic,
+                                    unsId: topicValue,
                                     ids: [item.id],
                                   }).then(() => {
                                     onCallBack?.();
@@ -210,18 +211,18 @@ const useInformationModal = ({ onCallBack }: any) => {
                                 },
                                 afterClose: () => {},
                                 onCancel: () => {},
-                                okText: formatMessage('appSpace.confirm'),
+                                okText: formatMessage('common.confirm'),
                                 cancelButtonProps: {
                                   // style: { color: '#000' },
                                 },
                               });
                             }}
                           >
-                            {formatMessage('information.confirm')}
+                            {formatMessage('common.confirm')}
                           </AuthButton>
                         ) : (
                           <AuthButton size="small" disabled style={{ cursor: 'inherit' }}>
-                            {formatMessage('information.processed')}
+                            {formatMessage('common.confirmed')}
                           </AuthButton>
                         )}
                       </Flex>
@@ -234,7 +235,19 @@ const useInformationModal = ({ onCallBack }: any) => {
             <Empty style={{ padding: '20px 1rem' }} />
           )}
           <div style={{ padding: '0 1rem' }}>
-            <ComPagination simple {...pagination} />
+            <Pagination
+              size="small"
+              align="end"
+              pageSize={pagination?.pageSize || 20}
+              current={pagination?.page}
+              className="custom-pagination-info"
+              total={pagination?.total}
+              onChange={pagination.onChange}
+              showTotal={showTotal}
+              onShowSizeChange={(current, size) => {
+                pagination.onChange({ page: current, pageSize: size });
+              }}
+            />
           </div>
         </Flex>
       </Loading>

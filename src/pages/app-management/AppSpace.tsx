@@ -1,8 +1,5 @@
-import { ComLayout, ComContent, ComLeft, AuthButton, AuthWrapper } from '@/components';
 import { AddLarge, Apps } from '@carbon/icons-react';
-import { Search } from '@carbon/react';
-import { message, Spin, Typography, Button } from 'antd';
-import { Flex } from 'antd';
+import { message, Spin, Typography, Button, Flex } from 'antd';
 import AppSpaceList from '@/pages/app-management/components/AppSpaceList';
 import useAddModal from '@/pages/app-management/components/useAddModal';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +11,12 @@ import { useDebounce, useUpdateEffect } from 'ahooks';
 import { PageProps } from '@/common-types';
 import { useTranslate } from '@/hooks';
 import { ButtonPermission } from '@/common-types/button-permission';
+import { useActivate } from '@/contexts/tabs-lifecycle-context';
+import { AuthWrapper, AuthButton } from '@/components/auth';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import ComLeft from '@/components/com-layout/ComLeft';
+import ProSearch from '@/components/pro-search';
 const { Title } = Typography;
 
 const Module: FC<PageProps> = ({ location }) => {
@@ -23,10 +26,13 @@ const Module: FC<PageProps> = ({ location }) => {
   const [list, setList] = useState([]);
   const [htmlList, setHtmlList] = useState<any>([]);
   const [htmlLoading, setHtmlLoading] = useState(false);
-  const [searchValue, setSearchValue] = useState<any>(null);
+  const [searchValue, setSearchValue] = useState<string>('');
   const [clickItemId, setClickItemIdItemId] = useState(null);
   const debouncedSearchValue = useDebounce(searchValue, { wait: 300 });
   const [loading, setLoading] = useState(false);
+  useActivate(() => {
+    getAppsFn(debouncedSearchValue);
+  });
 
   const getAppsFn = (k?: any) => {
     setLoading(true);
@@ -63,7 +69,7 @@ const Module: FC<PageProps> = ({ location }) => {
   };
 
   const onSearchChange = (e: any) => {
-    const value = e?.target?.value;
+    const value = e?.target?.value || '';
     setSearchValue(value);
   };
   const deleteHandle = (appName: string) => {
@@ -98,15 +104,14 @@ const Module: FC<PageProps> = ({ location }) => {
         }
       >
         <Flex gap={4}>
-          <Search
-            closeButtonLabelText="Clear search input"
+          <ProSearch
+            closeButtonLabelText={formatMessage('common.clearSearchInput')}
             id="search"
-            labelText="Label text"
             placeholder={formatMessage('uns.inputText')}
             role="searchbox"
             size="md"
             type="text"
-            style={{ '--cds-border-strong': 'transparent' }}
+            style={{ border: 'none' }}
             onChange={onSearchChange}
             value={searchValue}
           />

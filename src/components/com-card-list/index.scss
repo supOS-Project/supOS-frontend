@@ -134,14 +134,29 @@
     font-weight: 400;
   }
 
+  .item-disable {
+    cursor: not-allowed;
+    color: rgb(0 0 0 / 25%);
+  }
+
   .item:hover {
     color: var(--hover-color);
     font-weight: 600;
   }
 
+  .item-disable:hover {
+    color: rgb(0 0 0 / 25%);
+    font-weight: 400;
+  }
+
   .item:active {
     color: var(--active-color);
     font-weight: 600;
+  }
+
+  .item-disable:active {
+    color: rgb(0 0 0 / 25%);
+    font-weight: 400;
   }
 
   .item:not(:last-child)::after {

@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ListBoxes } from '@carbon/icons-react';
+import { Task } from '@carbon/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { Radio, Space, Select, Button, Spin, Input, Checkbox } from 'antd';
 import type { PaginationProps } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { getModuleList, todoPageList } from '@/apis/inter-api/todo';
-import { ComLayout, ComContent, AuthWrapper, ProTable } from '@/components';
 import { useTranslate, usePagination, useMediaSize } from '@/hooks';
 import { useActivate } from '@/contexts/tabs-lifecycle-context.ts';
-import { formatTimestamp } from '@/utils';
 import styles from './index.module.scss';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
+import { AuthWrapper } from '@/components/auth';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import ProTable from '@/components/pro-table';
+import { formatTimestamp } from '@/utils/format';
 const Todo = () => {
   const formatMessage = useTranslate();
   const navigate = useNavigate();
@@ -20,26 +23,31 @@ const Todo = () => {
   const [taskValue, setTaskValue] = useState<string>();
   const [todoTotal, setTodoTotal] = useState<number>();
   const [checkboxValue, setCheckboxValue] = useState<boolean>(false);
-
   const { isH5 } = useMediaSize();
   const { pagination, data, loading, refreshRequest, setSearchParams } = usePagination({
     initPageSize: 20,
+    defaultParams: {
+      status: 0,
+    },
     fetchApi: todoPageList,
-    simple: true,
-    isAntdPagination: true,
     onSuccessCallback: ({ total }: any) => {
       if (radioValue === 'todo') {
         setTodoTotal(total);
       }
     },
   });
-
+  const _moduleListName = useMemo(() => {
+    const lastDashIndex = moduleListName?.lastIndexOf('-');
+    return moduleListName?.slice?.(0, lastDashIndex) ?? '';
+  }, [moduleListName]);
   const showTotal: PaginationProps['showTotal'] = (total) =>
     isH5 ? null : `${formatMessage('common.total')}  ${total}  ${formatMessage('common.items')}`;
 
   useEffect(() => {
     getModuleList().then((res: any) => {
-      setModuleList(res ?? []);
+      setModuleList(
+        res?.map((item: any, index: number) => ({ ...item, moduleCodeAndName: `${item.moduleCode}-${index}` })) ?? []
+      );
     });
   }, []);
   useActivate(() => {
@@ -58,7 +66,13 @@ const Todo = () => {
         title: formatMessage('common.task'),
         dataIndex: 'todoMsg',
         key: 'todoMsg',
-        width: '50%',
+        width: '40%',
+        render: (item: any) => {
+          console.log(item);
+          return item?.replace(/\$\{(.*?)\}/, (_: any, p1: any) => {
+            return formatTimestamp(Number(p1));
+          });
+        },
       },
       {
         title: formatMessage('common.creationTime'),
@@ -94,6 +108,12 @@ const Todo = () => {
               width: '10%',
               key: 'handlerUsername',
             },
+            {
+              title: formatMessage('common.recipient'),
+              dataIndex: 'username',
+              width: '10%',
+              key: 'username',
+            },
           ]),
       ...(radioValue === 'todo'
         ? [
@@ -114,9 +134,15 @@ const Todo = () => {
                         whiteSpace: 'normal',
                         wordWrap: 'break-word',
                       }}
-                      disabled={e?.status}
+                      disabled={e?.status || !e.link}
                       onClick={() => {
-                        navigate('/alert', { state: { businessId: e.businessId } });
+                        if (e.moduleCode === 'system.module.alarm') {
+                          navigate('/Alert', { state: { businessId: e.businessId } });
+                        } else {
+                          if (e.link) {
+                            window.location.href = e.link;
+                          }
+                        }
                       }}
                     >
                       {formatMessage('common.processTask')}
@@ -132,7 +158,7 @@ const Todo = () => {
   const handleSearchClick = () => {
     setSearchParams({
       myTodo: radioValue === 'completed' && checkboxValue ? true : null,
-      moduleCode: moduleListName,
+      moduleCode: _moduleListName,
       status: radioValue === 'todo' ? 0 : 1,
       todoMsg: taskValue,
     });
@@ -140,10 +166,10 @@ const Todo = () => {
   const handleRadioChange = (e: any) => {
     switch (e.target.value) {
       case 'todo':
-        setSearchParams({ status: 0, moduleCode: moduleListName, todoMsg: taskValue });
+        setSearchParams({ status: 0, moduleCode: _moduleListName, todoMsg: taskValue });
         break;
       case 'completed':
-        setSearchParams({ status: 1, moduleCode: moduleListName, todoMsg: taskValue });
+        setSearchParams({ status: 1, moduleCode: _moduleListName, todoMsg: taskValue });
         break;
       default:
         break;
@@ -156,7 +182,7 @@ const Todo = () => {
     e.preventDefault();
     setSearchParams({
       myTodo: radioValue === 'completed' && checkboxValue ? true : null,
-      moduleCode: moduleListName,
+      moduleCode: _moduleListName,
       status: radioValue === 'todo' ? 0 : 1,
       todoMsg: e.target.value,
     });
@@ -168,12 +194,11 @@ const Todo = () => {
           hasBack={false}
           title={
             <>
-              <ListBoxes />
+              <Task />
               <span style={{ marginLeft: 10 }}>{formatMessage('common.taskCenter')}</span>
             </>
           }
           style={{
-            '--cds-layer': 'var(--supos-header-bg-color)',
             padding: '0 20px',
           }}
         >
@@ -210,7 +235,7 @@ const Todo = () => {
                 <Select
                   className={styles['filter-select']}
                   onChange={(e: string) => setModuleListName(e)}
-                  fieldNames={{ label: 'name', value: 'code' }}
+                  fieldNames={{ label: 'moduleName', value: 'moduleCodeAndName' }}
                   options={moduleList}
                   allowClear
                 />
@@ -236,7 +261,7 @@ const Todo = () => {
               showTotal: showTotal,
               style: { display: 'flex', justifyContent: 'flex-end', padding: '10px 0' },
               pageSize: pagination?.pageSize || 20,
-              current: pagination?.page + 1,
+              current: pagination?.page,
               showQuickJumper: true,
               pageSizeOptions: pagination?.pageSizes,
               onChange: pagination.onChange,

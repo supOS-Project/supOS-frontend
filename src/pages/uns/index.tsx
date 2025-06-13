@@ -1,322 +1,65 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { App, Radio, Drawer, Splitter, Breadcrumb } from 'antd';
+import { useState } from 'react';
+import { App } from 'antd';
 import { useDeepCompareEffect } from 'ahooks';
-import { ChevronDown, ChevronUp, Copy, TreeView as TreeViewIcon } from '@carbon/icons-react';
-import { AuthButton, ComLayout, ComLeft, ComContent } from '@/components';
-import { useClipboard, useTranslate } from '@/hooks';
-import { ButtonPermission } from '@/common-types/button-permission';
-import { observer } from 'mobx-react-lite';
-import { getTreeData, getAllLabel, getAllTemplate, deleteLabel, deleteTemplate } from '@/apis/inter-api/uns';
-import { useAiContext } from '@/contexts/ai-context';
-import {
-  ImportModal,
-  ExportModal,
-  TopicDetail,
-  ModelDetail,
-  useCreateModal,
-  useDeleteModal,
-  Dashboard,
-  Tree,
-  LabelDetail,
-  useTemplateModal,
-  TemplateDetail,
-  useLabelModal,
-} from './components';
-import { Loading } from '@/components';
+import { useGuideSteps, useTranslate } from '@/hooks';
+import { deleteLabel, deleteTemplate } from '@/apis/inter-api/uns';
+import { getTreeStoreSnapshot, TreeStoreProvider, useTreeStore, useTreeStoreRef } from './store/treeStore';
+import ModalContext from './ModalContext';
+import TopDom from './TopDom';
+import DetailDom from './DetailDom';
+import LeftDom from './LeftDom';
+import type { UnsTreeNode } from './types';
+import { useLocation } from 'react-router-dom';
+import { guideSteps } from './guide-steps';
 
 import './index.scss';
-import { useGuideSteps } from '@/hooks';
-import useUnsGlobalWs from '@/pages/uns/useUnsGlobalWs.ts';
-import { useMediaSize } from '@/hooks';
-import { useUnsTreeMapContext } from '@/UnsTreeMapContext';
-import RealTimeData from './components/RealTimeData';
-import UnusedTopicTree from './components/uns-tree/UnusedTopicTree';
-import { getExternalTreeData } from '@/apis/inter-api/external';
-import ComText from '@/components/com-text';
-import { guideSteps } from './guide-steps';
-import { useLocation } from 'react-router-dom';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import { setAiResult, useAiStore } from '@/stores/ai-store.ts';
 
-const panelCloseSize = 48;
-const panelOpenSize = 500;
+const initNode = {
+  key: '',
+  id: '',
+  type: null,
+};
 
 const Module = () => {
-  const [treeData, setTreeData] = useState<any>([]);
-  const aiStore = useAiContext();
-  const [currentTreeData, setCurrentTreeData] = useState([]); //当前eCharts的文件树
-  const [currentPath, setCurrentPath] = useState(''); //当前文件路径
-  const [pathArr, setPathArr] = useState([]); //当前文件路径Array
-  const [showType, setShowType] = useState<number | null>(null); //0:文件夹;1:模板;2:文件;
-  const [importModal, setImportModal] = useState(false);
-  const [addNamespaceForAi, setAddNamespaceForAi] = useState<any>(null);
-  const [treeMap, setTreeMap] = useState(true);
-  const [nodeValue, setNodeValue] = useState(0);
-  const [treeType, setTreeType] = useState<string>('treemap');
-  const [loading, setLoading] = useState(false);
-  const [targetNode, setTargetNode] = useState<any>(null);
-  const formatMessage = useTranslate();
+  const { treeType, selectedNode, operationFns } = useTreeStore((state) => ({
+    treeType: state.treeType,
+    selectedNode: state.selectedNode,
+    operationFns: state.operationFns,
+  }));
+  const stateRef = useTreeStoreRef();
+
+  const { loadData, setSelectedNode, setCurrentTreeMapType } = getTreeStoreSnapshot(stateRef, (state) => ({
+    loadData: state.loadData,
+    setSelectedNode: state.setSelectedNode,
+    setTreeMap: state.setTreeMap,
+    setCurrentTreeMapType: state.setCurrentTreeMapType,
+    setPasteNode: state.setPasteNode,
+  }));
+
   const { modal, message } = App.useApp();
-  const { topologyData, icmpStates } = useUnsGlobalWs();
+  const formatMessage = useTranslate();
+  const [addNamespaceForAi, setAddNamespaceForAi] = useState<any>(null);
+  const aiResult = useAiStore((state) => state.aiResult);
 
-  const [currentTreeMapType, setCurrentTreeMapType] = useState<string>('all');
-  // 针对Unused订阅的topic进行实时数据展示
-  const [unusedTopicTreeData, setUnusedTopicTreeData] = useState<any>([]); // unusedTopic订阅
-  const [currentUnusedTopicPath, setCurrentUnusedTopicPath] = useState(''); // 当前unusedTopic文件路径
-  const [unusedTopicPathArr, setUnusedTopicPathArr] = useState([]); //当前文件路径Array
-  const [unusedTopicLoading, setUnusedTopicLoading] = useState(false);
-  const [unusedTopicPanelSize, setUnusedTopicPanelSize] = useState([0, panelCloseSize]);
-
-  const copyPathRef = useRef(null);
-  const unsTreeRef = useRef<any>(null);
-  const exportRef = useRef<any>(null);
-  const unusedTopicTreeRef = useRef<any>(null);
-  const splitterWrapRef = useRef<any>(null);
-  const location = useLocation();
-
-  useGuideSteps(guideSteps(), location?.state?.stepId);
-
-  useClipboard(copyPathRef, currentTreeMapType === 'all' ? currentPath : currentUnusedTopicPath);
-
-  useEffect(() => {
-    initTreeData({ reset: true });
-    initUnusedTopicTreeData({ reset: true });
-  }, [treeType]);
+  const [currentUnusedTopicNode, setCurrentUnusedTopicNode] = useState<UnsTreeNode>(initNode); // 当前unusedTopic节点
+  const [unusedTopicBreadcrumbList, setUnusedTopicBreadcrumbList] = useState<UnsTreeNode[]>([]); //当前文件路径Array
 
   useDeepCompareEffect(() => {
-    if (aiStore?.aiResult?.uns) {
-      setAddNamespaceForAi(aiStore.aiResult?.uns);
-      aiStore?.setAiResult('uns', undefined);
+    if (aiResult?.uns) {
+      setAddNamespaceForAi(aiResult?.uns);
+      setAiResult('uns', undefined);
     }
-  }, [aiStore?.aiResult?.uns]);
+  }, [aiResult?.uns]);
 
-  useEffect(() => {
-    //监听文件路径获取最新的文件树
-    if (currentPath && typeof currentPath === 'string') {
-      const newPathArr: any = currentPath.replace(/^\//, '').replace(/\/$/, '').split('/');
-      setPathArr(newPathArr);
-      const findTreeData = (data: any) => {
-        data.forEach((e: any) => {
-          if (e.path === currentPath) {
-            if (e?.children?.length) {
-              setNodeValue(e.countChildren || 0);
-              changeCurrentTreeData([e]);
-            } else {
-              setNodeValue(0);
-              changeCurrentTreeData([]);
-            }
-          } else if (e?.children?.length) {
-            findTreeData(e.children);
-          }
-        });
-      };
-      findTreeData(treeData);
-
-      //处理来源于面包屑和echarts的选中路径
-      const result = findPathToNode(treeData, currentPath);
-      const expandedArr = unsTreeRef.current?.expandedArr || [];
-      const newArr = JSON.parse(JSON.stringify(expandedArr));
-      result.forEach((path: any) => {
-        if (!expandedArr.includes(path) && path) {
-          newArr.push(path);
-        }
-      });
-      unsTreeRef.current?.setExpandedArr(newArr);
-    } else if (currentPath && typeof currentPath === 'number') {
-      changeCurrentTreeData([]);
-    } else {
-      changeCurrentTreeData([]);
-      setShowType(null);
-    }
-  }, [currentPath, treeData]);
-
-  useEffect(() => {
-    //监听文件路径获取最新的文件树
-    if (currentUnusedTopicPath && typeof currentUnusedTopicPath === 'string') {
-      const newPathArr: any = currentUnusedTopicPath.replace(/^\//, '').replace(/\/$/, '').split('/');
-      setUnusedTopicPathArr(newPathArr);
-    }
-  }, [currentUnusedTopicPath]);
-
-  useEffect(() => {
-    if (targetNode) {
-      changeCurrentPath(targetNode);
-      scrollTreeNode(targetNode.path);
-      setTargetNode(null);
-    }
-  }, [treeData]);
-
-  useLayoutEffect(() => {
-    const updatePanelSize = () => {
-      if (splitterWrapRef.current) {
-        setUnusedTopicPanelSize([splitterWrapRef.current.offsetHeight - panelCloseSize, panelCloseSize]);
-      }
-    };
-    updatePanelSize();
-    const resizeObserver = new ResizeObserver(updatePanelSize);
-    if (splitterWrapRef.current) {
-      resizeObserver.observe(splitterWrapRef.current);
-    }
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
-  // 查找并返回从根节点到指定路径节点的所有父节点的path
-  const findPathToNode = (tree: any, targetPath: string) => {
-    let result: any = [];
-
-    const search = (node: any, currentPath: any) => {
-      if (!node) return false;
-
-      // 当前节点就是目标节点
-      if (node.path === targetPath) {
-        result = [...currentPath];
-        return true;
-      }
-
-      // 检查节点是否有children属性
-      if (node.children && Array.isArray(node.children)) {
-        for (const child of node.children) {
-          // 将当前节点的path加入路径
-          currentPath.push(node.path);
-
-          if (search(child, currentPath)) {
-            return true; // 找到了就停止搜索
-          }
-
-          // 如果没有找到，移除当前节点的path
-          currentPath.pop();
-        }
-      }
-      return false;
-    };
-
-    // 从根节点开始搜索
-    for (const root of tree) {
-      if (search(root, [])) break;
-    }
-
-    return result;
-  };
-  const resetTreeData = () => {
-    setTreeData([]);
-    setCurrentPath('');
-  };
-
-  //初始化树数据
-  const initTreeData = ({ reset, query, type }: any, cb?: () => void) => {
-    setLoading(true);
+  // uns、template、label删除操作
+  const handleDelete = (item: UnsTreeNode) => {
+    const { id } = item;
     switch (treeType) {
-      case 'treemap':
-        getTreeData({ key: query, type })
-          .then((res: any) => {
-            if (res?.length) {
-              setTreeData(res);
-              if (reset) {
-                changeCurrentPath({});
-                unsTreeRef.current?.setExpandedArr([]);
-                scrollTreeNode(res[0]?.path);
-              }
-            } else {
-              resetTreeData();
-              unsTreeRef.current?.setExpandedArr([]);
-            }
-            if (cb) cb();
-          })
-          .catch((err) => {
-            resetTreeData();
-            console.log(err);
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-        break;
-      case 'template':
-        unsTreeRef.current?.setExpandedArr([]);
-        getAllTemplate({ key: query, pageNo: 0, pageSize: 9999 })
-          .then((res: any) => {
-            if (res && Array.isArray(res)) {
-              setTreeData(res.map((res: any) => ({ ...res, name: res.path, path: res.id, type: 1, value: 0 })));
-              if (reset) {
-                changeCurrentPath({});
-                scrollTreeNode(res[0]?.path);
-              }
-              if (cb) cb();
-            } else {
-              resetTreeData();
-            }
-          })
-          .catch((err) => {
-            resetTreeData();
-            console.log(err);
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-        break;
-      case 'label':
-        unsTreeRef.current?.setExpandedArr([]);
-        getAllLabel({ key: query })
-          .then((res: any) => {
-            if (res && Array.isArray(res)) {
-              setTreeData(res.map(({ labelName, id }: any) => ({ name: labelName, path: id, type: 9, value: 0 })));
-              if (reset) {
-                changeCurrentPath({});
-                scrollTreeNode(res[0]?.path);
-              }
-              if (cb) cb();
-            } else {
-              resetTreeData();
-            }
-          })
-          .catch((err) => {
-            resetTreeData();
-            console.log(err);
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-        break;
-      default:
-        break;
-    }
-  };
-
-  //初始化UnusedTopic树数据
-  const initUnusedTopicTreeData = ({ reset, query }: any, cb?: () => void) => {
-    setUnusedTopicLoading(true);
-    if (treeType === 'treemap') {
-      getExternalTreeData({ key: query })
-        .then((res: any) => {
-          if (res?.length) {
-            setUnusedTopicTreeData(res);
-            if (reset) {
-              changeCurrentUnusedTopicPath({});
-              unusedTopicTreeRef.current?.setExpandedArr([]);
-              scrollUnusedTopicTreeNode(res[0]?.path);
-            }
-          } else {
-            setUnusedTopicTreeData([]);
-            setCurrentUnusedTopicPath('');
-            unusedTopicTreeRef.current?.setExpandedArr([]);
-          }
-          if (cb) cb();
-        })
-        .catch((err) => {
-          setUnusedTopicTreeData([]);
-          setCurrentUnusedTopicPath('');
-          console.log(err);
-        })
-        .finally(() => {
-          setUnusedTopicLoading(false);
-        });
-    }
-  };
-  const { DeleteModal, setDeleteOpen } = useDeleteModal({ successCallBack: initTreeData, currentPath: currentPath });
-
-  const handleDelete = (path: any, item: any) => {
-    switch (treeType) {
-      case 'treemap':
-        setDeleteOpen(item);
+      case 'uns':
+        operationFns?.setDeleteOpen(item as any);
         break;
       case 'label':
         modal.confirm({
@@ -324,8 +67,8 @@ const Module = () => {
           cancelText: formatMessage('common.cancel'),
           okText: formatMessage('common.confirm'),
           onOk() {
-            deleteLabel(path).then(() => {
-              initTreeData({ reset: path === currentPath });
+            deleteLabel(id as string).then(() => {
+              loadData({ clearSelect: id === selectedNode?.id });
               message.success(formatMessage('common.deleteSuccessfully'));
             });
           },
@@ -333,12 +76,12 @@ const Module = () => {
         break;
       case 'template':
         modal.confirm({
-          content: formatMessage('common.deleteConfirm'),
+          content: formatMessage('common.deleteTemplateConfirm'),
           cancelText: formatMessage('common.cancel'),
           okText: formatMessage('common.confirm'),
           onOk() {
-            deleteTemplate(path).then(() => {
-              initTreeData({ reset: path === currentPath });
+            deleteTemplate(id as string).then(() => {
+              loadData({ clearSelect: id === selectedNode?.id });
               message.success(formatMessage('common.deleteSuccessfully'));
             });
           },
@@ -349,326 +92,58 @@ const Module = () => {
     }
   };
 
-  const changeCurrentTreeData = (tree: any) => {
-    setCurrentTreeData(tree);
-  };
-
-  const changeCurrentPath = (currentNode: any) => {
-    const { path, type } = currentNode;
-    if (path === currentPath) {
-      setCurrentPath('');
-      setShowType(null);
-    } else {
-      setCurrentPath(path || '');
-      setShowType(typeof type === 'number' ? type : null);
-    }
-    setCurrentUnusedTopicPath('');
+  const changeCurrentPath = (node?: UnsTreeNode) => {
+    setSelectedNode(node?.id === selectedNode?.id ? undefined : node);
+    setCurrentUnusedTopicNode(initNode);
     setCurrentTreeMapType('all');
   };
-  const changeCurrentUnusedTopicPath = (currentNode: any) => {
-    const { path, type } = currentNode;
-    if (path === currentUnusedTopicPath) {
-      setCurrentUnusedTopicPath('');
-      setShowType(null);
-    } else {
-      setCurrentUnusedTopicPath(path || '');
-      setShowType(typeof type === 'number' ? type : null);
-    }
-    setCurrentPath('');
-    setCurrentTreeMapType('unusedTopic');
-  };
-
-  //滚动到目标树节点
-  const scrollTreeNode = (key: string) => {
-    setTimeout(() => {
-      if (unsTreeRef.current) unsTreeRef.current.scrollTo(key);
-    }, 500);
-  };
-
-  //滚动到目标树节点
-  const scrollUnusedTopicTreeNode = (key: string) => {
-    setTimeout(() => {
-      if (unusedTopicTreeRef.current) unusedTopicTreeRef.current.scrollTo(key);
-    }, 500);
-  };
-
-  const { OptionModal, setOptionOpen } = useCreateModal({
-    successCallBack: initTreeData,
-    addNamespaceForAi,
-    setAddNamespaceForAi,
-    changeCurrentPath,
-    scrollTreeNode,
-    setTreeMap,
-  });
-
-  const { TemplateModal, openTemplateModal } = useTemplateModal({
-    successCallBack: initTreeData,
-    changeCurrentPath,
-    scrollTreeNode,
-    setTreeMap,
-  });
-
-  const { LabelModal, setLabelOpen } = useLabelModal({
-    successCallBack: initTreeData,
-    changeCurrentPath,
-    scrollTreeNode,
-    setTreeMap,
-  });
-
-  //面包屑上改变文件路径
-  const changePath = (index: number, pArr: any[], sourceData: any[]) => {
-    const newArr = pArr.slice(0, index);
-    const findTreeNode = (data: any) => {
-      data.forEach((e: any) => {
-        //匹配路径上的模型
-        if (`${newArr.join('/')}/` === e.path) {
-          if (currentTreeMapType === 'all') {
-            setCurrentPath(e.path);
-          } else {
-            setCurrentUnusedTopicPath(e.path);
-          }
-          setShowType(e.type);
-        } else if (e?.children?.length) {
-          findTreeNode(e.children);
-        }
-      });
-    };
-    findTreeNode(sourceData);
-  };
-
-  const toTargetNode = (type: string, node: any) => {
-    setTreeMap(false);
-    setCurrentTreeData([]);
-    setTreeType(type);
-    setTargetNode(node);
-  };
-
-  const getDetailDom = (type: number | null, currentTreeData: any) => {
-    switch (type) {
-      case 0:
-        return (
-          <ModelDetail
-            currentPath={currentPath}
-            treeData={currentTreeData}
-            changeCurrentPath={changeCurrentPath}
-            nodeValue={nodeValue}
-          />
-        );
-      case 1:
-        return <TemplateDetail currentPath={currentPath} setDeleteOpen={handleDelete} initTreeData={initTreeData} />;
-      case 2:
-        return (
-          <TopicDetail
-            fileStatusInfo={icmpStates?.find((s: any) => s.topic === currentPath)}
-            currentPath={currentPath}
-            setDeleteOpen={setDeleteOpen}
-          />
-        );
-      case 9:
-        return <LabelDetail labelDetailId={currentPath} initTreeData={initTreeData} />;
-      default:
-        return null;
+  const changeCurrentUnusedTopicPath = (node?: UnsTreeNode) => {
+    setCurrentUnusedTopicNode(node?.id === currentUnusedTopicNode.id ? initNode : node || initNode);
+    setSelectedNode();
+    if (node?.id) {
+      setCurrentTreeMapType('unusedTopic');
     }
   };
-  const getTopicBreadcrumb = (pArr: any[], sourceData: any[]) => (
-    <>
-      <Breadcrumb
-        style={{ fontWeight: 700 }}
-        separator=">"
-        items={pArr?.map((e: any, idx: number) => {
-          if (idx + 1 === pArr?.length) {
-            return {
-              title: e,
-            };
-          }
-          return {
-            title: <ComText>{e}</ComText>,
-            onClick: () => changePath(idx + 1, pArr, sourceData),
-          };
-        })}
-      />
-      <div className="copyBox" ref={copyPathRef} title={formatMessage('common.copy')}>
-        <Copy />
-      </div>
-    </>
-  );
 
-  const { isTreeMapVisible, setTreeMapVisible } = useUnsTreeMapContext();
-  const { isH5 } = useMediaSize();
-
-  const treeMapHtml = (
-    <div ref={splitterWrapRef} style={{ height: 'calc(100% - 48px)' }}>
-      <Splitter layout="vertical" onResize={setUnusedTopicPanelSize} className="unusedTopicTree-Splitter">
-        <Splitter.Panel min={120} size={unusedTopicPanelSize[0]}>
-          <Loading spinning={loading}>
-            <Radio.Group
-              onChange={(e) => {
-                setShowType(null);
-                setTreeType(e.target.value);
-                setCurrentTreeData([]);
-                setCurrentPath('');
-              }}
-              value={treeType}
-              style={{ padding: '16px 14px' }}
-              size="small"
-            >
-              <Radio.Button value="treemap" title={formatMessage('uns.tree')}>
-                {formatMessage('uns.tree')}
-              </Radio.Button>
-              <Radio.Button value="template" title={formatMessage('common.template')}>
-                {formatMessage('common.template')}
-              </Radio.Button>
-              <Radio.Button value="label" title={formatMessage('common.label')}>
-                {formatMessage('common.label')}
-              </Radio.Button>
-            </Radio.Group>
-            <div style={{ padding: '0 14px', height: 'calc(100% - 56px)' }}>
-              <Tree
-                unsTreeRef={unsTreeRef}
-                treeData={treeData}
-                icmpStates={icmpStates}
-                currentPath={currentPath}
-                initTreeData={initTreeData}
-                showDeleteModal={handleDelete}
-                showCopyModal={setOptionOpen}
-                showCopyTemModal={openTemplateModal}
-                showAddTemModal={openTemplateModal}
-                showAddLabModal={setLabelOpen}
-                setTreeMap={setTreeMap}
-                changeCurrentPath={changeCurrentPath}
-                treeType={treeType}
-                showType={showType}
-                addNamespaceForAi={addNamespaceForAi}
-                setAddNamespaceForAi={setAddNamespaceForAi}
-                toTargetNode={toTargetNode}
-              />
-            </div>
-          </Loading>
-        </Splitter.Panel>
-        {treeType === 'treemap' && (
-          <Splitter.Panel size={unusedTopicPanelSize[1]} min={panelCloseSize} style={{ overflow: 'hidden' }}>
-            <div
-              className="unusedTopicTree-collapsible"
-              onClick={() => {
-                if (unusedTopicPanelSize[1] === panelCloseSize) {
-                  setUnusedTopicPanelSize([splitterWrapRef.current?.offsetHeight - panelOpenSize, panelOpenSize]);
-                } else {
-                  setUnusedTopicPanelSize([splitterWrapRef.current?.offsetHeight - panelCloseSize, panelCloseSize]);
-                }
-              }}
-            >
-              {formatMessage('uns.otherTopic', 'Raw Topics')}
-              {unusedTopicPanelSize[1] === panelCloseSize ? <ChevronUp /> : <ChevronDown />}
-            </div>
-            <div style={{ height: 'calc(100% - 48px)', padding: '8px 14px 0' }}>
-              <Loading spinning={unusedTopicLoading}>
-                <UnusedTopicTree
-                  unsTreeRef={unusedTopicTreeRef}
-                  treeData={unusedTopicTreeData}
-                  icmpStates={icmpStates}
-                  currentPath={currentUnusedTopicPath}
-                  initTreeData={initUnusedTopicTreeData}
-                  setTreeMap={setTreeMap}
-                  changeCurrentPath={changeCurrentUnusedTopicPath}
-                  treeType={treeType}
-                  showType={showType}
-                />
-              </Loading>
-            </div>
-          </Splitter.Panel>
-        )}
-      </Splitter>
-    </div>
-  );
+  const location = useLocation();
+  // 新手导航步骤
+  useGuideSteps(guideSteps(), location?.state?.stepId);
 
   return (
     <ComLayout className="unsContainer">
-      {!isH5 ? (
-        <ComLeft style={{ overflow: 'hidden' }} resize defaultWidth={360}>
-          <div
-            className="treemapTitle"
-            onClick={() => {
-              setTreeMap(true);
-              changeCurrentPath({});
-            }}
-          >
-            <TreeViewIcon />
-            <span>{formatMessage('uns.treeList')}</span>
-          </div>
-          {treeMapHtml}
-        </ComLeft>
-      ) : (
-        isTreeMapVisible && (
-          <Drawer
-            className="treemap-drawer"
-            rootClassName="treemap-drawer-root"
-            placement="right"
-            onClose={() => setTreeMapVisible(false)}
-            open={isTreeMapVisible}
-            getContainer={false}
-          >
-            {treeMapHtml}
-          </Drawer>
-        )
-      )}
+      <LeftDom
+        changeCurrentPath={changeCurrentPath}
+        handleDelete={handleDelete}
+        currentUnusedTopicNode={currentUnusedTopicNode}
+        setCurrentUnusedTopicNode={setCurrentUnusedTopicNode}
+        unusedTopicBreadcrumbList={unusedTopicBreadcrumbList}
+        changeCurrentUnusedTopicPath={changeCurrentUnusedTopicPath}
+        setUnusedTopicBreadcrumbList={setUnusedTopicBreadcrumbList}
+      />
       <ComContent>
         <div className="chartWrap">
-          <div className="chartTop">
-            {treeType === 'treemap' ? (
-              <div className="chartTopL">
-                {currentTreeMapType === 'all' && currentPath && getTopicBreadcrumb(pathArr, treeData)}
-                {currentTreeMapType === 'unusedTopic' &&
-                  currentUnusedTopicPath &&
-                  getTopicBreadcrumb(unusedTopicPathArr, unusedTopicTreeData)}
-              </div>
-            ) : (
-              <span />
-            )}
-            <div className="chartTopR">
-              <AuthButton
-                auth={ButtonPermission['uns.importNamespace']}
-                type="primary"
-                onClick={() => setImportModal(true)}
-                size="small"
-              >
-                {formatMessage('common.import')}
-              </AuthButton>
-              <AuthButton
-                auth={ButtonPermission['uns.export']}
-                color="default"
-                variant="filled"
-                style={{ background: '#c6c6c6', color: '#161616' }}
-                onClick={() => {
-                  exportRef.current?.setOpen(true);
-                }}
-                size="small"
-              >
-                {formatMessage('uns.export')}
-              </AuthButton>
-            </div>
-          </div>
-          {treeMap ? (
-            <Dashboard topologyData={topologyData} />
-          ) : currentTreeMapType === 'all' ? (
-            getDetailDom(showType, currentTreeData)
-          ) : (
-            <RealTimeData showType={showType} topic={currentUnusedTopicPath} />
-          )}
+          <TopDom
+            setCurrentUnusedTopicNode={setCurrentUnusedTopicNode}
+            unusedTopicBreadcrumbList={unusedTopicBreadcrumbList}
+            currentUnusedTopicNode={currentUnusedTopicNode}
+          />
+          <DetailDom handleDelete={handleDelete} currentUnusedTopicNode={currentUnusedTopicNode} />
         </div>
       </ComContent>
-      <ImportModal
-        importModal={importModal}
-        setImportModal={setImportModal}
-        initTreeData={initTreeData}
-        type={unsTreeRef.current?.searchType}
-        query={unsTreeRef.current?.searchQuery}
+      <ModalContext
+        addNamespaceForAi={addNamespaceForAi}
+        setAddNamespaceForAi={setAddNamespaceForAi}
+        changeCurrentPath={changeCurrentPath}
       />
-      <ExportModal exportRef={exportRef} treeData={treeData} />
-      {OptionModal}
-      {DeleteModal}
-      {TemplateModal}
-      {LabelModal}
     </ComLayout>
   );
 };
-export default observer(Module);
+
+const WrapperModule = () => {
+  return (
+    <TreeStoreProvider>
+      <Module />
+    </TreeStoreProvider>
+  );
+};
+export default WrapperModule;

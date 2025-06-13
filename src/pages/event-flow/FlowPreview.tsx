@@ -1,5 +1,4 @@
 import { FC, useEffect, useRef, useState } from 'react';
-import { ComLayout, ComContent, AuthButton, AuthWrapper, ComDrawer, OperationForm } from '@/components';
 import { useNavigate } from 'react-router-dom';
 import { App, Button, Dropdown, Form, message, Space, Breadcrumb } from 'antd';
 import { copyFlow, deployFlow, saveFlow } from '@/apis/inter-api/event-flow';
@@ -8,9 +7,16 @@ import { useLocalStorage, useTranslate } from '@/hooks';
 import { useUpdateEffect } from 'ahooks';
 import { PageProps } from '@/common-types';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
-import { getDevProxyBaseUrl, getSearchParamsObj, getSearchParamsString, validInputPattern } from '@/utils';
 import './index.scss';
 import ComText from '@/components/com-text';
+import { AuthButton } from '@/components/auth';
+import ComDrawer from '@/components/com-drawer';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import OperationForm from '@/components/operation-form';
+import { hasPermission } from '@/utils/auth';
+import { validInputPattern } from '@/utils/pattern';
+import { getSearchParamsObj, getSearchParamsString, getDevProxyBaseUrl } from '@/utils/url-util';
 
 const EventFlowPreview: FC<PageProps> = ({ location }) => {
   const { modal } = App.useApp();
@@ -58,7 +64,7 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
         .then((flowId: any) => {
           if (type === 'deploy') {
             if (!state.flowId && flowId) {
-              navigate(`/EvenFlowEditor?${getSearchParamsString({ ...state, flowId: flowId })}`, {
+              navigate(`/EvenFlow/Editor?${getSearchParamsString({ ...state, flowId: flowId })}`, {
                 replace: true,
               });
             }
@@ -67,7 +73,7 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
           } else {
             setLoading(false);
           }
-          message.success(type === 'deploy' ? formatMessage('appGui.deployOk') : formatMessage('appGui.save'));
+          message.success(type === 'deploy' ? formatMessage('appGui.deployOk') : formatMessage('appGui.saveSuccess'));
         })
         .catch(() => {
           setLoading(false);
@@ -153,7 +159,7 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
 
   const formItemOptions = [
     {
-      label: formatMessage('collectionFlow.copy') + ' Flow',
+      label: formatMessage('common.copy') + ' Flow',
     },
     {
       label: formatMessage('common.name'),
@@ -206,9 +212,12 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
           title: formatMessage('common.copyConfirm'),
           onOk: () => {
             form.resetFields();
-            navigate(`/EvenFlowEditor?${getSearchParamsString({ id: data, name: values.flowName, status: 'DRAFT' })}`, {
-              replace: true,
-            });
+            navigate(
+              `/EvenFlow/Editor?${getSearchParamsString({ id: data, name: values.flowName, status: 'DRAFT' })}`,
+              {
+                replace: true,
+              }
+            );
           },
           onCancel: () => {
             form.resetFields();
@@ -216,7 +225,7 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
           cancelButtonProps: {
             // style: { color: '#000' },
           },
-          okText: formatMessage('appSpace.confirm'),
+          okText: formatMessage('common.confirm'),
         });
       })
       .finally(() => {
@@ -227,30 +236,21 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
   const items: any = [
     {
       key: 'menu-item-import',
-      label: (
-        <AuthWrapper auth={ButtonPermission['eventFlow.import']}>
-          <span> {formatMessage('common.import')}</span>
-        </AuthWrapper>
-      ),
+      auth: ButtonPermission['eventFlow.import'],
+      label: formatMessage('common.import'),
     },
     {
       key: 'menu-item-export',
-      label: (
-        <AuthWrapper auth={ButtonPermission['eventFlow.export']}>
-          <span>{formatMessage('uns.export')}</span>{' '}
-        </AuthWrapper>
-      ),
+      auth: ButtonPermission['eventFlow.export'],
+      label: formatMessage('uns.export'),
     },
     {
       type: 'divider',
     },
     {
       key: 'menu-item-search',
-      label: (
-        <AuthWrapper auth={ButtonPermission['eventFlow.process']}>
-          <span>{formatMessage('flowEditor.process')}</span>
-        </AuthWrapper>
-      ),
+      auth: ButtonPermission['eventFlow.process'],
+      label: formatMessage('flowEditor.process'),
     },
     {
       type: 'divider',
@@ -264,11 +264,8 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
     // },
     {
       key: 'menu-item-edit-palette',
-      label: (
-        <AuthWrapper auth={ButtonPermission['eventFlow.nodeManagement']}>
-          <span>{formatMessage('flowEditor.nodeManagement')}</span>
-        </AuthWrapper>
-      ),
+      auth: ButtonPermission['eventFlow.nodeManagement'],
+      label: formatMessage('flowEditor.nodeManagement'),
     },
     // {
     //   type: 'divider',
@@ -277,7 +274,11 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
     //   key: 'menu-item-user-settings',
     //   label: <span>设置</span>,
     // },
-  ]?.filter((i) => i.type === 'divider' || i.label);
+  ]
+    ?.filter((i) => i.type === 'divider' || i.label)
+    ?.filter((f) => {
+      return !f.auth || hasPermission(f.auth);
+    });
   return (
     <ComLayout loading={loading}>
       <ComContent
@@ -317,7 +318,7 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
                 type="primary"
                 onClick={onCopyFlows}
               >
-                {formatMessage('collectionFlow.copy')}
+                {formatMessage('common.copy')}
               </AuthButton>
               <AuthButton
                 auth={ButtonPermission['eventFlow.save']}

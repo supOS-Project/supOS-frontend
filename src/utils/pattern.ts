@@ -13,3 +13,8 @@ export const validPicRegex = /^(jpg|jpeg|png|gif|bmp|webp)$/i;
 
 //sql关键字
 export const sqlKeywordsRegex = new RegExp(`^(?!.*\\b(${sqlKeywords.join('|')})\\b).*$`, 'i');
+
+// passwordRegex
+export const passwordRegex = /^[A-Za-z\d!@#$%^&*()_+\-=$$$${};':"\\|,.<>/?]+$/;
+
+export const phoneRegex = /^\d{11}$/;

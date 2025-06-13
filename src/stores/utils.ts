@@ -45,7 +45,13 @@ export function multiGroupByCondition<T>(data: T[], criteria: Criteria<T>): Reco
 export function filterByMatch(source: any[] = [], target: any[] = [], authEnable?: boolean) {
   if (authEnable)
     return source.filter((sourceItem) =>
-      target.some((targetItem) => '/' + sourceItem?.name?.toLowerCase?.() === targetItem.uri?.toLowerCase?.())
+      target.some((targetItem) => {
+        if (sourceItem?.service?.name !== 'frontend') {
+          return '/' + sourceItem?.name?.toLowerCase?.() === targetItem.uri?.toLowerCase?.();
+        } else {
+          return sourceItem?.menu?.url?.toLowerCase?.() === targetItem.uri?.toLowerCase?.();
+        }
+      })
     );
   return source;
 }
@@ -116,6 +122,8 @@ export const getTagsByObj = (
         if (TagValue !== undefined) {
           acc[tagKey] = TagValue;
           acc[tagKey + 'I18'] = '';
+        } else if (tagKey === 'remote') {
+          acc[tagKey] = '1';
         }
         return acc;
       }
@@ -148,36 +156,61 @@ export const getTags = (tags: string[]) => {
 };
 
 export const getGroupedOptions = (data: RoutesProps[]) => {
-  return data.map((item: RoutesProps) => {
-    const tags = getTagsByObj(item?.tags || []);
-    const serviceTags = getTags(item?.service?.tags || []);
-    const name = item.showName || item.name;
-    const groupKey = tags?.parentName || name; // 使用 parentName 或 name 作为分组键
-    return {
-      ...item,
-      isFrontend: serviceTags?.root === 'frontend',
-      name,
-      key: item?.name,
-      hasChildren: false,
-      children: [],
-      iconUrl: tags?.iconUrl,
-      description: tags?.description,
-      label: name,
-      value: item?.name,
-      hasParent: !!tags?.parentName,
-      parentName: tags?.parentNameI18,
-      parentKey: groupKey,
-      menuPort: tags?.menuPort,
-      menuProtocol: tags?.menuProtocol,
-      menuHost: tags?.menuHost,
-      selectKeyPath: tags?.parentName ? [item?.name, tags?.parentName] : [item?.name],
-      selectKey: [item?.name],
-    };
-  });
+  const newData =
+    data.map((item: RoutesProps) => {
+      const tags = getTagsByObj(item?.tags || []);
+      const serviceTags = getTags(item?.service?.tags || []);
+      const name = item.showName || item.name;
+      const groupKey = tags?.parentName || name; // 使用 parentName 或 name 作为分组键
+      return {
+        ...item,
+        isFrontend: serviceTags?.root === 'frontend' && tags.remote !== '1',
+        isRemote: tags.remote,
+        remoteSubPageList: tags?.moduleName?.split('.') || [],
+        name,
+        key: item?.name,
+        hasChildren: false,
+        children: [],
+        iconUrl: tags?.iconUrl,
+        description: tags?.description,
+        label: name,
+        value: item?.name,
+        hasParent: !!tags?.parentName,
+        parentName: tags?.parentNameI18,
+        parentKey: groupKey,
+        menuPort: tags?.menuPort,
+        openType: tags?.openType,
+        indexUrl: tags?.indexUrl,
+        menuProtocol: tags?.menuProtocol,
+        menuHost: tags?.menuHost,
+        selectKeyPath: tags?.parentName ? [item?.name, tags?.parentName] : [item?.name],
+        selectKey: [item?.name],
+      };
+    }) || [];
+  const _remoteSubPageList: RoutesProps[] = [];
+  newData
+    .filter((f) => f.remoteSubPageList?.length > 0)
+    ?.forEach((f) => {
+      f.remoteSubPageList?.forEach((s) => {
+        const key = f.key + '/' + s;
+        _remoteSubPageList.push({
+          ...f,
+          remoteSubPageList: [],
+          key,
+          value: key,
+          // selectKey: [key],
+          parentKey: f.key,
+          // selectKeyPath: [key, ...f.selectKeyPath],
+          isRemoteChildMenu: true,
+          childrenMenuKey: s,
+        });
+      });
+    });
+  return [...newData, ..._remoteSubPageList];
 };
 
 export const getGroupedData = (data: RoutesProps[], parentOrderMap: any, fatherKey: string = 'parentName') => {
-  const _MenuList = data
+  return data
     .reduce((acc: RoutesProps[], item: RoutesProps) => {
       const tags = getTagsByObj(item?.tags || []);
       const serviceTags = getTags(item?.service?.tags || []);
@@ -189,7 +222,9 @@ export const getGroupedData = (data: RoutesProps[], parentOrderMap: any, fatherK
         // 如果不存在该分组，则创建一个新的分组
         group = {
           ...item,
-          isFrontend: serviceTags?.root === 'frontend',
+          isFrontend: serviceTags?.root === 'frontend' && tags.remote !== '1',
+          isRemote: tags.remote,
+          remoteSubPageList: tags?.moduleName?.split('.') || [],
           name: tags?.[fatherKey + 'I18'] || tags?.parentNameI18 || name,
           key: groupKey,
           hasChildren: false,
@@ -199,6 +234,8 @@ export const getGroupedData = (data: RoutesProps[], parentOrderMap: any, fatherK
           menuPort: tags?.menuPort,
           menuProtocol: tags?.menuProtocol,
           menuHost: tags?.menuHost,
+          openType: tags?.openType,
+          indexUrl: tags?.indexUrl,
         };
         acc.push(group);
       }
@@ -215,7 +252,9 @@ export const getGroupedData = (data: RoutesProps[], parentOrderMap: any, fatherK
         group.menuHost = undefined;
         group?.children?.push({
           ...item,
-          isFrontend: serviceTags?.root === 'frontend',
+          isFrontend: serviceTags?.root === 'frontend' && tags.remote !== '1',
+          isRemote: tags.remote,
+          remoteSubPageList: tags?.moduleName?.split('.') || [],
           parentName: group.name,
           parentKey: group.key,
           key: item?.name,
@@ -226,6 +265,8 @@ export const getGroupedData = (data: RoutesProps[], parentOrderMap: any, fatherK
           menuPort: tags?.menuPort,
           menuProtocol: tags?.menuProtocol,
           menuHost: tags?.menuHost,
+          openType: tags?.openType,
+          indexUrl: tags?.indexUrl,
         });
       } else {
         group.key = item.name;
@@ -242,6 +283,8 @@ export const getGroupedData = (data: RoutesProps[], parentOrderMap: any, fatherK
           menuPort: tags?.menuPort,
           menuProtocol: tags?.menuProtocol,
           menuHost: tags?.menuHost,
+          openType: tags?.openType,
+          indexUrl: tags?.indexUrl,
         });
       }
       return acc;
@@ -262,7 +305,6 @@ export const getGroupedData = (data: RoutesProps[], parentOrderMap: any, fatherK
       const orderB = Number(parentOrderMap[b.key!]) || Infinity;
       return orderA - orderB;
     });
-  return _MenuList;
 };
 
 // 拆分关于我们和高阶使用

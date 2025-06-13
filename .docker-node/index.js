@@ -1,22 +1,28 @@
+// require('dotenv').config();
 const express = require('express');
 const {
   CopilotRuntime,
   OpenAIAdapter,
   LangChainAdapter,
   copilotRuntimeNodeHttpEndpoint,
+  langGraphPlatformEndpoint,
 } = require('@copilotkit/runtime');
 const OpenAI = require('openai');
 const { ChatOpenAI } = require('@langchain/openai');
 const { ChatOllama } = require('@langchain/ollama');
 const { ChatAnthropic } = require('@langchain/anthropic');
+// const { HttpsProxyAgent } = require('https-proxy-agent');
+
 // const { ChatAlibabaTongyi } = require('@langchain/community/chat_models/alibaba_tongyi');
+// const agentProxy = new HttpsProxyAgent('http://127.0.0.1:7897');
 
 const app = express();
 
-// 目前支持ollama、openai、anthropic、tongyi
-const LLM_TYPE = process.env.LLM_TYPE || 'openai';
 // coplilotkit端口号
 const COPILOTKIT_SERVER_PORT = process.env.COPILOTKIT_SERVER_PORT || 4000;
+
+// 目前支持ollama、openai、anthropic、tongyi
+const LLM_TYPE = process.env.LLM_TYPE || 'openai';
 
 // llama的配置
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
@@ -40,11 +46,16 @@ const ollamaModel = new ChatOllama({
   baseUrl: OLLAMA_BASEURL,
 });
 
-const openaiModel = new ChatOpenAI({
-  model: OPENAI_API_MODEL, // Default value.
-  apiKey: OPENAI_API_KEY, // Default value.
-  // baseUrl: OLLAMA_BASEURL,
-});
+const openaiModel = new ChatOpenAI(
+  {
+    model: OPENAI_API_MODEL, // Default value.
+    apiKey: OPENAI_API_KEY, // Default value.
+    // baseUrl: OLLAMA_BASEURL,
+  }
+  // {
+  //   httpAgent: agentProxy,
+  // }
+);
 
 // const openai = new OpenAI({
 //   apiKey: OPENAI_API_KEY || '',
@@ -106,7 +117,22 @@ const llmType = {
 };
 
 app.use('/copilotkit', (req, res, next) => {
-  const runtime = new CopilotRuntime();
+  const runtime = new CopilotRuntime({
+    remoteEndpoints: [
+      langGraphPlatformEndpoint({
+        deploymentUrl: `${process.env.AGENT_DEPLOYMENT_URL || 'http://localhost:8123'}`,
+        langsmithApiKey: process.env.LANGSMITH_API_KEY,
+        agents: [
+          {
+            name: 'sample_agent',
+            description: 'A helpful LLM agent.',
+          },
+        ],
+      }),
+    ],
+  });
+  // const runtime = new CopilotRuntime();
+
   const handler = copilotRuntimeNodeHttpEndpoint({
     endpoint: '/copilotkit',
     runtime,

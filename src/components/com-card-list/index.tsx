@@ -1,13 +1,12 @@
 import { AddLarge, Delete } from '@carbon/icons-react';
-import { Tag } from '@carbon/react';
 import { CSSProperties, FC, ReactNode, useState } from 'react';
-import { App, Flex } from 'antd';
+import { App, Flex, Tag } from 'antd';
 import ViewList from '../com-card-list/ViewList';
 import FooterOperation, { FooterOperationProps } from '../com-card-list/FooterOperation';
 import { useTranslate } from '@/hooks';
-import ThemeStore from '@/stores/theme-store';
 import { AuthWrapper } from '../auth';
 import './index.scss';
+import { ThemeType, useThemeStore } from '@/stores/theme-store.ts';
 
 interface ComCardListProps {
   list: { name?: string; type?: string; description?: string; runStatus?: string; icon?: ReactNode }[];
@@ -65,6 +64,7 @@ const ComCardList: FC<ComCardListProps> = ({
   const [hover, setHover] = useState('');
   const formatMessage = useTranslate();
   const { modal } = App.useApp();
+  const theme = useThemeStore((state) => state.theme);
 
   // view配置
   const viewOptions = defaultViewOptions
@@ -97,7 +97,7 @@ const ComCardList: FC<ComCardListProps> = ({
           key={item.id}
           style={{
             '--crl-border-color':
-              hover === item.id && !ThemeStore.theme.includes('dark') ? 'var(--supos-card-border-color)' : '#C6C6C6',
+              hover === item.id && !(theme === ThemeType.Dark) ? 'var(--supos-card-border-color)' : '#C6C6C6',
             ...cardStyle,
           }}
         >
@@ -112,8 +112,9 @@ const ComCardList: FC<ComCardListProps> = ({
               {item.status && (
                 <div>
                   <Tag
-                    size="sm"
-                    type={(runStatusOptions?.find((f: any) => f.value === item.status)?.bgType || 'red') as any}
+                    style={{ borderRadius: 15 }}
+                    bordered={false}
+                    color={(runStatusOptions?.find((f: any) => f.value === item.status)?.bgType || 'red') as any}
                   >
                     {titleStatehandle(item)}
                   </Tag>
@@ -128,7 +129,7 @@ const ComCardList: FC<ComCardListProps> = ({
                     modal.confirm({
                       title: formatMessage('common.deleteConfirm'),
                       onOk: () => onDeleteHandle?.(item),
-                      okText: formatMessage('appSpace.confirm'),
+                      okText: formatMessage('common.confirm'),
                       cancelButtonProps: {
                         // style: { color: '#000' },
                       },

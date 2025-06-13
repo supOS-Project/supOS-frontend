@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ComLayout, ComContent } from '@/components';
 import AppList from '@/pages/app-management/components/AppList';
 import { getApps } from '@/apis/inter-api/apps';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
 
 const Module = () => {
   const [loading, setLoading] = useState(false);

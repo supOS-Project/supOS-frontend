@@ -21,7 +21,7 @@ const IframeWrapper: FC<{ src: string; iframeRealUrl?: string; title: string; st
           border: 'none',
         }}
         title={title}
-        src={iframeRealUrl ? iframeRealUrl + src : src}
+        src={iframeRealUrl ? iframeRealUrl : src}
       ></iframe>
     </div>
   );

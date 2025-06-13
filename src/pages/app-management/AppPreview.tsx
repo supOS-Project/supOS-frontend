@@ -1,13 +1,17 @@
 import { FC, useEffect, useRef, useState } from 'react';
-import { ComLayout, ComContent, ComDrawer, CodeEditorWithPreview, CodeEditor } from '@/components';
 import { Button, Flex } from 'antd';
 import { getSingleHtml } from '@/apis/inter-api/apps';
-import { getFileName } from '@/utils';
 import DeployForm from '@/pages/app-management/components/DeployForm';
 import beautify from 'js-beautify';
 import { useSize } from 'ahooks';
 import { PageProps } from '@/common-types';
 import { useTranslate } from '@/hooks';
+import ComDrawer from '@/components/com-drawer';
+import CodeEditor from '@/components/craft/CodeEditor';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import CodeEditorWithPreview from '@/components/craft/CodeEditorWithPreview';
+import { getFileName } from '@/utils/url-util';
 
 const AppPreview: FC<PageProps> = ({ location }) => {
   const formatMessage = useTranslate();

@@ -1,9 +1,10 @@
 import { Button, Flex, message, Upload as AntUpload } from 'antd';
-import { AuthButton, ProModal } from '@/components';
 import { useTranslate } from '@/hooks';
 import { FolderAdd, Upload } from '@carbon/icons-react';
 import { useState } from 'react';
 import { uploadAttachment } from '@/apis/inter-api/attachments.ts';
+import { AuthButton } from '@/components/auth';
+import ProModal from '@/components/pro-modal';
 const { Dragger } = AntUpload;
 
 const UploadButton = ({ alias, documentListRef, auth }: { auth?: string; alias: string; documentListRef: any }) => {
@@ -77,14 +78,7 @@ const UploadButton = ({ alias, documentListRef, auth }: { auth?: string; alias: 
             <span style={{ fontSize: 12 }}>{formatMessage('uns.importDocumentMax')}</span>
           </Flex>
         </Dragger>
-        <Button
-          loading={loading}
-          color="primary"
-          variant="solid"
-          block
-          onClick={onSave}
-          style={{ marginTop: 20, marginBottom: 24 }}
-        >
+        <Button loading={loading} color="primary" variant="solid" block onClick={onSave} style={{ marginTop: 20 }}>
           {formatMessage('common.save')}
         </Button>
       </ProModal>

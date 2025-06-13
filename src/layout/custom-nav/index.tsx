@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { Flex } from 'antd';
-import { ChevronDown, Edit, User, ListBoxes } from '@carbon/icons-react';
+import { ChevronDown, Edit, User, Task } from '@carbon/icons-react';
 import { useNavigate } from 'react-router-dom';
-import { AuthWrapper, ProModal, DraggableContainer, SearchSelect, UserPopover } from '@/components';
 import logoBlack from '@/assets/custom-nav/logo-black.png';
 import logoBlackWhite from '@/assets/custom-nav/logo-white.png';
 import RoutesList from '@/layout/custom-nav/RoutesList';
-import { useRoutesContext } from '@/contexts/routes-context';
-import { observer } from 'mobx-react-lite';
 import SideNavList from './components/SideNavList';
 import SideMenuList from './components/SideMenuList';
 import menuChange from '@/assets/icons/menu-change.svg';
@@ -16,22 +13,28 @@ import menuDown from '@/assets/icons/menu-down.svg';
 import menuLightUp from '@/assets/icons/menu-light-up.svg';
 import upDark from '@/assets/icons/up-dark.svg';
 import downDark from '@/assets/icons/down-dark.svg';
-import { useThemeContext } from '@/contexts/theme-context';
-import { MenuTypeEnum } from '@/stores/theme-store.ts';
 import { useTranslate } from '@/hooks';
 import HelpNav from '../components/HelpNav';
 import './index.scss';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
+import { AuthWrapper } from '@/components/auth';
+import UserPopover from '@/components/com-group-button/UserPopover';
+import DraggableContainer from '@/components/draggable-container';
+import ProModal from '@/components/pro-modal';
+import SearchSelect from '@/components/search-select';
+import { useBaseStore } from '@/stores/base';
+import { MenuTypeEnum, setMenuType, ThemeType, useThemeStore } from '@/stores/theme-store';
 
 const Module = () => {
   const navigate = useNavigate();
-  const routesStore = useRoutesContext();
-  const themeStore = useThemeContext();
+  const { pickedGroupRoutes, currentMenuInfo } = useBaseStore((state) => ({
+    pickedGroupRoutes: state.pickedGroupRoutes,
+    currentMenuInfo: state.currentMenuInfo,
+  }));
+  const theme = useThemeStore((state) => state.theme);
+  const isDark = theme === ThemeType.Dark;
   const formatMessage = useTranslate();
-  const navList = [
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    ...routesStore?.pickedGroupRoutes,
-  ];
+  const navList = [...pickedGroupRoutes];
 
   const [openEdit, setEditOpen] = useState(false);
   const [openHoverNav, setOpenHoverNav] = useState(false);
@@ -68,9 +71,9 @@ const Module = () => {
                 setSearchOpen(true);
               }}
             >
-              <img src={themeStore.theme.includes('dark') ? logoBlackWhite : logoBlack} />
-              <span style={{ margin: '0 5px' }} title={routesStore.currentMenuInfo?.name}>
-                {routesStore.currentMenuInfo?.name}
+              <img src={isDark ? logoBlackWhite : logoBlack} />
+              <span style={{ margin: '0 5px' }} title={currentMenuInfo?.name}>
+                {currentMenuInfo?.name}
               </span>
               <ChevronDown />
             </div>
@@ -83,7 +86,7 @@ const Module = () => {
                   setSearchOpen(true);
                 }}
               >
-                {themeStore.theme.includes('dark') ? (
+                {isDark ? (
                   <img src={showAllNav ? upDark : downDark} />
                 ) : (
                   <img src={showAllNav ? menuLightUp : menuDown} />
@@ -92,9 +95,9 @@ const Module = () => {
               <div style={{ cursor: 'pointer' }}>
                 <SearchSelect value={searchOpen} onChange={setSearchOpen} selectStyle={{ height: 44 }} />
               </div>
-              <div className="navTopIcon" onClick={() => themeStore.setMenuType(MenuTypeEnum.Top)}>
+              <div className="navTopIcon" onClick={() => setMenuType(MenuTypeEnum.Top)}>
                 <img
-                  src={themeStore.theme.includes('dark') ? menuChangeDark : menuChange}
+                  src={isDark ? menuChangeDark : menuChange}
                   style={{
                     width: 20,
                     height: 20,
@@ -104,7 +107,7 @@ const Module = () => {
             </Flex>
           </div>
           <div className="navContent">
-            <SideNavList navList={navList} selectedKeys={routesStore.currentMenuInfo?.selectKeyPath ?? []} />
+            <SideNavList navList={navList} selectedKeys={currentMenuInfo?.selectKeyPath ?? []} />
           </div>
           <div className="navBottom">
             <div className="iconWrap">
@@ -126,7 +129,7 @@ const Module = () => {
                   navigate('/todo');
                 }}
               >
-                <ListBoxes size={20} style={{ color: 'var(--supos-text-color)' }} />
+                <Task size={20} style={{ color: 'var(--supos-text-color)' }} />
               </div>
               <UserPopover zIndex={10000} placement={'top'}>
                 <div className="iconWrapper">
@@ -147,7 +150,7 @@ const Module = () => {
             <SideMenuList
               openHoverNav={openHoverNav}
               navList={navList}
-              selectedKeys={routesStore.currentMenuInfo?.selectKey ? routesStore.currentMenuInfo?.selectKey : []}
+              selectedKeys={currentMenuInfo?.selectKey ? currentMenuInfo?.selectKey : []}
               setOpenHoverNav={setOpenHoverNav}
             />
           </div>
@@ -166,4 +169,4 @@ const Module = () => {
     </DraggableContainer>
   );
 };
-export default observer(Module);
+export default Module;

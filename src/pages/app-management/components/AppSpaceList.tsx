@@ -5,8 +5,8 @@ import { App } from 'antd';
 import styles from './AppSpaceList.module.scss';
 import { useTranslate } from '@/hooks';
 
-import { AuthWrapper } from '@/components';
 import { ButtonPermission } from '@/common-types/button-permission';
+import { AuthWrapper } from '@/components/auth';
 
 const AppSpaceList: FC<any> = ({ list, getHtmlList, clickItemId, setClickItemIdItemId, deleteHandle }) => {
   const [hoveredItemId, setHoveredItemId] = useState(null);
@@ -39,7 +39,7 @@ const AppSpaceList: FC<any> = ({ list, getHtmlList, clickItemId, setClickItemIdI
                       cancelButtonProps: {
                         // style: { color: '#000' },
                       },
-                      okText: formatMessage('appSpace.confirm'),
+                      okText: formatMessage('common.confirm'),
                     });
                     e.stopPropagation();
                   }}

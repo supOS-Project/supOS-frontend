@@ -1,14 +1,14 @@
-import I18nStore from '@/stores/i18n-store';
 import { Step, StepOptions } from 'shepherd.js';
-import homePic from '@/assets/guide/home.png';
-import homeChartreuse from '@/assets/guide/home-chartreuse.png';
+import homeFlow from '@/assets/guide/home-flow.gif';
+import homeFlowChartreuse from '@/assets/guide/home-flow-chartreuse.gif';
 import './guide-steps.scss';
+import { getIntl } from '@/stores/i18n-store.ts';
 
 // 新手导航步骤
-export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<StepOptions> | Array<Step> = (
+export const guideSteps: (navigate: any, opt: any, theme: any) => Array<StepOptions> | Array<Step> = (
   navigate: any,
   opt: any,
-  themeStore: any
+  theme: any
 ) => {
   return [
     {
@@ -18,9 +18,12 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
       },
       classes: 'guide-home-classes',
       text: `
-        <img src=${themeStore.theme.includes('chartreuse') ? homeChartreuse : homePic} class="guide-home-logo"/>
-        <div class="guide-home-title">${I18nStore.getIntl('common.welcome', opt)}</div>
-        <div class="guide-home-content">${I18nStore.getIntl('home.guideText')}</div>
+        <img src=${theme.includes('chartreuse') ? homeFlowChartreuse : homeFlow} class="guide-home-logo"/>
+        <div class="guide-home-text">
+          <div class="guide-home-title">${getIntl('common.welcome', opt)}</div>
+          <div class="guide-home-info">${getIntl('home.guideText')}</div>
+        </div>
+        
     `,
       attachTo: undefined,
       buttons: [
@@ -28,14 +31,14 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
           action() {
             return this.next();
           },
-          text: I18nStore.getIntl('home.guide1Next'),
+          text: getIntl('home.guide1Next'),
           classes: 'home-guide-next',
         },
         {
           action() {
             return this.complete();
           },
-          text: I18nStore.getIntl('home.guide1Exit'),
+          text: getIntl('home.guide1Exit'),
           classes: 'home-guide-exit prev-class',
         },
       ],
@@ -46,7 +49,7 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
       cancelIcon: {
         enabled: false,
       },
-      title: I18nStore.getIntl('home.guideUnsTitle'),
+      title: getIntl('home.guideUnsTitle'),
       attachTo: {
         element: '#home_route_uns',
         on: 'right',
@@ -56,7 +59,7 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
           action() {
             return this.complete();
           },
-          text: I18nStore.getIntl('home.guide1Exit'),
+          text: getIntl('home.guide1Exit'),
           classes: 'prev-class',
         },
         {
@@ -64,26 +67,26 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
             navigate('/uns');
             return this.complete();
           },
-          text: I18nStore.getIntl('global.tipNext'),
+          text: getIntl('common.next'),
         },
       ],
     },
     // {
     //   id: 'homepage',
-    //   title: I18nStore.getIntl('home.guide1Title'),
+    //   title: getIntl('home.guide1Title'),
     //   text: `
     // <ul class="user-guide-list">
-    //   <li>${I18nStore.getIntl('home.guide1Text1')}</li>
-    //   <li>${I18nStore.getIntl('home.guide1Text2')}</li>
+    //   <li>${getIntl('home.guide1Text1')}</li>
+    //   <li>${getIntl('home.guide1Text2')}</li>
     // </ul>
     // `,
     //   attachTo: undefined,
     // },
     // {
     //   id: 'home_step1',
-    //   title: I18nStore.getIntl('home.guide2Title'),
+    //   title: getIntl('home.guide2Title'),
     //   text: `
-    // ${I18nStore.getIntl('home.guide2Text1', opt)}
+    // ${getIntl('home.guide2Text1', opt)}
     // `,
     //   attachTo: {
     //     element: '#custom_menu_left',
@@ -92,17 +95,17 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
     // },
     // {
     //   id: 'home_step2',
-    //   title: I18nStore.getIntl('home.guide3Title'),
+    //   title: getIntl('home.guide3Title'),
     //   classes: 'guide-home-topBar-classes',
     //   text: `
-    // ${I18nStore.getIntl('home.guide3Text1')}
+    // ${getIntl('home.guide3Text1')}
     // <ul class="user-guide-list">
-    //   <li>${I18nStore.getIntl('home.guide3Text6')}</li>
-    //   <li>${I18nStore.getIntl('home.guide3Text2')}</li>
-    //   <li>${I18nStore.getIntl('home.guide3Text7')}</li>
-    //   <li>${I18nStore.getIntl('home.guide3Text3')}</li>
-    //   <li>${I18nStore.getIntl('home.guide3Text4')}</li>
-    //   <li>${I18nStore.getIntl('home.guide3Text5')}</li>
+    //   <li>${getIntl('home.guide3Text6')}</li>
+    //   <li>${getIntl('home.guide3Text2')}</li>
+    //   <li>${getIntl('home.guide3Text7')}</li>
+    //   <li>${getIntl('home.guide3Text3')}</li>
+    //   <li>${getIntl('home.guide3Text4')}</li>
+    //   <li>${getIntl('home.guide3Text5')}</li>
     // </ul>
     // `,
     //   attachTo: {
@@ -112,12 +115,12 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
     // },
     // {
     //   id: 'home_step3',
-    //   title: I18nStore.getIntl('home.guide4Title'),
+    //   title: getIntl('home.guide4Title'),
     //   text: `
-    // ${I18nStore.getIntl('home.guide4Text1', { ...opt, strong: (chunks: string) => `<strong>${chunks}</strong>` })}
+    // ${getIntl('home.guide4Text1', { ...opt, strong: (chunks: string) => `<strong>${chunks}</strong>` })}
     // <ul class="user-guide-list">
-    //   <li>${I18nStore.getIntl('home.guide4Text2')}</li>
-    //   <li>${I18nStore.getIntl('home.guide4Text3')}</li>
+    //   <li>${getIntl('home.guide4Text2')}</li>
+    //   <li>${getIntl('home.guide4Text3')}</li>
     // </ul>
     // `,
     //   attachTo: {
@@ -129,7 +132,7 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
     //       action() {
     //         return this.back();
     //       },
-    //       text: I18nStore.getIntl('global.tipBack'),
+    //       text: getIntl('common.prev'),
     //       classes: 'prev-class',
     //     },
     //     {
@@ -139,9 +142,9 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
     //         if (currentRoute && currentRoute?.isVisited === false) {
     //           this.addStep({
     //             id: 'home_step4',
-    //             title: I18nStore.getIntl('home.guide5Title'),
+    //             title: getIntl('home.guide5Title'),
     //             text: `
-    //           ${I18nStore.getIntl('home.guide5Text1')}
+    //           ${getIntl('home.guide5Text1')}
     //           `,
     //             attachTo: undefined,
     //             buttons: [
@@ -149,7 +152,7 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
     //                 action() {
     //                   return this.complete();
     //                 },
-    //                 text: I18nStore.getIntl('global.tipCancel'),
+    //                 text: getIntl('common.cancel'),
     //                 classes: 'prev-class',
     //               },
     //               {
@@ -157,7 +160,7 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
     //                   navigate('/uns');
     //                   return this.complete();
     //                 },
-    //                 text: I18nStore.getIntl('global.tipGo'),
+    //                 text: getIntl('global.tipGo'),
     //               },
     //             ],
     //           });
@@ -166,7 +169,7 @@ export const guideSteps: (navigate: any, opt: any, themeStore: any) => Array<Ste
     //           return this.complete();
     //         }
     //       },
-    //       text: I18nStore.getIntl('global.tipDone'),
+    //       text: getIntl('global.tipDone'),
     //     },
     //   ],
     // },

@@ -1,11 +1,21 @@
 import { FC, useState, useImperativeHandle } from 'react';
-import { ProModal, ComCheckbox } from '@/components';
 import { Button, Form, App, Select, Flex } from 'antd';
 import SearchSelect from '@/pages/uns/components/use-create-modal/components/SearchSelect';
 import { exportExcel } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 
-const Module: FC<any> = (props) => {
+import type { RefObject, Dispatch, SetStateAction } from 'react';
+import ComCheckbox from '@/components/com-checkbox';
+import ProModal from '@/components/pro-modal';
+interface ExportModalRef {
+  setOpen: Dispatch<SetStateAction<boolean>>;
+}
+
+export interface ExportModalProps {
+  exportRef?: RefObject<ExportModalRef>;
+}
+
+const Module: FC<ExportModalProps> = (props) => {
   const { exportRef } = props;
   const [form] = Form.useForm();
   const [open, setOpen] = useState(false);
@@ -23,15 +33,12 @@ const Module: FC<any> = (props) => {
       message.warning(formatMessage('uns.pleaseSelectTheInstanceToExport'));
       return;
     }
-    const _instances =
-      instances.length > 0
-        ? instances.filter((instance: string) => !models.some((model: string) => instance.startsWith(model)))
-        : [];
+
     setLoading(true);
     try {
       const filePath = await exportExcel({
         fileType,
-        ...(all ? { exportType: 'ALL' } : { models, instances: _instances }),
+        ...(all ? { exportType: 'ALL' } : { models, instances }),
       });
       if (filePath) {
         window.open(`/inter-api/supos/uns/excel/download?path=${filePath}`, '_self');
@@ -110,11 +117,10 @@ const Module: FC<any> = (props) => {
         <Form.Item label={formatMessage('uns.model')} name="models">
           <SearchSelect
             placeholder={formatMessage('uns.exportFolderTip')}
-            type={0}
             mode="multiple"
             disabled={all}
-            normal
             popupMatchSelectWidth={500}
+            apiParams={{ type: 0, normal: true }}
           />
         </Form.Item>
         <Form.Item
@@ -127,11 +133,10 @@ const Module: FC<any> = (props) => {
         >
           <SearchSelect
             placeholder={formatMessage('uns.exportFileTip')}
-            type={2}
             mode="multiple"
             disabled={all}
-            normal
             popupMatchSelectWidth={500}
+            apiParams={{ type: 2, normal: true }}
           />
         </Form.Item>
       </Form>

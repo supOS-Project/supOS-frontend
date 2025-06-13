@@ -1,24 +1,38 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Button, Form, App } from 'antd';
 import { WarningFilled } from '@carbon/icons-react';
 import { deleteTreeNode } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
-import { ProModal, ComCheckbox } from '@/components';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
 
-const Module = ({ successCallBack, currentPath }: any) => {
+import type { UnsTreeNode, InitTreeDataFnType } from '@/pages/uns/types';
+import ComCheckbox from '@/components/com-checkbox';
+import ProModal from '@/components/pro-modal';
+import { useBaseStore } from '@/stores/base';
+
+export interface DeleteModalProps {
+  successCallBack: InitTreeDataFnType;
+  currentNode?: UnsTreeNode;
+  setSelectedNode?: any;
+  lazyTree?: boolean;
+}
+
+const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) => {
   const formatMessage = useTranslate();
   const [form] = Form.useForm();
   const [open, setOpen] = useState(false);
-  const [deleteDetail, setDeleteDetail] = useState<any>({});
+  const [deleteDetail, setDeleteDetail] = useState<UnsTreeNode | null>();
   const [loading, setLoading] = useState(false);
   const { message, modal } = App.useApp();
-  const { dashboardType } = useRoutesContext();
+  const dashboardType = useBaseStore((state) => state.dashboardType);
 
-  const setModalOpen = (detail: any) => {
-    setDeleteDetail(detail);
-    setOpen(true);
-  };
+  const setModalOpen = useCallback(
+    (detail: UnsTreeNode) => {
+      setDeleteDetail(detail);
+      setOpen(true);
+    },
+    [setOpen, setDeleteDetail]
+  );
+
   const close = () => {
     setOpen(false);
     form.resetFields();
@@ -28,7 +42,7 @@ const Module = ({ successCallBack, currentPath }: any) => {
     close();
   };
 
-  const deleteRequest = async (path: any, params: any) => {
+  const deleteRequest = async (params: any) => {
     setLoading(true);
     try {
       const data: any = await deleteTreeNode(params);
@@ -46,7 +60,12 @@ const Module = ({ successCallBack, currentPath }: any) => {
         });
       } else {
         message.success(formatMessage('common.deleteSuccessfully'));
-        successCallBack({ reset: currentPath.startsWith(path) || params.cascade });
+        const clearSelect =
+          currentNode?.path?.startsWith(deleteDetail?.path || '') ||
+          currentNode?.id === deleteDetail?.id ||
+          params.cascade;
+        const config = lazyTree ? { reset: true, clearSelect } : { clearSelect };
+        successCallBack(config);
         close();
       }
     } catch (err) {
@@ -56,15 +75,15 @@ const Module = ({ successCallBack, currentPath }: any) => {
     }
   };
 
-  const confirm = async (cascade: boolean | undefined) => {
-    const { path, type } = deleteDetail;
+  const confirm = async (cascade?: boolean) => {
+    const { id, type } = deleteDetail || {};
     if (type === 0) {
-      deleteRequest(path, { cascade, path });
+      deleteRequest({ cascade, id });
     } else {
       const formData = await form.validateFields();
-      const params = { path, ...formData };
+      const params = { id, ...formData };
       if (cascade) params.cascade = cascade;
-      deleteRequest(path, params);
+      deleteRequest(params);
     }
   };
 
@@ -75,11 +94,11 @@ const Module = ({ successCallBack, currentPath }: any) => {
       open={open}
       onCancel={close}
       maskClosable={false}
-      title={formatMessage(deleteDetail.type === 2 ? 'uns.deleteFile' : 'uns.deleteFolder')}
+      title={formatMessage(deleteDetail?.type === 2 ? 'uns.deleteFile' : 'uns.deleteFolder')}
       width={460}
     >
       <Form name="deleteForm" form={form} colon={false}>
-        {deleteDetail.type === 2 ? (
+        {deleteDetail?.type === 2 ? (
           <>
             <Form.Item
               name="withFlow"

@@ -1,4 +1,4 @@
-import { ApiWrapper } from '@/utils';
+import { ApiWrapper } from '@/utils/request';
 
 export const baseUrl = '/hasura/home/v1/graphql';
 

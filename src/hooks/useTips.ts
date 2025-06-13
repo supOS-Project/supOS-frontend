@@ -6,7 +6,7 @@ import { updateTipsEnable } from '@/apis/inter-api/user-manage';
 import { find, shuffle } from 'lodash';
 import { useLocation } from 'react-router-dom';
 import { useTranslate } from '@/hooks';
-import { useRoutesContext } from '@/contexts/routes-context';
+import { setUserTipsEnable, useBaseStore } from '@/stores/base';
 
 const getCheckboxText = (checked: boolean, formatMessage: any) =>
   `<input type="checkbox" ${checked ? 'checked' : ''} /> <span class="checkbox-label"> ${formatMessage('global.tipCheckbox', 'Don’t show again at next login')}</span>`;
@@ -16,11 +16,10 @@ const getCheckboxText = (checked: boolean, formatMessage: any) =>
  * @param tips 初始化步骤数据
  */
 export const useTips = (originTips: any[] = []) => {
-  const routesStore = useRoutesContext();
   const pathname = useLocation().pathname;
   const formatMessage = useTranslate();
 
-  const userTipsEnable = routesStore.getUserTipsEnable();
+  const userTipsEnable = useBaseStore((state) => state.userTipsEnable);
   const tour = useRef(shepherd()).current;
   const [checked, setChecked] = useState<boolean>(false);
   const loginEnable = storageOpt.getOrigin(SUPOS_USER_LAST_LOGIN_ENABLE); // 是否为免登录
@@ -106,7 +105,7 @@ export const useTips = (originTips: any[] = []) => {
     });
     tour.on('complete', () => {
       // 监听完成时设置为不开启
-      routesStore.setUserTipsEnable('0');
+      setUserTipsEnable('0');
     });
   }, []);
 
@@ -115,7 +114,7 @@ export const useTips = (originTips: any[] = []) => {
     const currentRoute = find(userGuideRoute, (route) => route?.menu?.url === pathname);
     // 新手导航存在则先不触发，新手导航优先级更高
     if (currentRoute && currentRoute?.isVisited === false) {
-      routesStore.setUserTipsEnable('0');
+      setUserTipsEnable('0');
       return;
     }
     // 监听到userTipsEnable改变时判断是否触发启用
@@ -152,7 +151,7 @@ export const useTips = (originTips: any[] = []) => {
       updateTipsEnable(checked ? 0 : 1);
       // }
       // 监听完成时设置为不开启
-      routesStore.setUserTipsEnable('0');
+      setUserTipsEnable('0');
     });
   }, [checked]);
 

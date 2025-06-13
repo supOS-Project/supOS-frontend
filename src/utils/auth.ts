@@ -36,3 +36,23 @@ export const hasPermission = (auth: string | string[]) => {
     return perms?.includes(auth);
   }
 };
+
+export const filterPermissionToList = <T, K extends string = 'auth'>(
+  list: (T & { [P in K]?: string | string[] })[],
+  key: K = 'auth' as K
+): T[] => {
+  return list
+    ?.filter((item) => {
+      const itemAny = item as any;
+      if (!itemAny[key]) {
+        return true;
+      } else {
+        return hasPermission(itemAny[key]);
+      }
+    })
+    ?.map((item) => {
+      const newItem = { ...item } as any;
+      delete newItem[key];
+      return newItem as T;
+    });
+};

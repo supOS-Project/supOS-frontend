@@ -8,32 +8,46 @@ import AppSpace from '@/pages/app-management/AppSpace';
 import AppGUI from '@/pages/app-management/AppGUI';
 import AppPreview from '@/pages/app-management/AppPreview';
 import AppIframe from '@/pages/app-management/AppIframe';
-import NotFoundPage from '@/pages/not-found-Page';
+import NotFoundPage from '@/pages/not-found-Page/NotFoundPage';
+import NotPage from '@/pages/not-found-Page';
 import CollectionFlow from '@/pages/collection-flow';
 import FlowPreview from '@/pages/collection-flow/FlowPreview';
 import Dashboards from '@/pages/dashboards';
 import DashboardsPreview from '@/pages/dashboards/DashboardsPreview';
 import Home from '@/pages/home';
 import AccountManagement from '@/pages/account-management';
-import I18nStore from '@/stores/i18n-store';
 import AboutUs from '@/pages/aboutus';
 import AdvancedUse from '@/pages/advanced-use';
 import DevPage from '@/pages/dev-page';
 import NoPermission from '@/pages/not-found-Page/NoPermission';
-import Alert from '@/pages/alert';
 import { LOGIN_URL } from '@/common-types/constans';
-import { observer } from 'mobx-react-lite';
-import { useRoutesContext } from '@/contexts/routes-context';
 import Share from '@/pages/share';
 import EventFlow from '@/pages/event-flow';
 import EventFlowPreview from '@/pages/event-flow/FlowPreview.tsx';
+import PluginManagement from '@/pages/plugin-management';
+import qs from 'qs';
+import { useEffect } from 'react';
+import { useBaseStore } from '@/stores/base';
+import { getIntl } from '@/stores/i18n-store.ts';
 
 // 根路径重定向到外部login页
-const RootRedirect = observer(() => {
-  const routesStore = useRoutesContext();
-  window.location.href = routesStore?.systemInfo?.loginPath || LOGIN_URL;
+
+const RootRedirect = () => {
+  const { currentUserInfo, systemInfo } = useBaseStore((state) => ({
+    currentUserInfo: state.currentUserInfo,
+    systemInfo: state.systemInfo,
+  }));
+  const params = qs.parse(window.location.search, { ignoreQueryPrefix: true });
+  useEffect(() => {
+    console.warn(params);
+    if (params?.isLogin) {
+      window.location.href = currentUserInfo?.homePage || '/home';
+    } else {
+      window.location.href = systemInfo?.loginPath || LOGIN_URL;
+    }
+  }, [params?.isLogin]);
   return null;
-});
+};
 
 export const childrenRoutes = [
   {
@@ -49,7 +63,9 @@ export const childrenRoutes = [
     Component: Todo,
     handle: {
       parentPath: '/_common',
-      name: I18nStore.getIntl('common.todo', 'To-do'),
+      name: getIntl('common.todo', 'To-do'),
+      menuNameKey: 'common.todo',
+      type: 'all',
     },
   },
   {
@@ -57,7 +73,8 @@ export const childrenRoutes = [
     Component: GrafanaDesign,
     handle: {
       parentPath: '/_common',
-      name: I18nStore.getIntl('common.grafanaDesign', 'GrafanaDesign'),
+      name: getIntl('common.grafanaDesign', 'GrafanaDesign'),
+      menuNameKey: 'common.grafanaDesign',
     },
   },
   {
@@ -69,7 +86,8 @@ export const childrenRoutes = [
     Component: AppIframe,
     handle: {
       parentPath: '/app-display',
-      name: I18nStore.getIntl('route.appIframe', 'AppIframe'),
+      name: getIntl('route.appIframe', 'AppIframe'),
+      menuNameKey: 'route.appIframe',
     },
   },
   {
@@ -81,7 +99,8 @@ export const childrenRoutes = [
     Component: AppGUI,
     handle: {
       parentPath: '/app-space',
-      name: I18nStore.getIntl('route.appGUI', 'AppGUI'),
+      name: getIntl('route.appGUI', 'AppGUI'),
+      menuNameKey: 'route.appGUI',
     },
   },
   {
@@ -89,7 +108,8 @@ export const childrenRoutes = [
     Component: AppPreview,
     handle: {
       parentPath: '/app-space',
-      name: I18nStore.getIntl('route.appPreview', 'AppPreview'),
+      name: getIntl('route.appPreview', 'AppPreview'),
+      menuNameKey: 'route.appPreview',
     },
   },
   {
@@ -97,11 +117,12 @@ export const childrenRoutes = [
     Component: CollectionFlow,
   },
   {
-    path: '/flow-editor',
+    path: '/collection-flow/flow-editor',
     Component: FlowPreview,
     handle: {
       parentPath: '/collection-flow',
-      name: I18nStore.getIntl('route.flowEditor', 'FlowEditor'),
+      name: getIntl('route.flowEditor', 'SourceFlow Editor'),
+      menuNameKey: 'route.flowEditor',
     },
   },
   {
@@ -109,11 +130,12 @@ export const childrenRoutes = [
     Component: EventFlow,
   },
   {
-    path: '/EvenFlowEditor',
+    path: '/EvenFlow/Editor',
     Component: EventFlowPreview,
     handle: {
       parentPath: '/EventFlow',
-      name: I18nStore.getIntl('route.eventFlowEditor', 'EventFlowEditor'),
+      name: getIntl('route.eventFlowEditor', 'EventFlow Editor'),
+      menuNameKey: 'route.eventFlowEditor',
     },
   },
   {
@@ -121,13 +143,15 @@ export const childrenRoutes = [
     Component: Dashboards,
   },
   {
-    path: '/dashboards-preview',
+    path: '/dashboards/preview',
     Component: DashboardsPreview,
     handle: {
       parentPath: '/dashboards',
-      name: I18nStore.getIntl('route.dashboardsPreview', 'DashboardsPreview'),
+      name: getIntl('route.dashboardsPreview', 'DashboardsPreview'),
+      menuNameKey: 'route.dashboardsPreview',
     },
   },
+
   {
     path: '/account-management',
     Component: AccountManagement,
@@ -145,11 +169,30 @@ export const childrenRoutes = [
     Component: DevPage,
     handle: {
       name: 'devPage',
+      type: 'dev',
     },
   },
   {
-    path: '/alert',
-    Component: Alert,
+    path: '/plugin-management',
+    Component: PluginManagement,
+  },
+  {
+    path: '/403',
+    Component: NoPermission,
+    handle: {
+      parentPath: '/_common',
+      name: '403',
+      type: 'all',
+    },
+  },
+  {
+    path: '/404',
+    element: <NotFoundPage />,
+    handle: {
+      parentPath: '/_common',
+      name: '404',
+      type: 'all',
+    },
   },
 ];
 
@@ -167,13 +210,13 @@ const routes = [
     path: '/share',
     Component: Share,
   },
-  {
-    path: '/403',
-    Component: NoPermission,
-  },
+  // {
+  //   path: '/403',
+  //   Component: NoPermission,
+  // },
   {
     path: '*',
-    element: <NotFoundPage />,
+    element: <NotPage />,
   },
 ];
 

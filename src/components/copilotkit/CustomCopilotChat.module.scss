@@ -116,5 +116,22 @@
       background-color: var(--supos-bg-color);
       color: var(--supos-text-color);
     }
+
+    .copilotKitMessageControlButton {
+      color: var(--supos-text-color);
+    }
+
+    .copilotKitMessage.copilotKitUserMessage {
+      background-color: var(--supos-blue-color-10);
+    }
+
+    .copilotKitCodeBlockToolbarButton {
+      letter-spacing: inherit;
+      color: inherit;
+      background-color: rgb(0 0 0 / 0%);
+      opacity: 1;
+      font: inherit;
+      border: none;
+    }
   }
 }

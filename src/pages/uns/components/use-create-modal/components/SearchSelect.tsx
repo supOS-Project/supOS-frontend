@@ -1,25 +1,37 @@
-import { useMemo, useState, FC } from 'react';
+import { useMemo, useState, FC, useEffect } from 'react';
 import { Spin, Select, Divider, Button } from 'antd';
+import type { SelectProps } from 'antd';
 import debounce from 'lodash/debounce';
 import { searchTreeData } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 
-const DebounceSelect: FC<any> = ({
+export interface DebounceSelectProps extends Omit<SelectProps, 'onChange'> {
+  debounceTimeout?: number;
+  selectAll?: (value: string[]) => void;
+  onChange?: (e: any) => void;
+  apiParams?: { type: number; [key: string]: string | number | boolean };
+  disabledIds?: string[];
+}
+
+const DebounceSelect: FC<DebounceSelectProps> = ({
   value,
   onChange,
   debounceTimeout = 500,
-  index = 0,
-  type = 3,
-  normal,
   selectAll,
+  apiParams,
+  labelInValue = false,
+  mode,
+  disabledIds,
   ...rest
 }) => {
   const [fetching, setFetching] = useState(false);
   const [options, setOptions] = useState([]);
   const formatMessage = useTranslate();
 
+  const { type = 3 } = apiParams || {};
+
   const debounceFetcher = useMemo(() => {
-    const loadOptions = (value: any) => {
+    const loadOptions = (value: string) => {
       setOptions([]);
       setFetching(true);
       searchData(value);
@@ -27,22 +39,15 @@ const DebounceSelect: FC<any> = ({
     return debounce(loadOptions, debounceTimeout);
   }, [debounceTimeout]);
 
-  const searchData = (key?: any) => {
-    const params: any = { type, p: 1, sz: 100, normal };
+  const searchData = (key?: string) => {
+    const params: any = { pageNo: 1, pageSize: 100, type, ...apiParams };
     if (key) params.k = key;
     searchTreeData(params)
       .then((res: any) => {
-        const newRes = (res || []).map((e: any) => {
-          return type < 3
-            ? {
-                value: e,
-              }
-            : {
-                ...e,
-                value: e.topic,
-              };
+        res.forEach((e: any) => {
+          e.disabled = disabledIds?.includes(e.id);
         });
-        setOptions(newRes);
+        setOptions(res);
         setFetching(false);
       })
       .catch((err) => {
@@ -51,35 +56,42 @@ const DebounceSelect: FC<any> = ({
       });
   };
 
+  useEffect(() => {
+    searchData?.();
+  }, []);
+
   const _onChange = (e: any) => {
-    onChange(e, options, index);
+    onChange?.(
+      labelInValue
+        ? mode
+          ? (e?.map((item: any) => ({ ...item, option: options.find((i: any) => i.id === item.value) })) ?? [])
+          : e
+            ? { ...e, option: options.find((i: any) => i.id === e?.value) }
+            : undefined
+        : e
+    );
   };
 
   return (
     <Select
-      {...rest}
+      allowClear
       showSearch
       filterOption={false}
-      onSearch={debounceFetcher}
+      fieldNames={{ label: 'path', value: 'id' }}
       notFoundContent={fetching ? <Spin size="small" /> : formatMessage('uns.noData')}
-      options={options}
-      value={value}
-      onChange={_onChange}
-      onFocus={() => searchData()}
-      allowClear
-      dropdownRender={(menu) => (
+      popupRender={(menu) => (
         <>
           {menu}
-          {options.length > 0 && (selectAll || options.length > 99) && (
+          {options.length > 0 && ((selectAll && mode) || options.length > 99) && (
             <>
               <Divider style={{ margin: '4px 0', borderColor: '#c6c6c6' }} />
-              {selectAll && (
+              {selectAll && mode && (
                 <div style={{ textAlign: 'center' }}>
                   <Button
                     color="default"
                     variant="filled"
                     onClick={() => {
-                      selectAll(options.map((option: any) => option.value));
+                      selectAll(options);
                     }}
                     size="small"
                     style={{ backgroundColor: 'var(--supos-uns-button-color)' }}
@@ -95,6 +107,14 @@ const DebounceSelect: FC<any> = ({
           )}
         </>
       )}
+      {...rest}
+      onSearch={debounceFetcher}
+      options={options}
+      value={value}
+      onChange={_onChange}
+      onFocus={() => searchData()}
+      labelInValue={labelInValue}
+      mode={mode}
     />
   );
 };

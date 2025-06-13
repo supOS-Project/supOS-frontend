@@ -1,7 +1,7 @@
-import I18nStore from '@/stores/i18n-store';
 import { Step, StepOptions } from 'shepherd.js';
 import guideVideo1 from '@/assets/guide/uns_step1.mp4';
 import guideVideo2 from '@/assets/guide/uns_step2.mp4';
+import { getIntl } from '@/stores/i18n-store.ts';
 
 // 新手导航步骤
 export const guideSteps: () => Array<StepOptions> | Array<Step> = () => [
@@ -12,8 +12,8 @@ export const guideSteps: () => Array<StepOptions> | Array<Step> = () => [
     },
     classes: 'guide-video-classes no-attach',
     text: `
-        <div class="video-title">${I18nStore.getIntl('uns.guideVideo1Title')}</div>
-        <div class="video-info">${I18nStore.getIntl('uns.guideVideo1Info')}</div>
+        <div class="video-title">${getIntl('uns.guideVideo1Title')}</div>
+        <div class="video-info">${getIntl('uns.guideVideo1Info')}</div>
         <video class="guide-video" autoplay muted loop controls>
           <source src="${guideVideo1}" type="video/mp4">
           Your browser does not support the video tag.
@@ -25,14 +25,14 @@ export const guideSteps: () => Array<StepOptions> | Array<Step> = () => [
         action() {
           return this.complete();
         },
-        text: I18nStore.getIntl('global.tipExit'),
+        text: getIntl('global.tipExit'),
         classes: 'prev-class',
       },
       {
         action() {
           return this.next();
         },
-        text: I18nStore.getIntl('global.tipNext'),
+        text: getIntl('common.next'),
       },
     ],
   },
@@ -43,8 +43,8 @@ export const guideSteps: () => Array<StepOptions> | Array<Step> = () => [
     },
     classes: 'guide-video-classes no-attach',
     text: `
-        <div class="video-title">${I18nStore.getIntl('uns.guideVideo2Title')}</div>
-        <div class="video-info">${I18nStore.getIntl('uns.guideVideo2Info')}</div>
+        <div class="video-title">${getIntl('uns.guideVideo2Title')}</div>
+        <div class="video-info">${getIntl('uns.guideVideo2Info')}</div>
         <video class="guide-video" autoplay muted loop controls>
           <source src="${guideVideo2}" type="video/mp4">
           Your browser does not support the video tag.
@@ -56,21 +56,21 @@ export const guideSteps: () => Array<StepOptions> | Array<Step> = () => [
         action() {
           return this.complete();
         },
-        text: I18nStore.getIntl('global.tipExit'),
+        text: getIntl('global.tipExit'),
         classes: 'prev-class',
       },
       {
         action() {
           return this.back();
         },
-        text: I18nStore.getIntl('global.tipBack'),
+        text: getIntl('common.prev'),
         classes: 'back-class',
       },
       {
         action() {
           return this.complete();
         },
-        text: I18nStore.getIntl('global.tipDone'),
+        text: getIntl('global.tipDone'),
       },
     ],
   },

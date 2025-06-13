@@ -1,8 +1,9 @@
 // storage
 export const SUPOS_STORAGE_MENU_TYPE = 'SUPOS_STORAGE_MENU_TYPE';
+export const SUPOS_PRIMARY_COLOR = 'SUPOS_PRIMARY_COLOR';
 export const SUPOS_STORAGE_MENU_WIDTH = 'SUPOS_STORAGE_MENU_WIDTH';
-export const SUPOS_THEME = 'SUPOS_THEME';
-export const SUPOS_REAL_THEME = 'SUPOS_REAL_THEME';
+export const SUPOS_THEME = 'SUPOS_THEME_V2';
+export const SUPOS_REAL_THEME = 'SUPOS_REAL_THEME_V2';
 export const SUPOS_LANG_MESSAGE = 'SUPOS_LANG_MESSAGE';
 export const SUPOS_LANG = 'SUPOS_LANG';
 export const SUPOS_USER_BUTTON_LIST = 'SUPOS_USER_BUTTON_LIST';
@@ -20,3 +21,4 @@ export const STORAGE_PATH = '/files/system/resource';
 export const MENU_TARGET_PATH = '/supos';
 // 高阶使用等放的路径
 export const Original_TARGET_PATH = '/icons';
+export const SUPOS_UNS_TREE = 'SUPOS_UNS_TREE'; // tips是否需要展示

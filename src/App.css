@@ -39,8 +39,14 @@
   color: #fff;
 }
 
+/* autoprefixer: ignore next */
 ::-webkit-selection {
   /* Chrome, Safari, Opera */
   background: var(--supos-theme-color);
   color: #fff;
+}
+
+body {
+  background-color: var(--supos-bg-color) !important;
+  color: var(--supos-text-color, #161616) !important;
 }

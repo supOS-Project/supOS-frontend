@@ -1,36 +1,24 @@
-// import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
 import { Button, Result } from 'antd';
-// import { useRoutesContext } from '@/contexts/routes-context';
-import { observer } from 'mobx-react-lite';
 import { useTranslate } from '@/hooks';
+import useNavigateForIframe from '@/hooks/useNavigateForIframe';
 
 const NotFoundPage = () => {
-  // const routesStore = useRoutesContext();
   const formatMessage = useTranslate();
-  const navigate = useNavigate();
-  // const { pathname } = useLocation();
-  // if (routesStore.routes.some((s) => '/' + s.name === pathname)) {
-  //   // 如果是动态路由过来的数据，跳转到uns页
-  //   return <Navigate to="/home" replace />;
-  // }
+  const { security, onClick } = useNavigateForIframe({ path: '/home' });
   return (
     <Result
       status="403"
       title={403}
       subTitle={<span style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.pageNoPermission')}</span>}
       extra={
-        <Button
-          type="primary"
-          onClick={() => {
-            navigate('/home');
-          }}
-        >
-          {formatMessage('common.goHome')}
-        </Button>
+        security && (
+          <Button type="primary" onClick={onClick}>
+            {formatMessage('common.goHome')}
+          </Button>
+        )
       }
     />
   );
 };
 
-export default observer(NotFoundPage);
+export default NotFoundPage;

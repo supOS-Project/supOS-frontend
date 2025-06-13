@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import RenderFormItem, { RenderFormItemProps } from '../operation-form/render-form-item.tsx';
 import './index.scss';
 import { useTranslate } from '@/hooks';
-import { Search } from '@carbon/icons-react';
+// import { Search } from '@carbon/icons-react';
 
 export interface ComSearchProps {
   form: FormInstance;
@@ -32,16 +32,19 @@ const ComSearch: FC<ComSearchProps> = ({ form, formConfig, formItemOptions, onSe
       })}
       <Flex gap={4}>
         <Button
-          type={'primary'}
-          style={{ height: 32 }}
+          color="primary"
+          variant="outlined"
+          style={{ height: 32, background: 'var(--supos-bg-color)' }}
           onClick={() => {
             onSearch?.();
           }}
         >
-          <Flex gap={32} align="center">
-            <span>{formatMessage('common.search')}</span>
-            <Search size={14} />
-          </Flex>
+          {/* <Flex gap={32} align="center"> */}
+          {/* <span> */}
+          {formatMessage('common.search')}
+          {/* </span> */}
+          {/* <Search size={14} /> */}
+          {/* </Flex> */}
         </Button>
       </Flex>
     </Form>

@@ -8,9 +8,10 @@ import {
   MutableRefObject,
 } from 'react';
 import { Form } from 'antd';
-import { ComTree } from '@/components';
 import type { TreeProps, TreeDataNode } from 'antd';
 import _ from 'lodash';
+import ComTree from '@/components/com-tree';
+import { generateAlias } from '@/utils/uns';
 
 export interface JsonTreeRefProps {
   checkedKeys: string[];
@@ -29,6 +30,7 @@ export interface FieldItem {
   displayName?: string;
   remark?: string;
   unique?: boolean;
+  isDefault?: boolean;
 }
 
 export interface TreeNode extends TreeDataNode {
@@ -40,9 +42,14 @@ export interface TreeNode extends TreeDataNode {
   description?: string;
   tags?: string[];
   save2db?: boolean;
+  addFlow?: boolean;
+  addDashBoard?: boolean;
   mainKey?: number;
   fields?: FieldItem[];
   parentDataPath?: string;
+  alias?: string;
+  parentAlias?: string;
+  [key: string]: any;
 }
 
 const JsonForm = forwardRef<JsonTreeRefProps | undefined, JsonTreeProps>(
@@ -58,13 +65,11 @@ const JsonForm = forwardRef<JsonTreeRefProps | undefined, JsonTreeProps>(
     }));
 
     const onSelect: TreeProps['onSelect'] = (selectedKeys, info) => {
-      form.validateFields().then(() => {
-        form.setFieldsValue({
-          currentNode: undefined,
-        });
-        setSelectedKeys(selectedKeys as string[]);
-        setSelectedInfo((selectedKeys.length ? info?.selectedNodes[0] : undefined) as TreeNode);
+      form.setFieldsValue({
+        currentNode: undefined,
       });
+      setSelectedKeys(selectedKeys as string[]);
+      setSelectedInfo((selectedKeys.length ? info?.selectedNodes[0] : undefined) as TreeNode);
     };
 
     useEffect(() => {
@@ -78,10 +83,11 @@ const JsonForm = forwardRef<JsonTreeRefProps | undefined, JsonTreeProps>(
       setCheckedKeys(checkedKeysValue as string[]);
     };
 
-    const updateChildrenNewDataPaths = (node: TreeNode, parentNames: string[]) => {
+    const updateChildrenNewDataPaths = (node: TreeNode, parentNames: string[], parentAlias?: string) => {
       node.newDataPath = [...parentNames, node.name].join('.');
+      node.parentAlias = parentAlias || node.parentAlias;
       if (node.children && node.children.length > 0) {
-        node.children.forEach((child) => updateChildrenNewDataPaths(child, [...parentNames, node.name]));
+        node.children.forEach((child) => updateChildrenNewDataPaths(child, [...parentNames, node.name], node.alias));
       }
     };
 
@@ -92,6 +98,7 @@ const JsonForm = forwardRef<JsonTreeRefProps | undefined, JsonTreeProps>(
           if (nodes[i].dataPath === targetDataPath) {
             // 更新新节点的 children 以保持原有结构，并更新 newDataPath
             newNode.children = nodes[i].children || [];
+            newNode.alias = generateAlias(newNode.name);
 
             // 使用扩展运算符合并对象，但不覆盖 children，以便后续更新 newDataPath
             nodes[i] = { ...nodes[i], ...newNode, children: newNode.children };
@@ -120,7 +127,7 @@ const JsonForm = forwardRef<JsonTreeRefProps | undefined, JsonTreeProps>(
     };
 
     useEffect(() => {
-      if (currentNode) {
+      if (currentNode?.name) {
         const newTreeData = replaceNodeInTree(treeData, selectedKeys?.[0], currentNode);
         setTreeData(newTreeData);
       }

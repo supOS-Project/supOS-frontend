@@ -1,27 +1,26 @@
 import { FC, useState, useEffect, useRef, useImperativeHandle, useCallback } from 'react';
-import { Search } from '@carbon/react';
 import { Renew, Folder, FolderOpen, Document } from '@carbon/icons-react';
 import debounce from 'lodash/debounce';
 import { useTranslate } from '@/hooks';
 import { App, Flex, Divider } from 'antd';
-import { ComTree } from '@/components';
 import HighlightText from './HighlightText';
-import { generatePaths, findParentIds, collectChildrenIds } from '@/utils';
-import StatusDot from '@/pages/uns/components/uns-tree/StatusDot';
-import { IcmpStatesType } from '@/pages/uns/useUnsGlobalWs';
 import './index.scss';
+
+import type { UnsTreeNode } from '@/pages/uns/types';
+import ComTree from '@/components/com-tree';
+import ProSearch from '@/components/pro-search';
+import { collectChildrenIds, findParentIds } from '@/utils/uns';
 
 export interface UnusedTopicTreeProps {
   treeData: any[];
-  currentPath: string;
+  currentNode: UnsTreeNode;
   initTreeData: (data: any, cb?: () => void) => void;
   setTreeMap?: (params: any) => void;
-  changeCurrentPath: (currentNode: any) => void;
+  changeCurrentPath: (node: any) => void;
   treeHeight?: number;
   unsTreeRef?: any;
   treeType: string;
-  showType: number | null;
-  icmpStates?: IcmpStatesType;
+  unusedTopicBreadcrumbList: UnsTreeNode[];
 }
 
 export interface RightKeyMenuItem {
@@ -33,14 +32,14 @@ export interface RightKeyMenuItem {
 
 const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
   treeData,
-  currentPath,
+  currentNode,
   initTreeData,
   changeCurrentPath,
   setTreeMap,
   treeHeight = 0,
   unsTreeRef,
   treeType,
-  icmpStates,
+  unusedTopicBreadcrumbList,
 }) => {
   const [expandedArr, setExpandedArr] = useState<any>([]); //展开的树节点
   const [searchType, setSearchType] = useState(1); //搜索类型
@@ -112,7 +111,7 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
     if (expanded) {
       newArr.push(node.value);
     } else {
-      const index = expandedKeys.findIndex((path: any) => path === node.value);
+      const index = expandedKeys.findIndex((id: any) => id === node.value);
       newArr.splice(index, 1);
     }
     setExpandedArr([...new Set(newArr)]);
@@ -133,11 +132,10 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
   return (
     <div className="treeWrap">
       <Flex gap="8px" className="treeSearchBox">
-        <Search
+        <ProSearch
           ref={selectRef}
-          closeButtonLabelText="Clear search input"
+          closeButtonLabelText={formatMessage('common.clearSearchInput')}
           id="search-playground-1"
-          labelText="Label text"
           placeholder={formatMessage('uns.inputText')}
           role="searchbox"
           size="sm"
@@ -157,11 +155,11 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
           }}
         />
         <div className="treeOperateIconWrap">
-          <span title={formatMessage('uns.refresh')}>
+          <span title={formatMessage('common.refresh')}>
             <Renew
               onClick={() => {
                 initTreeData({ reset: false, type: searchType, query: searchQuery }, () => {
-                  message.success(formatMessage('uns.refreshSuccessful'));
+                  message.success(formatMessage('common.refreshSuccessful'));
                 });
               }}
             />
@@ -172,9 +170,9 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
       <ComTree
         ref={treeRef}
         height={treeHeight}
-        selectedKeys={[currentPath]}
+        selectedKeys={[currentNode.id as string]}
         treeData={treeData}
-        fieldNames={{ title: 'name', key: 'path' }}
+        fieldNames={{ title: 'name', key: 'id' }}
         blockNode
         expandedKeys={expandedArr}
         onExpand={onExpand}
@@ -182,37 +180,33 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
           treeData.length === 0 ? <div style={{ textAlign: 'center' }}>{formatMessage('uns.noData')}</div> : null
         }
         titleRender={(item: any) => {
-          const icmpInfo = icmpStates?.find((s: any) => s.topic === item.path);
           return (
             <div
               className={`customTreeNode`}
               onClick={() => {
                 changeCurrentPath(item);
-                if (setTreeMap) setTreeMap(false);
+                setTreeMap?.(false);
               }}
               style={
-                treeType === 'treemap'
+                treeType === 'treemap' &&
+                currentNode.id &&
+                unusedTopicBreadcrumbList
+                  .slice(0, -1)
+                  .map((e) => e.id)
+                  .includes(item.id)
                   ? {
-                      color:
-                        currentPath && generatePaths(currentPath).includes(item.path)
-                          ? 'var(--supos-theme-color)'
-                          : 'var(--supos-text-color)',
+                      color: 'var(--supos-theme-color)',
                     }
                   : {}
               }
             >
               {item.type === 0 &&
-                (expandedArr.includes(item.path) && item.children ? (
+                (expandedArr.includes(item.id) && item.children ? (
                   <FolderOpen style={{ flexShrink: 0, marginRight: '5px' }} />
                 ) : (
                   <Folder style={{ flexShrink: 0, marginRight: '5px' }} />
                 ))}
-              {item.type === 2 && (
-                <Flex align={'center'} gap={8}>
-                  {item.protocol === 'icmp' && <StatusDot status={!!icmpInfo?.status} />}
-                  <Document style={{ flexShrink: 0, marginRight: '5px' }} />
-                </Flex>
-              )}
+              {item.type === 2 && <Document style={{ flexShrink: 0, marginRight: '5px' }} />}
               <div className="customTreeNodeTitle">
                 <HighlightText needle={searchQuery} haystack={item.name} />
                 {item.type === 0 && (

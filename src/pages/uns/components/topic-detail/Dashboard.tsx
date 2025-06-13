@@ -2,22 +2,29 @@ import { FC, useEffect, useRef, useState } from 'react';
 import md5 from 'blueimp-md5';
 import { ResizableBox } from 'react-resizable';
 import '@/components/resizable-container/index.scss';
-import { IframeMask } from '@/components';
 import type { TimeRangePickerProps } from 'antd';
 import { Flex, DatePicker, Button } from 'antd';
 import { Renew } from '@carbon/icons-react';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { useTranslate } from '@/hooks';
+import IframeMask from '@/components/iframe-mask';
 
 const { RangePicker } = DatePicker;
 
-const DetailDashboard: FC<any> = ({ instanceInfo }) => {
-  const { dataType } = instanceInfo;
+interface DetailDashboardProps {
+  instanceInfo: { [key: string]: any };
+}
+
+const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
+  const { dataType, refers, alias } = instanceInfo;
+
   const formatMessage = useTranslate();
   const observer = useRef<MutationObserver | null>(null);
-  const aliasHash = md5(instanceInfo?.alias).slice(8, 24);
-  const iframeName = `${instanceInfo?.alias?.replaceAll('_', '-')}`;
+
+  const newAlias = dataType === 7 ? refers?.[0]?.alias : alias;
+  const aliasHash = md5(newAlias).slice(8, 24);
+  const iframeName = `${newAlias?.replaceAll('_', '-')}`;
 
   const [iframeUrl, setIframeUrl] = useState(
     `/grafana/home/d-solo/${aliasHash}/${iframeName}?orgId=1&panelId=1&__feature.dashboardSceneSolo`
@@ -39,14 +46,17 @@ const DetailDashboard: FC<any> = ({ instanceInfo }) => {
     const iframe = document.getElementById('dashboardIframe') as HTMLIFrameElement | null;
 
     if (iframe) {
+      interface CustomHTMLElement extends HTMLElement {
+        __handled__?: boolean;
+      }
       const handleMutation = (mutationsList: MutationRecord[]) => {
         for (const mutation of mutationsList) {
           if (mutation.type === 'childList') {
             // 使用 querySelectorAll 获取所有匹配的元素，并遍历它们
             const showOnHoverBtns = Array.from(
               iframe?.contentWindow?.document?.querySelectorAll('.show-on-hover') || []
-            ) as HTMLElement[];
-            showOnHoverBtns.forEach((btn: any) => {
+            ) as CustomHTMLElement[];
+            showOnHoverBtns.forEach((btn: CustomHTMLElement) => {
               // 如果按钮还没有被处理过，则进行处理
               if (!btn.__handled__) {
                 btn.style.display = 'none';
@@ -80,7 +90,8 @@ const DetailDashboard: FC<any> = ({ instanceInfo }) => {
 
       // 当 iframe 加载完成后开始观察
       iframe.onload = function () {
-        const iframeDocument: any = iframe.contentDocument || iframe.contentWindow?.document;
+        const iframeDocument: Document | undefined = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDocument) return;
         // 创建style元素
         const style = iframeDocument.createElement('style');
         style.type = 'text/css';

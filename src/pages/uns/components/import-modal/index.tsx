@@ -3,25 +3,45 @@ import { FolderAdd, Download } from '@carbon/icons-react';
 import { Upload, Button, App, Dropdown } from 'antd';
 import { importExcel } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
-import { ProModal, InlineLoading } from '@/components';
 
 import { useWebSocket } from 'ahooks';
 
+import type { Dispatch, SetStateAction } from 'react';
+import type { UploadFile } from 'antd';
+import type { InitTreeDataFnType } from '@/pages/uns/types';
+
 import './index.scss';
+import InlineLoading from '@/components/inline-loading';
+import ProModal from '@/components/pro-modal';
 
 const { Dragger } = Upload;
-const { confirm } = ProModal;
 
-const Module: FC<any> = (props) => {
-  const { importModal, setImportModal, initTreeData, type, query } = props;
+export interface ImportModalProps {
+  importModal: boolean;
+  setImportModal: Dispatch<SetStateAction<boolean>>;
+  initTreeData: InitTreeDataFnType;
+}
+
+interface SocketDataType {
+  code?: number;
+  finished?: boolean;
+  msg?: string;
+  progress?: number;
+  task?: string;
+  errTipFile?: string;
+}
+
+const Module: FC<ImportModalProps> = (props) => {
+  const { importModal, setImportModal, initTreeData } = props;
   const formatMessage = useTranslate();
   const { message } = App.useApp();
-  const timer: any = useRef(null);
+  const timer = useRef<NodeJS.Timeout>();
   const uploadRef = useRef<any>(null);
+  const { modal } = App.useApp();
 
-  const [fileList, setFileList] = useState<any>([]);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [loading, setLoading] = useState(false);
-  const [socketData, setSocketData] = useState<any>({});
+  const [socketData, setSocketData] = useState<SocketDataType>({});
   const [socketUrl, setSocketUrl] = useState('');
 
   // 创建 WebSocket 连接
@@ -33,7 +53,7 @@ const Module: FC<any> = (props) => {
         if (event.data === 'pong') return;
         const data = JSON.parse(event.data);
         setSocketData(data);
-        if (data.finished) initTreeData({ reset: true, query, type });
+        if (data.finished) initTreeData({ reset: true });
       },
       onError: (error) => console.error('WebSocket error:', error),
     }
@@ -57,7 +77,7 @@ const Module: FC<any> = (props) => {
         name: 'file',
         fileName: fileList[0].name,
       })
-        .then((data: any) => {
+        .then((data) => {
           if (data) {
             const protocol = location.protocol.includes('https') ? 'wss' : 'ws';
             // 创建 WebSocket 连接
@@ -90,7 +110,7 @@ const Module: FC<any> = (props) => {
   const Reupload = () => {
     resetUploadStatus();
     setTimeout(() => {
-      if (uploadRef.current) uploadRef.current.nativeElement.querySelector('input').click();
+      if (uploadRef.current) uploadRef?.current?.nativeElement?.querySelector('input').click();
     });
   };
 
@@ -106,7 +126,7 @@ const Module: FC<any> = (props) => {
       }
     }
     if (socketData.code === 206) {
-      confirm({
+      modal.confirm({
         title: formatMessage('uns.PartialDataImportFailed'),
         onOk() {
           window.open(`/inter-api/supos/uns/excel/download?path=${socketData.errTipFile}`, '_self');
@@ -139,11 +159,12 @@ const Module: FC<any> = (props) => {
     };
   }, []);
 
-  const reimport = socketData.finished && socketData.code !== 200;
+  const { code, finished, msg, task, progress } = socketData;
+
+  const reimport = finished && code !== 200;
 
   return (
     <ProModal
-      aria-label=""
       className="importModalWrap"
       open={importModal}
       onCancel={close}
@@ -180,8 +201,8 @@ const Module: FC<any> = (props) => {
       {loading ? (
         <div className="loadingWrap">
           <InlineLoading
-            status={socketData.finished ? (socketData.code === 200 ? 'finished' : 'error') : 'active'}
-            description={`${socketData.finished ? socketData.msg : socketData.task || ''}(${socketData.progress || 0}%)`}
+            status={finished ? (code === 200 ? 'finished' : 'error') : 'active'}
+            description={`${formatMessage('common.importProgress')}：${progress || 0}%${msg || task ? '，' : ''}${finished ? msg : task || ''}`}
           />
         </div>
       ) : (

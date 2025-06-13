@@ -1,4 +1,4 @@
-import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils';
+import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils/request';
 
 const baseUrl = '/inter-api/supos/event';
 
@@ -20,17 +20,11 @@ export const deployFlow = async (data: any) => api.post('/flow/deploy', data);
 
 // 保存流程
 export const saveFlow = async (data: any) => api.put('/flow/save', data);
-// 拓扑图跳转
-export const goFlow = async (topic?: string) => api.get(`/flow/by/topic?t=${topic}`);
 
 // 查询流程列表,分页
 export const flowPage = async (params?: Record<string, unknown>) =>
   api.get('/flows', {
-    params: {
-      k: params?.k,
-      pageNo: params?.page,
-      pageSize: params?.pageSize,
-    },
+    params,
     [CustomAxiosConfigEnum.BusinessResponse]: true,
   });
 // 工作流程列表
@@ -38,7 +32,7 @@ export const processList = async () =>
   api.post(
     `/process/definition/pageList`,
     {
-      pageNo: 0,
+      pageNo: 1,
       pageSize: 99999,
     },
     {

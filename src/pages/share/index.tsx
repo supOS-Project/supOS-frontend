@@ -1,6 +1,6 @@
-import { getSearchParamsObj } from '@/utils';
 import NotFoundPage from '@/pages/not-found-Page';
 import './index.scss';
+import { getSearchParamsObj } from '@/utils/url-util';
 
 const Share = () => {
   const { url } = getSearchParamsObj(location?.search) || {};

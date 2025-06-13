@@ -1,7 +1,7 @@
 import { Image as AntImage, ImageProps } from 'antd';
 import { FC, useEffect, useState } from 'react';
 import defaultIconUrl from '@/assets/home-icons/default.svg';
-import { checkImageExists, getImageSrcByTheme } from '@/utils';
+import { checkImageExists, getImageSrcByTheme } from '@/utils/url-util';
 
 interface IconImageProps extends Partial<ImageProps> {
   theme: string;

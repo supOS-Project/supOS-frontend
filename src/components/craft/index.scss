@@ -12,3 +12,13 @@
   width: var(--cdm-c-width);
   height: var(--cdm-c-height);
 }
+
+.selected-row {
+  background-color: rgb(172 174 177) !important;
+}
+
+.carft-table {
+  .ant-table-thead {
+    display: none;
+  }
+}

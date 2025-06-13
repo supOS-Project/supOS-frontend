@@ -7,7 +7,9 @@ export { default as usePagination } from './usePagination';
 export { default as usePropsValue } from './usePropsValue';
 export { default as useRefreshLocalStorage } from './useRefreshLocalStorage';
 export { default as useTranslate } from './useTranslate';
+export { default as useFormValue } from './useFormValue';
+export { default as useSimpleRequest } from './useSimpleRequest';
 
 export * from './useGuideSteps';
 export * from './useMatchRouter';
-export * from './useTips.ts';
+export * from './useTips';

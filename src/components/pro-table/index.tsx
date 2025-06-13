@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Table, TableProps } from 'antd';
 import type { TableColumnsType } from 'antd';
+import classNames from 'classnames';
 import './index.scss';
+import { useTranslate } from '@/hooks';
 
 interface TitlePropsType {
   width?: number;
@@ -9,14 +11,32 @@ interface TitlePropsType {
   changeWidth: (width: number) => void;
 }
 
-interface ATableProps extends TableProps {
+export interface ATableProps extends TableProps {
   columns: TableColumnsType;
   resizeable?: boolean;
+  // 是否隐藏空白
+  hiddenEmpty?: boolean;
+  fixedPosition?: boolean; // 是否固定页码在底部
 }
+// 查找所有可滚动祖先元素（包括window）
+const findScrollParents = (element: HTMLElement | null): (HTMLElement | Window)[] => {
+  const parents: (HTMLElement | Window)[] = [];
+  let current = element;
 
+  while (current) {
+    parents.push(current);
+    const { overflow, overflowX, overflowY } = getComputedStyle(current);
+    if (/(auto|scroll)/.test(overflow + overflowX + overflowY)) {
+      break;
+    }
+    current = current.parentElement;
+  }
+  // 添加window作为可能的滚动容器
+  parents.push(window);
+  return parents;
+};
 const ResizableTitle: React.FC<Readonly<React.HTMLAttributes<any> & TitlePropsType>> = (props) => {
-  const { changeWidth, width, minWidth = 60, children, ...restProps } = props;
-
+  const { changeWidth, width, minWidth = 100, children, ...restProps } = props;
   const [tableRect, setTableRect] = useState<DOMRect | null>(null);
   const isResizingRef: any = useRef(false);
   const thRef = useRef<HTMLTableHeaderCellElement>(null);
@@ -39,7 +59,6 @@ const ResizableTitle: React.FC<Readonly<React.HTMLAttributes<any> & TitlePropsTy
     thStartXRef.current = e.clientX;
     // 拖拽开始时记录当前鼠标的x坐标与th最右侧的x坐标的差值
     diffXRef.current = e.clientX - currentX + 1;
-
     highLineRef.current.style.left = currentX - 1 + 'px';
     document.body.style.cursor = 'col-resize';
     document.addEventListener('mousemove', handleMouseMove);
@@ -52,7 +71,6 @@ const ResizableTitle: React.FC<Readonly<React.HTMLAttributes<any> & TitlePropsTy
 
   const handleMouseMove = (e: any) => {
     if (!isResizingRef.current || !thRef.current) return;
-
     //实际宽度 = th的宽度 + 鼠标移动的距离 - 鼠标按下时的x坐标
     const realWidth = thRef.current?.clientWidth + e.clientX - thStartXRef.current;
     //记录当前th的最左侧的x坐标
@@ -67,6 +85,10 @@ const ResizableTitle: React.FC<Readonly<React.HTMLAttributes<any> & TitlePropsTy
   };
 
   const handleMouseUp = () => {
+    if (highLineRef.current) {
+      //移除高亮线
+      document.body?.removeChild(highLineRef.current);
+    }
     isResizingRef.current = false;
     document.body.style.cursor = '';
     //鼠标抬起的时候再改变宽度
@@ -75,8 +97,6 @@ const ResizableTitle: React.FC<Readonly<React.HTMLAttributes<any> & TitlePropsTy
     document.removeEventListener('mouseup', handleMouseUp);
     // 拖拽结束时恢复文本选择功能
     changeBodyUserSelect('');
-    //移除高亮线
-    document.body.removeChild(highLineRef.current);
   };
 
   useEffect(() => {
@@ -92,53 +112,89 @@ const ResizableTitle: React.FC<Readonly<React.HTMLAttributes<any> & TitlePropsTy
   }, [tableRect]);
 
   useEffect(() => {
-    if (thRef.current) {
-      // if (thRef.current.clientWidth) {
-      //   changeWidth(thRef.current.clientWidth);
-      // }
-      const tableContainer: any = thRef.current.closest('.ant-table-container');
-      if (tableContainer) {
-        const rect = tableContainer.getBoundingClientRect();
-        setTableRect(rect);
-      }
-      // 创建更新函数
-      const updateSize = () => {
-        const rect: any = tableContainer?.getBoundingClientRect();
-        setTableRect(rect);
-      };
-      updateSize();
-      // 创建 ResizeObserver 监听
-      const observer = new ResizeObserver(updateSize);
-      observer.observe(tableContainer);
-      return () => {
-        observer.disconnect();
-        highLineRef.current = null;
-      };
+    if (!thRef.current) return;
+    // if (thRef.current.clientWidth) {
+    //   changeWidth(thRef.current.clientWidth);
+    // }
+    const tableContainer: any = thRef.current.closest('.ant-table-container');
+    if (!tableContainer) return;
+    const updateSize = () => {
+      const rect = tableContainer.getBoundingClientRect();
+      setTableRect(rect);
+    };
+    // 初始化尺寸
+    updateSize();
+    // 监听容器尺寸变化
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(tableContainer);
+    // 监听滚动事件
+    const scrollParents = findScrollParents(tableContainer);
+    const handleScroll = () => {
+      updateSize(); // 滚动时更新位置
+    };
 
-      // const parentElement = thRef.current.parentNode as HTMLElement;
-      // if (parentElement?.parentNode?.parentNode) {
-      //   const tableElement = parentElement.parentNode.parentNode as HTMLElement;
-      //   setTableRect(tableElement.getBoundingClientRect());
-      //   console.log(tableElement.getBoundingClientRect(), 'xxx');
-      // }
-      // if (minWidth && minWidth > thRef.current.clientWidth) {
-      //   changeWidth(minWidth);
-      // }
-    }
+    scrollParents.forEach((parent: any) => {
+      if (parent instanceof Window) {
+        window.addEventListener('scroll', handleScroll, { passive: true });
+      } else {
+        parent.addEventListener('scroll', handleScroll, { passive: true });
+      }
+    });
+    return () => {
+      resizeObserver.disconnect();
+      scrollParents.forEach((parent: any) => {
+        if (parent instanceof Window) {
+          window.removeEventListener('scroll', handleScroll);
+        } else {
+          (parent as HTMLElement).removeEventListener('scroll', handleScroll);
+        }
+      });
+    };
   }, []);
+
+  useEffect(() => {
+    if (!highLineRef.current || !tableRect) return;
+    // 动态更新高亮线位置
+    highLineRef.current.style.height = `${tableRect.height}px`;
+    highLineRef.current.style.top = `${tableRect.top}px`;
+  }, [tableRect]);
 
   return (
     <th {...restProps} ref={thRef} title={Array.isArray(children) && children.length > 1 ? children[1] : undefined}>
       {children}
+
       <div className="react-resizable-line" onMouseDown={handleMouseDown} />
     </th>
   );
 };
 
-const ProTable: React.FC<ATableProps> = ({ resizeable, columns, components, scroll, ...restProps }) => {
+const ProTable: React.FC<ATableProps> = ({
+  resizeable,
+  columns,
+  components,
+  scroll,
+  className,
+  hiddenEmpty,
+  pagination,
+  fixedPosition,
+  ...restProps
+}) => {
+  const formatMessage = useTranslate();
+
   const [resizeColumns, setResizeColumns] = useState<TableColumnsType>(columns);
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const containerWidthRef = useRef(0);
+
+  const newPagination = pagination
+    ? {
+        total: pagination?.total,
+        showTotal: (total: number) => `${formatMessage('common.total')}  ${total}  ${formatMessage('common.items')}`,
+        style: { display: 'flex', justifyContent: 'flex-end', padding: '10px 0' },
+        pageSize: 20,
+        showQuickJumper: true,
+        ...pagination,
+      }
+    : pagination;
 
   // 计算有效列宽总和（排除固定列的潜在样式误差）
   const calculateEffectiveWidth = (cols: TableColumnsType) => {
@@ -260,25 +316,39 @@ const ProTable: React.FC<ATableProps> = ({ resizeable, columns, components, scro
       changeWidth: handleResize(index),
     }),
   }));
-
+  const _classNames = classNames(className, 'pro-table', {
+    'resizable-table': resizeable,
+    'hidden-empty': hiddenEmpty && restProps?.dataSource?.length === 0,
+    'fixed-pagination-bottom': fixedPosition,
+  });
   return resizeable ? (
     <div ref={tableWrapRef}>
       <Table
         rowKey="id"
         size={'small'}
         {...restProps}
-        className="resizable-table"
+        className={_classNames}
         columns={mergedColumns}
+        pagination={newPagination}
         scroll={{
-          ...scroll,
           x: 'max-content',
+          ...scroll,
         }}
         components={{ ...components, header: { cell: ResizableTitle } }}
         tableLayout="fixed"
       />
     </div>
   ) : (
-    <Table rowKey="id" {...restProps} components={components} scroll={scroll} columns={columns} />
+    <Table
+      rowKey="id"
+      size={'small'}
+      {...restProps}
+      className={_classNames}
+      components={components}
+      scroll={scroll}
+      columns={columns}
+      pagination={newPagination}
+    />
   );
 };
 

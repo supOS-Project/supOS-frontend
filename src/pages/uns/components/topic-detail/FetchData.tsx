@@ -2,10 +2,10 @@ import { FC, useState } from 'react';
 import styles from './FetchData.module.scss';
 import { Flex, Tabs } from 'antd';
 import { useTranslate } from '@/hooks';
-import { ComCopyContent, ComCodeSnippet } from '@/components';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
-import { observer } from 'mobx-react-lite';
-import { sqlKeywordsRegex } from '@/utils';
+import ComCodeSnippet from '@/components/com-code-snippet';
+import ComCopyContent from '@/components/com-copy/ComCopyContent';
+import { sqlKeywordsRegex } from '@/utils/pattern';
+import { useBaseStore } from '@/stores/base';
 
 const apikey = '4174348a-9222-4e81-b33e-5d72d2fd7f1e';
 
@@ -101,11 +101,12 @@ const HistoryData = ({ instanceInfo }: any) => {
   );
 };
 
-const RealtimeData = observer(({ instanceInfo }: any) => {
-  const routesStore = useRoutesContext();
-  const wsPort = routesStore?.systemInfo?.mqttWebsocketTslPort ?? window.location.port;
-  const multipleTopicPre = routesStore?.systemInfo?.multipleTopic === false ? '' : '_rs/';
-  const tcpPort = routesStore?.systemInfo?.mqttTcpPort ?? window.location.port;
+const RealtimeData = ({ instanceInfo }: any) => {
+  const systemInfo = useBaseStore((state) => state.systemInfo);
+  const wsPort = systemInfo?.mqttWebsocketTslPort ?? window.location.port;
+  const multipleTopicPre = '';
+  const topic = instanceInfo.topic;
+  const tcpPort = systemInfo?.mqttTcpPort ?? window.location.port;
   const hostName = window.location.hostname;
   const formatMessage = useTranslate();
   const [tab, setTab] = useState('js');
@@ -125,7 +126,7 @@ const client = mqtt.connect(connectUrl, options);
 
 client.on('connect', function () {
   console.log('Connected');
-  client.subscribe('${multipleTopicPre}${instanceInfo.topic}', function (err) {
+  client.subscribe('${multipleTopicPre}${topic}', function (err) {
     console.log(err)
   });
 });
@@ -145,7 +146,7 @@ client.on('message', function (topic, message) {
         // ${formatMessage('uns.mqttClientId')}
         String clientId = "JavaDemoClient2";
         // ${formatMessage('uns.mqttTopic')}
-        String topic = "${multipleTopicPre}${instanceInfo.topic}";
+        String topic = "${multipleTopicPre}${topic}";
         // ${formatMessage('uns.mqttQos')}
         int qos = 1;
 
@@ -228,10 +229,7 @@ client.on('message', function (topic, message) {
                 <Flex gap={14} vertical>
                   <ComCopyContent label={formatMessage('uns.MQTTUrl')} textToCopy={`wss://${hostName}`} />
                   <ComCopyContent label={formatMessage('uns.MQTTPort')} textToCopy={wsPort} />
-                  <ComCopyContent
-                    label={formatMessage('uns.topic')}
-                    textToCopy={`${multipleTopicPre}${instanceInfo?.topic}`}
-                  />
+                  <ComCopyContent label={formatMessage('uns.topic')} textToCopy={`${multipleTopicPre}${topic}`} />
                   <ComCopyContent label={formatMessage('uns.dependent')} textToCopy={'npm install mqtt'} />
                 </Flex>
               ),
@@ -243,10 +241,7 @@ client.on('message', function (topic, message) {
                 <Flex gap={14} vertical>
                   <ComCopyContent label={formatMessage('uns.MQTTUrl')} textToCopy={`tcp://${hostName}`} />
                   <ComCopyContent label={formatMessage('uns.MQTTPort')} textToCopy={tcpPort} />
-                  <ComCopyContent
-                    label={formatMessage('uns.topic')}
-                    textToCopy={`${multipleTopicPre}${instanceInfo?.topic}`}
-                  />
+                  <ComCopyContent label={formatMessage('uns.topic')} textToCopy={`${multipleTopicPre}${topic}`} />
                   <ComCopyContent label={formatMessage('uns.dependent')} textToCopy={jb} />
                 </Flex>
               ),
@@ -261,7 +256,7 @@ client.on('message', function (topic, message) {
       </div>
     </div>
   );
-});
+};
 
 const FetchData: FC<any> = ({ instanceInfo }) => {
   const formatMessage = useTranslate();

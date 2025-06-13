@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, FC } from 'react';
 import { Graph, Markup } from '@antv/x6';
 import { register } from '@antv/x6-react-shape';
-import { ApplicationWeb, Launch } from '@carbon/icons-react';
+import { ApplicationWeb, Launch, InformationFilled, CautionInverted } from '@carbon/icons-react';
 import tdengine from '@/assets/home-icons/tdengine.png';
 import postgresql from '@/assets/home-icons/postgresql.svg';
 import nodeRed from '@/assets/home-icons/node-red.svg';
@@ -9,62 +9,107 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslate } from '@/hooks';
 import styles from './TopologyChart.module.scss';
 import { goFlow } from '@/apis/inter-api/flow';
-// import { Button, Tooltip } from 'antd';
-import { Button } from 'antd';
-import { ComFormula } from '@/components';
+import { Button, Tooltip } from 'antd';
 import { getTopologyStatus } from '@/apis/inter-api/uns';
 import c2 from '@/assets/uns/cw.svg';
 import error from '@/assets/uns/error.svg';
 import ReactDOM from 'react-dom/client'; // React 18 使用 'react-dom/client'
-import { getSearchParamsString, simpleFormat, formatTimestamp } from '@/utils';
 import { debounce } from 'lodash';
 import md5 from 'blueimp-md5';
 import { useDeepCompareEffect } from 'ahooks';
 import classNames from 'classnames';
-import I18nStore from '@/stores/i18n-store';
 import { getRefreshList, getSourceList } from '@/apis/chat2db';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
 import timescaleDB from '@/assets/home-icons/timescaleDB.svg';
-
-const Modbus = (data: any) => {
-  const { protocol } = data.node.data.protocol || {};
-  return (
-    <div
-      className={classNames(styles['common-node'], styles['common-node-hover'], {
-        [styles['activeBg']]: data.node.data.active,
-      })}
-    >
-      {protocol == 'rest' ? 'Restful API' : protocol || 'Input'}
-    </div>
-  );
-};
+import ComFormula from '@/components/com-formula';
+import ProTable from '@/components/pro-table';
+import { simpleFormat, formatTimestamp } from '@/utils/format';
+import { getSearchParamsString } from '@/utils/url-util';
+import { useBaseStore } from '@/stores/base';
 
 const NodeRed: FC<any> = (data) => {
+  //TODO: 临时处理，后续需要修改
+  console.log('data', data);
+  const connected = false;
+  const statusColor = connected ? '#4CAF50' : '#B1973B';
+  console.log('NodeRed status:', data.node.data.flowStatus, connected);
+  const formatMessage = useTranslate();
+  const tooltipContent = () => {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <InformationFilled style={{ color: 'var(--supos-theme-color)', marginRight: 4, width: 30, height: 30 }} />
+          <div>
+            <span style={{ color: 'var(--supos-text-color)', fontWeight: 600, fontSize: 12 }}>
+              {formatMessage('common.nextStep')}:
+            </span>
+            <span style={{ color: 'var(--supos-text-color)', fontSize: 12 }}>
+              {formatMessage('common.clickSourceFlow')}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
   return (
-    <div
-      className={classNames(styles['common-node'], styles['common-node-hover'], {
-        [styles['activeBg']]: data.node.data.active,
-      })}
-    >
-      <img src={nodeRed} alt="" width="28px" />
-      {I18nStore.getIntl('common.nodeRed', 'Node-Red')}
+    <div id="node-red-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <Tooltip
+        title={tooltipContent()}
+        open={data.node && !connected}
+        placement="topRight"
+        color="var(--supos-bg-color)"
+        styles={{
+          body: {
+            position: 'relative',
+            right: -100,
+            backgroundColor: '#fff',
+            borderRadius: 2,
+            padding: 8,
+          },
+        }}
+        getPopupContainer={() => document.getElementById('node-red-container') as HTMLElement}
+      >
+        <div
+          className={classNames(styles['common-node'], styles['common-node-hover'], {
+            [styles['activeBg']]: data.node.data.active,
+          })}
+          style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+        >
+          <img src={nodeRed} alt="" width="28px" />
+          <div className={styles['common-node-content']}>
+            <span className={styles['common-node-subtitle']}>{formatMessage('common.nodeRed', 'Node-Red')}</span>
+            <span className={styles['common-node-title']}>{formatMessage('uns.autoFlow', 'Source Flow')}</span>
+          </div>
+          <div className={styles['common-node-btn']} data-action="navigate">
+            <Launch size={20} />
+          </div>
+          <div className={styles['status-indicator']}>
+            <span className={styles['status-dot']} style={{ background: statusColor }} />
+            {formatMessage(connected ? 'common.connected' : 'common.unconnected')}
+          </div>
+        </div>
+      </Tooltip>
     </div>
   );
 };
 
 const Mqtt = (data: any) => {
+  const mqttBrokeType = useBaseStore((state) => state.mqttBrokeType);
   return (
     <div
       className={classNames(styles['common-node'], styles['common-node-hover'], {
         [styles['activeBg']]: data.node.data.active,
       })}
     >
-      MQTT Broker
+      <div className={styles['common-node-content']}>
+        <span className={styles['common-node-subtitle']}>{mqttBrokeType?.toUpperCase() || 'EMQX'}</span>
+        <span className={styles['common-node-title']}>MQTT Broker </span>
+      </div>
     </div>
   );
 };
 const TDEngine = (data: any) => {
-  const { dataBaseType } = useRoutesContext();
+  const dataBaseType = useBaseStore((state) => state.dataBaseType);
+  console.log(data);
   return (
     <div
       className={classNames(styles['common-node'], styles['common-node-hover'], {
@@ -74,12 +119,28 @@ const TDEngine = (data: any) => {
       {data.node.data.dataType === 2 ? (
         <>
           <img src={postgresql} alt="" width="28px" />
-          PostgreSQL
+          <div className={styles['common-node-content']}>
+            <span className={styles['common-node-subtitle']}>PostgreSQL</span>
+            <span className={styles['common-node-title']}>Relational DB</span>
+          </div>
+          <div className={styles['common-node-btn']} data-action="navigate">
+            <Launch size={20} />
+          </div>
         </>
       ) : (
         <>
           <img src={dataBaseType.includes('tdengine') ? tdengine : timescaleDB} width="28px" />
-          {dataBaseType.includes('tdengine') ? 'TDEngine' : 'TimescaleDB'}
+          {dataBaseType.includes('tdengine') ? (
+            <div className={styles['common-node-content']}>
+              <span className={styles['common-node-subtitle']}>TimescaleDB</span>
+              <span className={styles['common-node-title']}>TDengine</span>
+            </div>
+          ) : (
+            <div className={styles['common-node-content']}>
+              <span className={styles['common-node-subtitle']}>TimescaleDB</span>
+              <span className={styles['common-node-title']}>Database</span>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -93,42 +154,19 @@ const Apps = (data: any) => {
       })}
     >
       <ApplicationWeb size={28} />
-      Grafana
+      <div className={styles['common-node-content']}>
+        <span className={styles['common-node-subtitle']}>Grafana</span>
+        <span className={styles['common-node-title']}>Dashboard</span>
+      </div>
+      <div className={styles['common-node-btn']} data-action="navigate">
+        <Launch size={20} />
+      </div>
     </div>
   );
 };
-const Modbus1: FC<any> = ({ instanceInfo }) => {
-  const formatMessage = useTranslate();
-  return (
-    <table className={styles['customTable']} border={1} cellSpacing="1">
-      <thead>
-        <tr>
-          <td style={{ width: '30%' }}>{formatMessage('uns.serverDetail')}</td>
-          <td>{formatMessage('uns.content')}</td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>{formatMessage('common.serverName')}</td>
-          <td>{instanceInfo.protocol?.serverName}</td>
-        </tr>
-        <tr>
-          <td>{formatMessage('common.host')}</td>
-          <td>{instanceInfo.protocol?.server?.host}</td>
-        </tr>
-        {instanceInfo.protocol?.server?.port !== 'opcda' && (
-          <tr>
-            <td>{formatMessage('common.port')}</td>
-            <td>{instanceInfo.protocol?.server?.port}</td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  );
-};
+
 const NodeRedTable: FC<any> = ({ flowList }) => {
   const formatMessage = useTranslate();
-  const navigate = useNavigate();
 
   return (
     <div style={{ width: '100%', display: 'contents' }}>
@@ -136,47 +174,51 @@ const NodeRedTable: FC<any> = ({ flowList }) => {
         flowList?.map((item: any, index: number) => {
           return (
             <div key={index} style={{ width: '100%' }}>
-              <div style={{ width: '100%' }} className={styles['name']}>
-                {item?.flowName}
+              <div style={{ width: '100%', marginBottom: 12 }} className={styles['name']}>
+                <CautionInverted style={{ marginRight: 8, width: 10, height: 10 }} />
+                {formatMessage('uns.autoFlow', 'Source Flow')}
               </div>
-              <table className={styles['customTable']} border={1} cellSpacing="1">
-                <thead>
-                  <tr>
-                    <td style={{ width: '30%' }}>{formatMessage('uns.collectionFlowDetail')}</td>
-                    <td>{formatMessage('uns.content')}</td>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>{formatMessage('uns.CollectionFlowName')}</td>
-                    <td>{item?.flowName}</td>
-                  </tr>
-                  <tr>
-                    <td>{formatMessage('uns.flowTemplate')}</td>
-                    <td>{item?.template}</td>
-                  </tr>
-                  <tr>
-                    <td>{formatMessage('uns.description')}</td>
-                    <td>{item?.Description}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className={styles['btn']}>
-                <Button
-                  color="default"
-                  variant="filled"
-                  style={{ marginTop: '10px', width: '100px' }}
-                  icon={<Launch />}
-                  iconPosition="end"
-                  onClick={() => {
-                    navigate(
-                      `/flow-editor?${getSearchParamsString({ id: item.id, name: item.flowName, status: item.flowStatus, flowId: item.flowId })}`
-                    );
-                  }}
-                >
-                  Node-RED
-                </Button>
-              </div>
+              <ProTable
+                bordered
+                rowHoverable={false}
+                className={styles.customTable}
+                columns={[
+                  {
+                    title: formatMessage('uns.collectionFlowDetail'),
+                    dataIndex: 'label',
+                    key: 'label',
+                    width: '30%',
+                    render: (text: any) => <span className={styles.detailLabel}>{text}</span>,
+                  },
+                  {
+                    title: formatMessage('uns.content'),
+                    dataIndex: 'value',
+                    key: 'value',
+                    width: '70%',
+                    render: (value: any) => value || <span className={styles.empty}>-</span>,
+                  },
+                ]}
+                dataSource={[
+                  {
+                    key: 'flowName',
+                    label: formatMessage('uns.CollectionFlowName'),
+                    value: item?.flowName,
+                  },
+                  {
+                    key: 'template',
+                    label: formatMessage('uns.flowTemplate'),
+                    value: item?.template,
+                  },
+                  {
+                    key: 'description',
+                    label: formatMessage('uns.description'),
+                    value: item?.Description, // 注意大小写一致性
+                  },
+                ]}
+                pagination={false}
+                showHeader={true}
+                rowKey="key"
+              />
             </div>
           );
         })}
@@ -184,31 +226,51 @@ const NodeRedTable: FC<any> = ({ flowList }) => {
   );
 };
 const TdEngine1: FC<any> = ({ payload, dt = {}, instanceInfo }) => {
+  const systemInfo = useBaseStore((state) => state.systemInfo);
+  console.log(instanceInfo);
   const formatMessage = useTranslate();
   const navigate = useNavigate();
+  const columns: any = [
+    {
+      title: formatMessage('uns.key'),
+      dataIndex: 'key',
+      width: '30%',
+      render: (text: any) => <span className="payloadFirstTd">{text}</span>,
+    },
+    {
+      title: formatMessage('uns.value'),
+      dataIndex: 'value',
+      width: '30%',
+      render: (text: any) => simpleFormat(text),
+    },
+    {
+      title: formatMessage('common.latestUpdate'),
+      width: '35%',
+      dataIndex: 'updateTime',
+      render: (text: any) => formatTimestamp(text),
+    },
+  ];
+
+  const dataSource = payload
+    ? Object.keys(payload).map((key) => ({
+        key,
+        value: payload[key],
+        updateTime: dt?.[key],
+      }))
+    : [];
   return (
     <>
-      <table className={styles['customTable']} border={1} cellSpacing="1">
-        <thead>
-          <tr>
-            <td style={{ width: '30%' }}>{formatMessage('uns.key')}</td>
-            <td style={{ width: '30%' }}>{formatMessage('uns.value')}</td>
-            <td>{formatMessage('common.latestUpdate')}</td>
-          </tr>
-        </thead>
-        {payload && (
-          <tbody>
-            {Object.keys(payload || {}).map((key) => (
-              <tr key={key}>
-                <td className="payloadFirstTd">{key}</td>
-                <td>{simpleFormat(payload[key])}</td>
-                <td>{formatTimestamp(dt[key])}</td>
-              </tr>
-            ))}
-          </tbody>
-        )}
-      </table>
-      {instanceInfo?.dataType === 2 && instanceInfo?.alias && (
+      <ProTable
+        className={styles.customTable}
+        columns={columns}
+        dataSource={dataSource}
+        pagination={false}
+        rowKey="key"
+        hiddenEmpty
+        bordered
+        rowHoverable={false}
+      />
+      {systemInfo?.containerMap?.chat2db && instanceInfo?.dataType === 2 && instanceInfo?.alias && (
         <div className={styles['btn']}>
           <Button
             color="default"
@@ -246,25 +308,48 @@ const TdEngine1: FC<any> = ({ payload, dt = {}, instanceInfo }) => {
 };
 const Mqtt1: FC<any> = () => {
   const formatMessage = useTranslate();
+
+  const dataSource = [
+    {
+      key: 'front',
+      detail: formatMessage('uns.front'),
+      content: `ws://${window.location.hostname}:8083/mqtt`,
+    },
+    {
+      key: 'backend',
+      detail: formatMessage('uns.backend'),
+      content: `tcp://${window.location.hostname}:1883/mqtt`,
+    },
+  ];
+
+  const columns = [
+    {
+      title: formatMessage('common.detail'),
+      dataIndex: 'detail',
+      key: 'detail',
+      width: '30%',
+      render: (text: string) => <td className="payloadFirstTd">{text}</td>,
+    },
+    {
+      title: formatMessage('uns.content'),
+      dataIndex: 'content',
+      width: '70%',
+      key: 'content',
+    },
+  ];
+
   return (
-    <table className={styles['customTable']} border={1} cellSpacing="1">
-      <thead>
-        <tr>
-          <td style={{ width: '30%' }}>{formatMessage('common.detail')}</td>
-          <td>{formatMessage('uns.content')}</td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td className="payloadFirstTd">{formatMessage('uns.front')}</td>
-          <td>{`wss://${window.location.hostname}:8084/mqtt`}</td>
-        </tr>
-        <tr>
-          <td className="payloadFirstTd">{formatMessage('uns.backend')}</td>
-          <td>{`tcp://${window.location.hostname}:1883/mqtt`}</td>
-        </tr>
-      </tbody>
-    </table>
+    <ProTable
+      className={styles.customTable}
+      columns={columns}
+      dataSource={dataSource}
+      pagination={false}
+      showHeader={true}
+      rowKey="key"
+      rowHoverable={false}
+      bordered
+      hiddenEmpty
+    />
   );
 };
 
@@ -303,30 +388,40 @@ const Tables: FC<any> = ({ instanceInfo }) => {
     const valueRegex = new RegExp(item.value, 'g');
     resultStr = resultStr.replace(valueRegex, `${item.label}`);
   });
+  const columns = [
+    {
+      title: formatMessage('uns.variable'),
+      dataIndex: 'variable',
+      width: '30%',
+      render: (_: any, __: any, index: number) => formatMessage('uns.variable') + (index + 1),
+    },
+    {
+      title: formatMessage('uns.topic'),
+      dataIndex: 'topic',
+      width: '40%',
+      key: 'topic',
+    },
+    {
+      title: formatMessage('uns.key'),
+      dataIndex: 'field',
+      width: '30%',
+      key: 'field',
+    },
+  ];
 
   return (
     <div className={styles['Tables']}>
       <ComFormula fieldList={newd2} defaultOpenCalculator={false} value={resultStr} readonly={true} />
-      <table className={styles['customTable']} border={1} cellSpacing="1">
-        <thead>
-          <tr>
-            <td style={{ width: '30%' }}>{formatMessage('uns.variable')}</td>
-            <td>{formatMessage('uns.topic')}</td>
-            <td>{formatMessage('uns.key')}</td>
-          </tr>
-        </thead>
-        <tbody>
-          {uniqueArr.map((item: any, index: number) => {
-            return (
-              <tr key={index}>
-                <td>{formatMessage('uns.variable') + (index + 1)}</td>
-                <td>{item?.topic}</td>
-                <td>{item?.field}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <ProTable
+        className={styles.customTable}
+        columns={columns}
+        dataSource={uniqueArr}
+        bordered
+        pagination={false}
+        rowHoverable={false}
+        hiddenEmpty
+        rowKey={(_: any, index: any) => `row-${index}`}
+      />
     </div>
   );
 };
@@ -342,33 +437,27 @@ const ButtonError: FC<any> = () => {
   );
 };
 register({
-  shape: 'modbus1',
-  width: 150,
-  height: 40,
-  component: Modbus,
-});
-register({
   shape: 'nodeRed1',
-  width: 150,
-  height: 40,
+  width: 190,
+  height: 50,
   component: NodeRed,
 });
 register({
   shape: 'mqtt1',
   width: 150,
-  height: 40,
+  height: 50,
   component: Mqtt,
 });
 register({
   shape: 'tdEngine1',
-  width: 150,
-  height: 40,
+  width: 190,
+  height: 50,
   component: TDEngine,
 });
 register({
   shape: 'apps1',
-  width: 150,
-  height: 40,
+  width: 180,
+  height: 50,
   component: Apps,
 });
 
@@ -395,31 +484,24 @@ const markupLine = {
 
 const data = {
   nodes: [
-    // {
-    //   id: 'modbus1',
-    //   shape: 'modbus1',
-    //   x: 0,
-    //   y: 0,
-    //   data: {
-    //     name: '',
-    //     protocol: {},
-    //     active: false,
-    //   },
-    // },
     {
       id: 'nodeRed1',
       shape: 'nodeRed1',
-      x: 210,
+      x: 250,
       y: 0,
       data: {
         topic: '',
         active: false,
+        id: '',
+        flowId: '',
+        flowStatus: '',
+        flowName: '',
       },
     },
     {
       id: 'mqtt1',
       shape: 'mqtt1',
-      x: 420,
+      x: 480,
       y: 0,
       data: {
         active: false,
@@ -428,17 +510,18 @@ const data = {
     {
       id: 'tdEngine1',
       shape: 'tdEngine1',
-      x: 630,
+      x: 680,
       y: 0,
       data: {
         dataType: 1,
         active: false,
+        alias: '',
       },
     },
     {
       id: 'apps1',
       shape: 'apps1',
-      x: 840,
+      x: 910,
       y: 0,
       data: {
         active: false,
@@ -446,19 +529,6 @@ const data = {
     },
   ],
   edges: [
-    // {
-    //   shape: 'edge',
-    //   source: 'modbus1',
-    //   target: 'nodeRed1',
-    //   id: 'pushOriginalData',
-    //   attrs: {
-    //     // line 是选择器名称，选中的边的 path 元素
-    //     line: { ...commonLine },
-    //   },
-    //   label: {
-    //     position: 0,
-    //   },
-    // },
     {
       shape: 'edge',
       source: 'nodeRed1',
@@ -500,7 +570,7 @@ const data = {
 
 const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   const graphRef = useRef<any>(null);
-  const { dashboardType } = useRoutesContext();
+  const dashboardType = useBaseStore((state) => state.dashboardType);
   const [active, setActive] = useState<any>('');
   const containerRef = useRef<HTMLDivElement>(null);
   const [datas, setDatas] = useState<any>([]);
@@ -510,7 +580,7 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   const [activeInfo, setActiveInfo] = useState<any>();
   const [errorState, setErrorState] = useState<any>(false);
   const navigate = useNavigate();
-  function findDate({ dataType, withSave2db }: any) {
+  function findDate({ dataType, withSave2db, withDashboard }: any) {
     const _data = data;
     // _data.nodes[3].data.dataType = dataType;
     if (dataType == 3) {
@@ -525,7 +595,7 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
         edges: _data.edges.slice(0, -2),
       });
     }
-    if (withSave2db && !dashboardType?.includes('grafana')) {
+    if (withSave2db && (!dashboardType?.includes('grafana') || !withDashboard)) {
       return Object.assign({}, _data, {
         nodes: _data.nodes.slice(0, -1),
         edges: _data.edges.slice(0, -1),
@@ -563,7 +633,7 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   // 轮询获取拓扑图状态
   const getTopologyState = async () => {
     getTopologyStatus({
-      topic: instanceInfo?.topic || '',
+      id: instanceInfo?.id || '',
     }).then((res: any) => {
       const flag = res.filter((item: any) => item.eventCode != '0');
       if (flag.length > 0) {
@@ -571,7 +641,6 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
       } else {
         setErrorState(false);
       }
-
       const sortedData = res.sort(compareByXxOrder);
       for (let i = 0; i < sortedData.length; i++) {
         if (sortedData[i].eventCode !== '0') {
@@ -581,7 +650,6 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
           break; // 找到第一个eventCode不等于0的元素并处理后就可以退出循环了
         }
       }
-
       //合并pullMqtt和dataPersistence的报错信息
       const errNode = sortedData.find((e: any) => e.eventCode !== '0');
       if (errNode && ['pullMqtt', 'dataPersistence'].includes(errNode.topologyNode)) {
@@ -602,7 +670,6 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
         eventTime: null,
         marked: errNode ? true : false,
       });
-
       modeState.current = sortedData;
       data.edges.map((item: any) => {
         sortedData.map((item2: any) => {
@@ -629,8 +696,29 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
     }
   }, 200); // 防抖 200 毫秒
   // 为节点绑定点击事件
-  const nodeClickFn = ({ cell }: any) => {
-    if (cell?.id === 'apps1' && dashboardType?.includes('grafana')) {
+  const nodeClickFn = ({ cell, e }: any) => {
+    const target = e.target as HTMLElement;
+    const launchButton = target.closest('[data-action="navigate"]');
+
+    if (cell?.id === 'nodeRed1' && launchButton) {
+      navigate(
+        `/collection-flow/flow-editor?${getSearchParamsString({
+          id: cell.data.id,
+          name: cell.data.flowName,
+          status: cell.data.flowStatus,
+          flowId: cell.data.flowId,
+        })}`
+      );
+      return;
+    }
+
+    if (cell?.id === 'tdEngine1' && cell.data.dataType === 2 && launchButton) {
+      navigate(
+        `/SQLEditor?dataSourceName=@postgresql&databaseName=postgres&databaseType=POSTGRESQL&schemaName=public&tableName=${cell.data.alias}`
+      );
+      return;
+    }
+    if (cell?.id === 'apps1' && dashboardType?.includes('grafana') && launchButton) {
       navigate('/grafana-design', { state: { url: getAppsLink(instanceInfo), name: 'GrafanaDesign' } });
       return;
     }
@@ -671,9 +759,9 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   };
 
   // 更新 Topology 数据
-  const fetchTopologyData = async (topic: any) => {
+  const fetchTopologyData = async (alias: string) => {
     try {
-      const result = await goFlow(topic);
+      const result = await goFlow(alias);
       setDatas(result);
     } catch (error) {
       console.error('Error fetching topology data:', error);
@@ -687,19 +775,33 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   };
 
   // 获取并更新图表数据
-  const updateGraphData = (instanceInfo: any) => {
+  const updateGraphData = (instanceInfo: any, flowList?: any[]) => {
     const { nodes, edges } = findDate(instanceInfo) || { nodes: [], edges: [] };
     modeState.current = [];
+    console.log('flowList', flowList);
+    console.log('instanceInfo', instanceInfo);
     if (graphRef.current) {
       // 清理现有的节点和边
-      nodes.forEach((node) => graphRef.current.addNode(node));
-      edges.forEach((edge) => graphRef.current.addEdge(edge));
-      const graphNode = graphRef.current.getCellById('modbus1');
-      if (graphNode) {
-        graphNode.setData({
-          protocol: instanceInfo.protocol,
-        });
-      }
+      graphRef.current.clearCells();
+      nodes.forEach((node) => {
+        console.log('node', node);
+        //更新nodeRed1节点数据
+        if (node.id === 'nodeRed1') {
+          node.data.id = flowList?.[0]?.id || '';
+          node.data.flowStatus = flowList?.[0]?.flowStatus || '';
+          node.data.flowId = flowList?.[0]?.flowId || '';
+          node.data.flowName = flowList?.[0]?.flowName || '';
+          node.data.active = true;
+          setActive('nodeRed1');
+        } else if (node.id === 'tdEngine1') {
+          node.data.dataType = instanceInfo?.dataType;
+          node.data.alias = instanceInfo?.alias;
+        }
+        graphRef.current.addNode(node);
+      });
+      edges.forEach((edge) => {
+        graphRef.current.addEdge(edge);
+      });
     }
   };
 
@@ -755,18 +857,20 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   useDeepCompareEffect(() => {
     graphRef.current?.clearCells();
     setActive('');
-    fetchTopologyData(instanceInfo?.topic);
+    fetchTopologyData(instanceInfo?.alias);
     if (!graphRef.current || !instanceInfo) return;
+
     // 设置轮询
     interls.current = setInterval(() => {
       getTopologyStateData();
     }, 2000);
-    // 更新图表数据
-    updateGraphData(instanceInfo);
+
+    // 只在这里调用一次
+    updateGraphData(instanceInfo, datas);
+
     // 设置事件监听器
     graphRef.current.on('node:click', nodeClickFn);
     graphRef.current.on('edge:click', edgeClickFn);
-
     // 清理事件监听器
     return () => {
       if (graphRef.current) {
@@ -776,14 +880,13 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
       clearInterval(interls.current);
       interls.current = null;
     };
-  }, [instanceInfo]);
+  }, [instanceInfo, datas]);
   return (
     <div className={styles['detailTopologyWrap']}>
       <div className={styles['detailTopologyContent']} ref={containerRef} />
-      {(['modbus1', 'tdEngine1', 'mqtt1'].includes(active) || (active === 'nodeRed1' && datas?.length > 0)) && (
+      {(['tdEngine1', 'mqtt1'].includes(active) || (active === 'nodeRed1' && datas?.length > 0)) && (
         <div className={styles['detailTable']}>
           {active === 'mqtt1' && instanceInfo.dataType == 3 && <Tables instanceInfo={instanceInfo} />}
-          {active == 'modbus1' ? <Modbus1 instanceInfo={instanceInfo} /> : ''}
           {active == 'nodeRed1' ? <NodeRedTable flowList={datas} /> : ''}
           {active == 'tdEngine1' ? <TdEngine1 payload={payload} instanceInfo={instanceInfo} dt={dt} /> : ''}
           {active == 'mqtt1' && instanceInfo.dataType != 3 ? <Mqtt1 /> : ''}
@@ -804,4 +907,5 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
     </div>
   );
 };
+
 export default TopologyChart;

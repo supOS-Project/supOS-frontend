@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { ProModal } from '@/components';
 import { Button, Flex } from 'antd';
 import { Launch } from '@carbon/icons-react';
 import { useTranslate } from '@/hooks';
-import './index.scss';
+import ProModal from '@/components/pro-modal';
 
 interface LabelItem {
   id: string | number;
@@ -24,8 +23,8 @@ const Module = ({ toTargetNode }: any) => {
   };
 
   const Dom = (
-    <ProModal className="viewLabelModalWrap" open={open} onCancel={close} title={formatMessage('uns.label')} size="xxs">
-      <Flex gap={10}>
+    <ProModal open={open} onCancel={close} title={formatMessage('common.label')} size="xxs">
+      <Flex gap={10} wrap>
         {labelList.map((label: LabelItem) => (
           <Button
             key={label.id}
@@ -35,16 +34,19 @@ const Module = ({ toTargetNode }: any) => {
             iconPosition="end"
             size="small"
             style={{
+              height: 'max-content',
+              minHeight: '24px',
+              maxWidth: '100%',
               border: '1px solid #CBD5E1',
               color: 'var(--supos-text-color)',
               backgroundColor: 'var(--supos-uns-button-color)',
             }}
             onClick={() => {
-              toTargetNode('label', { type: 9, path: label.id });
+              toTargetNode('label', { type: 9, id: label.id });
               close();
             }}
           >
-            {label.labelName}
+            <span style={{ maxWidth: '95%', whiteSpace: 'pre-wrap', textAlign: 'left' }}>{label.labelName}</span>
           </Button>
         ))}
       </Flex>

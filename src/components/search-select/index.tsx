@@ -1,11 +1,10 @@
 import { Close, Search } from '@carbon/icons-react';
-import { CSSProperties, FC } from 'react';
+import { CSSProperties, FC, useEffect, useRef } from 'react';
 import ComSelect from '../com-select';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
-import { observer } from 'mobx-react-lite';
 import { useMenuNavigate, usePropsValue, useTranslate } from '@/hooks';
 import { Space } from 'antd';
 import './index.scss';
+import { useBaseStore } from '@/stores/base';
 
 interface SearchSelectProps {
   onSearchCallback?: () => void;
@@ -15,8 +14,9 @@ interface SearchSelectProps {
 }
 
 const SearchSelect: FC<SearchSelectProps> = ({ onSearchCallback, value, onChange, selectStyle }) => {
-  const routesStore = useRoutesContext();
   const formatMessage = useTranslate();
+  const pickedRoutesOptionsNoChildrenMenu = useBaseStore((state) => state.pickedRoutesOptionsNoChildrenMenu);
+  const selectRef = useRef<any>(null);
 
   const handleNavigate = useMenuNavigate();
   const [isIcon, setIcon] = usePropsValue({
@@ -24,6 +24,11 @@ const SearchSelect: FC<SearchSelectProps> = ({ onSearchCallback, value, onChange
     onChange,
     defaultValue: true,
   });
+  useEffect(() => {
+    if (!isIcon) {
+      selectRef?.current?.focus();
+    }
+  }, [isIcon]);
 
   return isIcon ? (
     <div
@@ -39,9 +44,11 @@ const SearchSelect: FC<SearchSelectProps> = ({ onSearchCallback, value, onChange
   ) : (
     <Space.Compact block>
       <ComSelect
+        defaultOpen
+        ref={selectRef}
         variant="filled"
-        options={routesStore.pickedRoutesOptions}
-        placeholder={formatMessage('uns.inputText')}
+        options={pickedRoutesOptionsNoChildrenMenu}
+        placeholder={formatMessage('common.searchPage')}
         style={{ width: 180, height: '100%', ...selectStyle }}
         onChange={(_: any, options: any) => {
           handleNavigate(options);
@@ -69,4 +76,4 @@ const SearchSelect: FC<SearchSelectProps> = ({ onSearchCallback, value, onChange
   );
 };
 
-export default observer(SearchSelect);
+export default SearchSelect;

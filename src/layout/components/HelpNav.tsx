@@ -1,21 +1,19 @@
 import { useMemo } from 'react';
 import { Dropdown } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { useRoutesContext } from '@/contexts/routes-context';
 import { find, map } from 'lodash';
-import { storageOpt } from '@/utils';
 import { SUPOS_USER_GUIDE_ROUTES } from '@/common-types/constans';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { useTranslate } from '@/hooks';
 import { useTabsContext } from '@/contexts/tabs-context';
-import { observer } from 'mobx-react-lite';
 import { ItemType } from 'antd/es/menu/interface';
+import { storageOpt } from '@/utils/storage';
+import { setUserTipsEnable, useBaseStore } from '@/stores/base';
 
 const HelpNav = () => {
   const navigate = useNavigate();
   const { TabsContext } = useTabsContext();
-  const routesStore = useRoutesContext();
-  const userRoute = routesStore.pickedRoutes;
+  const userRoute = useBaseStore((state) => state.pickedRoutes);
   const formatMessage = useTranslate();
   const unsRoutePath = '/uns';
 
@@ -79,7 +77,7 @@ const HelpNav = () => {
 
   const handleUserGuide = ({ key }: any) => {
     if (key === 'tips') {
-      routesStore.setUserTipsEnable('1');
+      setUserTipsEnable('1');
     } else {
       let currentUserGuideRoute = storageOpt.get(SUPOS_USER_GUIDE_ROUTES);
       if (!currentUserGuideRoute) {
@@ -119,4 +117,4 @@ const HelpNav = () => {
     </Dropdown>
   );
 };
-export default observer(HelpNav);
+export default HelpNav;

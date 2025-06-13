@@ -1,19 +1,21 @@
-import { FC, useEffect, useState, Dispatch, SetStateAction } from 'react';
-import { ProModal } from '@/components';
+import { FC, useEffect, useState, Dispatch, SetStateAction, useRef } from 'react';
 import { Form, Select, Divider } from 'antd';
-import { ComRadio } from '@/components';
 import { useTranslate } from '@/hooks';
 import JsonForm from './source-form/json';
 import { getTypes } from '@/apis/inter-api/uns';
 
+import type { UnsTreeNode, InitTreeDataFnType } from '@/pages/uns/types';
+import ComRadio from '@/components/com-radio';
+import ProModal from '@/components/pro-modal';
+
 export interface ReverseModalProps {
-  currentPath: string;
+  currentNode?: UnsTreeNode;
   reverserOpen: boolean;
   setReverserOpen: Dispatch<SetStateAction<boolean>>;
-  initTreeData: (data: any, cb?: () => void) => void;
+  initTreeData: InitTreeDataFnType;
 }
 
-const ReverseModal: FC<ReverseModalProps> = ({ reverserOpen, setReverserOpen, currentPath, initTreeData }) => {
+const ReverseModal: FC<ReverseModalProps> = ({ reverserOpen, setReverserOpen, currentNode, initTreeData }) => {
   const [form] = Form.useForm();
   const formatMessage = useTranslate();
 
@@ -22,16 +24,20 @@ const ReverseModal: FC<ReverseModalProps> = ({ reverserOpen, setReverserOpen, cu
 
   const source = Form.useWatch('source', form) || form.getFieldValue('source');
 
+  const jsonFormRef = useRef<any>(null);
+
   const getSourceForm = () => {
     switch (source) {
       case 'json':
         return (
           <JsonForm
+            ref={jsonFormRef}
             formatMessage={formatMessage}
             types={types}
-            currentPath={currentPath}
+            currentNode={currentNode}
             close={close}
             fullScreen={fullScreen}
+            initTreeData={initTreeData}
           />
         );
       default:
@@ -40,7 +46,7 @@ const ReverseModal: FC<ReverseModalProps> = ({ reverserOpen, setReverserOpen, cu
   };
 
   const close = (refreshTree?: boolean) => {
-    if (refreshTree) initTreeData({});
+    if (refreshTree) initTreeData({ reset: true });
     setReverserOpen(false);
   };
 
@@ -58,7 +64,7 @@ const ReverseModal: FC<ReverseModalProps> = ({ reverserOpen, setReverserOpen, cu
     <ProModal
       title={formatMessage('uns.batchReverseGeneration')}
       draggable={false}
-      width={800}
+      width={1000}
       open={reverserOpen}
       onCancel={() => close()}
       maskClosable={false}
@@ -88,6 +94,9 @@ const ReverseModal: FC<ReverseModalProps> = ({ reverserOpen, setReverserOpen, cu
               { label: formatMessage('uns.timeSeries'), value: 1 },
               { label: formatMessage('uns.relational'), value: 2 },
             ]}
+            onClick={(e) => {
+              jsonFormRef?.current?.batchModifyDataType?.(e.target.value * 1);
+            }}
           />
         </Form.Item>
         <Form.Item name="source" label={formatMessage('uns.source')} rules={[{ required: true }]}>

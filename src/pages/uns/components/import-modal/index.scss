@@ -8,6 +8,15 @@
       border: none;
       background: var(--supos-charttop-bg-color);
     }
+
+    .ant-upload-list {
+      max-height: 300px;
+      overflow-y: auto;
+
+      .ant-upload-list-item-container {
+        overflow: hidden;
+      }
+    }
   }
 
   .loadingWrap {
@@ -18,13 +27,5 @@
     display: flex;
     align-items: center;
     justify-content: center;
-
-    .cds--inline-loading {
-      width: max-content;
-
-      .cds--inline-loading__text {
-        font-size: 16px;
-      }
-    }
   }
 }

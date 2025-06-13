@@ -102,12 +102,6 @@ $dark-color: #000;
           border-radius: 4px;
         }
       }
-
-      @media (width <= 65.98rem) {
-        .cds--side-nav__overlay-active {
-          display: none;
-        }
-      }
     }
 
     .navBottom {
@@ -208,12 +202,6 @@ $dark-color: #000;
 
   .navBottom {
     background: rgb(0 0 0 / 5%);
-
-    .swith {
-      .cds--toggle__text {
-        color: $dark-color;
-      }
-    }
   }
 
   .navHoverContent {
@@ -252,11 +240,6 @@ $dark-color: #000;
   &:active {
     background-color: rgb(141 141 141 / 50%);
   }
-}
-
-.cds--tree-node--active > .cds--tree-node__label::before {
-  // background-color: #1d77fe !important;
-  background-color: var(--supos-theme-color) !important;
 }
 
 .user-guide-icon {

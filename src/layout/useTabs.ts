@@ -1,8 +1,8 @@
 import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { useMatchRoute } from '@/hooks';
 import { Location } from 'react-router-dom';
-import { compareLocations } from '@/utils';
 import { useLocationNavigate } from '@/routers';
+import { compareLocations } from '@/utils/compare';
 
 export interface KeepAliveTab {
   title: ReactNode;
@@ -69,6 +69,7 @@ export function useTabs() {
         return;
       }
       const index = (keepAliveTabs || []).findIndex((o) => o.routePath === routePath);
+      if (index === -1) return;
       if (keepAliveTabs[index].routePath === activeTabRoutePath && keepAliveTabs.length > 1) {
         if (index > 0) {
           const { location } = keepAliveTabs[index - 1];

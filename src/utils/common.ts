@@ -51,3 +51,25 @@ export const copyToClipboard: (text: string, callback?: CopyCallback) => void = 
     document.body.removeChild(textarea);
   }
 };
+
+export function canModifyParentHref() {
+  try {
+    if (window.parent === window || !window.parent) {
+      return false;
+    }
+
+    const parentOrigin = window.parent.location.origin;
+    const currentOrigin = window.location.origin;
+
+    if (parentOrigin === currentOrigin) {
+      // 同域
+      return true;
+    }
+
+    return false;
+  } catch (e) {
+    console.log(e);
+    // 跨域
+    return -1;
+  }
+}

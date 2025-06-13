@@ -85,15 +85,21 @@ export const data = {
       x: 640,
       y: 280,
     },
+    // {
+    //   id: 'gui',
+    //   shape: 'gui',
+    //   x: 850,
+    //   y: 100,
+    // },
+    // {
+    //   id: 'apps',
+    //   shape: 'apps',
+    //   x: 850,
+    //   y: 160,
+    // },
     {
-      id: 'gui',
-      shape: 'gui',
-      x: 850,
-      y: 100,
-    },
-    {
-      id: 'apps',
-      shape: 'apps',
+      id: 'grafana',
+      shape: 'grafana',
       x: 850,
       y: 160,
     },
@@ -346,60 +352,60 @@ export const data = {
       },
     },
 
-    {
-      shape: 'edge',
-      source: 'postgreSQL',
-      target: 'gui',
-      vertices: [
-        { x: 820, y: 210 },
-        { x: 820, y: 120 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: {
-            name: 'circle',
-            r: 2,
-          },
-          targetMarker: { name: 'circle', r: 2 },
-
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {
-            animation: 'ant-line 60s infinite linear',
-          },
-        },
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'graphQL',
-      target: 'gui',
-      vertices: [
-        { x: 820, y: 300 },
-        { x: 820, y: 120 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: {
-            name: 'circle',
-            r: 2,
-          },
-          targetMarker: { name: 'circle', r: 2 },
-
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {
-            animation: 'ant-line 60s infinite linear',
-          },
-        },
-      },
-    },
+    // {
+    //   shape: 'edge',
+    //   source: 'postgreSQL',
+    //   target: 'gui',
+    //   vertices: [
+    //     { x: 820, y: 210 },
+    //     { x: 820, y: 120 },
+    //   ],
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: {
+    //         name: 'circle',
+    //         r: 2,
+    //       },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {
+    //         animation: 'ant-line 60s infinite linear',
+    //       },
+    //     },
+    //   },
+    // },
+    // {
+    //   shape: 'edge',
+    //   source: 'graphQL',
+    //   target: 'gui',
+    //   vertices: [
+    //     { x: 820, y: 300 },
+    //     { x: 820, y: 120 },
+    //   ],
+    //   attrs: {
+    //     // line 是选择器名称，选中的边的 path 元素
+    //     line: {
+    //       sourceMarker: {
+    //         name: 'circle',
+    //         r: 2,
+    //       },
+    //       targetMarker: { name: 'circle', r: 2 },
+    //
+    //       stroke: 'var(--supos-theme-color)',
+    //       strokeDasharray: 3,
+    //       style: {
+    //         animation: 'ant-line 60s infinite linear',
+    //       },
+    //     },
+    //   },
+    // },
     {
       shape: 'edge',
       source: 'tdEngine',
-      target: 'apps',
+      target: 'grafana',
       vertices: [
         { x: 820, y: 150 },
         { x: 820, y: 180 },
@@ -424,7 +430,7 @@ export const data = {
     {
       shape: 'edge',
       source: 'postgreSQL', //来源
-      target: 'apps', //目标
+      target: 'grafana', //目标
       vertices: [
         { x: 820, y: 210 },
         { x: 820, y: 180 },
@@ -449,7 +455,7 @@ export const data = {
     {
       shape: 'edge',
       source: 'graphQL',
-      target: 'apps',
+      target: 'grafana',
       vertices: [
         { x: 820, y: 300 },
         { x: 820, y: 180 },

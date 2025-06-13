@@ -2,7 +2,7 @@ export default {
   token: {
     borderRadius: 3,
     colorBgElevated: 'var(--supos-bg-color)',
-    colorFill: 'var(--supos-header-splitter-color)',
+    colorFill: 'var(--supos-color-fill)',
     colorTextPlaceholder: 'var(--supos-t-gray-color-30)',
     colorText: 'var(--supos-text-color)',
     colorTextDescription: 'var(--supos-text-color)',
@@ -102,7 +102,7 @@ export default {
     Table: {
       colorPrimary: 'var(--supos-theme-color)',
       colorBgContainer: 'var(--supos-bg-color)',
-      headerBg: 'var(--supos-charttop-bg-color)',
+      headerBg: 'var(--supos-table-head-color)',
       headerColor: 'var(--supos-text-color)',
       rowHoverBg: 'var(--supos-menu-hover-color)',
       headerBorderRadius: 0,
@@ -110,6 +110,7 @@ export default {
       headerFilterHoverBg: 'var(--supos-fill-secondary)',
       headerSortHoverBg: 'var(--supos-fill-secondary)',
       headerSortActiveBg: 'var(--supos-fill-secondary)',
+      borderColor: 'var(--supos-table-tr-color)',
     },
     Typography: {
       colorLink: 'var(--supos-theme-color)',
@@ -134,6 +135,14 @@ export default {
       nodeSelectedBg: 'var(--supos-select-active-color)',
       nodeHoverBg: 'var(--supos-fill-secondary)',
       colorBgContainer: 'var(--supos-bg-color)',
+    },
+    Switch: {
+      colorPrimary: 'var(--supos-theme-color)',
+      handleShadow: '',
+    },
+    Pagination: {
+      itemBg: 'var(--supos-bg-color)',
+      itemActiveBg: 'var(--supos-bg-color)',
     },
   },
 };

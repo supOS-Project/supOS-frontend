@@ -1,11 +1,28 @@
 .guide-home-classes.shepherd-element {
+  max-width: 670px;
+  padding: 16px;
+
+  &.shepherd-element[data-popper-placement='bottom'] {
+    margin-top: 0 !important;
+  }
+
   .shepherd-text {
-    padding: 10px;
+    padding: 0;
   }
 
   .shepherd-footer {
     flex-direction: column;
-    padding: 4px 80px 16px;
+    padding: 0 150px;
+
+    .shepherd-button {
+      height: 44px;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .home-guide-next {
+      margin: 0;
+    }
 
     .home-guide-next {
       margin: 0;
@@ -22,19 +39,24 @@
     height: auto;
   }
 
+  .guide-home-text {
+    padding: 24px 0;
+  }
+
   .guide-home-title {
     text-align: center;
     font-weight: bold;
     color: #000;
-    padding: 10px 0;
-    font-size: 16px;
+    margin: 0 0 10px;
+    font-size: 26px;
+    line-height: 34px;
   }
 
-  .guide-home-content {
+  .guide-home-info {
     text-align: center;
-    font-size: 12px;
-    line-height: 18px;
-    padding: 0 50px;
+    font-size: 16px;
+    line-height: 140%;
+    padding: 0 50px 20px;
   }
 }
 

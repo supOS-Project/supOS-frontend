@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useMatches, useOutlet, Location } from 'react-router-dom';
 import { useDeepCompareEffect } from 'ahooks';
+import { useTranslate } from '@/hooks';
 
 interface MatchRouteType {
   // 菜单名称
@@ -17,6 +18,10 @@ interface MatchRouteType {
   path: string;
   // location对象，存储起来用来二次导航
   location: Location;
+  // 模块联邦名称
+  moduleName?: string;
+  // 模块联邦父级菜单
+  parentPath?: string;
 }
 
 // 匹配路由，拿到信息
@@ -25,6 +30,7 @@ export function useMatchRoute(): MatchRouteType | undefined {
   const children = useOutlet();
   // 获取嵌套路由信息
   const matches = useMatches();
+  const formatMessage = useTranslate();
   // 获取当前url
   const location = useLocation();
 
@@ -38,12 +44,16 @@ export function useMatchRoute(): MatchRouteType | undefined {
     if (!lastRoute?.handle) return;
 
     setMatchRoute({
-      title: (lastRoute?.handle as any)?.name,
+      title: (lastRoute?.handle as any)?.menuNameKey
+        ? formatMessage((lastRoute?.handle as any)?.menuNameKey)
+        : (lastRoute?.handle as any)?.name,
       icon: (lastRoute?.handle as any)?.icon,
       path: (lastRoute?.handle as any)?.path,
       pathname: location.pathname,
       children,
       routePath: lastRoute?.pathname || '',
+      moduleName: (lastRoute?.handle as any)?.moduleName,
+      parentPath: (lastRoute?.handle as any)?.parentPath,
       location,
     });
   }, [location]);

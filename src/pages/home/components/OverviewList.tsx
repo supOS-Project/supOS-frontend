@@ -3,10 +3,9 @@ import { Divider, Flex, Spin, Typography } from 'antd';
 import { ChevronRight } from '@carbon/icons-react';
 import { RoutesProps } from '@/stores/types';
 import { useMenuNavigate } from '@/hooks';
-import { observer } from 'mobx-react-lite';
 import styles from '../index.module.scss';
-import { useThemeContext } from '@/contexts/theme-context.ts';
-import { IconImage } from '@/components';
+import IconImage from '@/components/icon-image';
+import { useThemeStore } from '@/stores/theme-store.ts';
 const { Paragraph } = Typography;
 
 interface MenuListProps {
@@ -50,7 +49,7 @@ const Item = ({ item, theme, iconName, type, customOptRender }: any) => {
 };
 const OverviewList: FC<MenuListProps> = ({ list, type, customOptRender, loadingViews }) => {
   const handleNavigate = useMenuNavigate();
-  const themeStore = useThemeContext();
+  const primaryColor = useThemeStore((state) => state.primaryColor);
 
   const handleClickItem = (item: RoutesProps) => {
     if (type === 'example') {
@@ -69,7 +68,7 @@ const OverviewList: FC<MenuListProps> = ({ list, type, customOptRender, loadingV
               <Flex align="center" gap={4}>
                 {item.iconComp || (
                   <IconImage
-                    theme={themeStore.theme}
+                    theme={primaryColor}
                     iconName={item.iconUrl}
                     width={24}
                     height={24}
@@ -91,7 +90,7 @@ const OverviewList: FC<MenuListProps> = ({ list, type, customOptRender, loadingV
                     <Spin spinning={(loadingViews || []).includes(c.key as string)}>
                       <Item
                         item={c}
-                        theme={themeStore.theme}
+                        theme={primaryColor}
                         iconName={c.iconUrl}
                         type={type}
                         customOptRender={customOptRender}
@@ -109,4 +108,4 @@ const OverviewList: FC<MenuListProps> = ({ list, type, customOptRender, loadingV
   );
 };
 
-export default observer(OverviewList);
+export default OverviewList;

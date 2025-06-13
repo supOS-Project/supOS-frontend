@@ -1,32 +1,34 @@
-import { FC, useState } from 'react';
+import { useState } from 'react';
 import { ModelAlt, WatsonHealth3DCursor, MessageQueue, FlowConnection } from '@carbon/icons-react';
 import { useDeepCompareEffect } from 'ahooks';
 import { useTranslate } from '@/hooks';
 import UnsTopology from './uns-topology';
 import { useMediaSize } from '@/hooks';
+import useUnsGlobalWs from '@/pages/uns/useUnsGlobalWs.ts';
 
-const Dashboard: FC<any> = ({ topologyData }) => {
+const Dashboard = () => {
   const [datas, setDatas] = useState({});
   const formatMessage = useTranslate();
   const { isH5 } = useMediaSize();
+  const { topologyData } = useUnsGlobalWs();
 
   const [overviewList, setOverviewList] = useState<any>([
-    { key: 'Folder', label: formatMessage('uns.totalModel'), icon: <ModelAlt size={24} />, value: 0 },
+    { key: 'Folder', label: 'uns.totalModel', icon: <ModelAlt size={24} />, value: 0 },
     {
       key: 'File',
-      label: formatMessage('uns.totalInstance'),
+      label: 'uns.totalInstance',
       icon: <WatsonHealth3DCursor size={24} />,
       value: 0,
     },
     {
       key: 'allConnections',
-      label: formatMessage('uns.allConnections'),
+      label: 'uns.allConnections',
       icon: <FlowConnection size={24} />,
       value: 0,
     },
     {
       key: 'liveConnections',
-      label: formatMessage('uns.liveConnections'),
+      label: 'uns.liveConnections',
       icon: <MessageQueue size={24} />,
       value: 0,
     },
@@ -59,13 +61,13 @@ const Dashboard: FC<any> = ({ topologyData }) => {
   return (
     <div className="unsDashboardWrap">
       <div className="unsDashboardTop">
-        <div className="overviewTitle">{formatMessage('uns.overview')}</div>
+        <div className="overviewTitle">{formatMessage('common.overview')}</div>
         <div className="overviewWrap">
           {overviewList?.map((e: any, i: number) => {
             return (
               <div className="overviewItem" key={i}>
                 <div className="overviewItemTop">
-                  <div className="overviewLabel">{e.label}</div>
+                  <div className="overviewLabel">{formatMessage(e.label)}</div>
                   {e.icon}
                 </div>
                 <div className="overviewValue">{e.value}</div>

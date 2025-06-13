@@ -8,7 +8,7 @@ export interface RadioOptionProps extends CheckboxOptionType {
 }
 
 export interface ComRadioProps extends Omit<RadioGroupProps, 'options'> {
-  options: RadioOptionProps[];
+  options?: RadioOptionProps[];
   direction?: 'horizontal' | 'vertical';
   rootStyle?: CSSProperties;
   rootClassname?: CSSProperties;
@@ -19,7 +19,7 @@ const ComRadio: FC<ComRadioProps> = ({
   direction = 'horizontal',
   rootClassname,
   rootStyle,
-  options,
+  options = [],
   onClick,
   ...restProps
 }) => {

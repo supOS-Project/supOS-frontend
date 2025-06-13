@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@copilotkit/runtime": "1.4.7",
+    "@copilotkit/runtime": "1.8.13",
     "@langchain/anthropic": "^0.3.15",
     "@langchain/ollama": "^0.1.2",
     "@langchain/openai": "^0.3.14",

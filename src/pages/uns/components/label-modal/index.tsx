@@ -1,19 +1,30 @@
-import { useState } from 'react';
-import { ProModal } from '@/components';
+import { useCallback, useState } from 'react';
 import { Button, Form, App, Input } from 'antd';
 import { addLabel } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 
-const Module = ({ successCallBack, changeCurrentPath, setTreeMap, scrollTreeNode }: any) => {
+import type { InitTreeDataFnType, UnsTreeNode } from '@/pages/uns/types';
+import { TreeStoreActions } from '../../store/types';
+import ProModal from '@/components/pro-modal';
+
+export interface LabelModalProps {
+  successCallBack: InitTreeDataFnType;
+  changeCurrentPath: (node: UnsTreeNode) => void;
+  setTreeMap: TreeStoreActions['setTreeMap'];
+  scrollTreeNode: (id: string) => void;
+}
+
+const Module = ({ successCallBack, changeCurrentPath, setTreeMap, scrollTreeNode }: LabelModalProps) => {
   const formatMessage = useTranslate();
   const [form] = Form.useForm();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { message } = App.useApp();
 
-  const setModalOpen = () => {
+  const setModalOpen = useCallback(() => {
     setOpen(true);
-  };
+  }, [setOpen]);
+
   const close = () => {
     setOpen(false);
     form.resetFields();
@@ -29,7 +40,7 @@ const Module = ({ successCallBack, changeCurrentPath, setTreeMap, scrollTreeNode
       addLabel(name)
         .then((data: any) => {
           successCallBack({}, () => {
-            changeCurrentPath({ path: data?.id, type: 9 });
+            changeCurrentPath({ key: data?.id, id: data?.id, type: 9 });
             setTreeMap(false);
             scrollTreeNode(data?.id);
           });
@@ -41,6 +52,14 @@ const Module = ({ successCallBack, changeCurrentPath, setTreeMap, scrollTreeNode
           setLoading(false);
         });
     }
+  };
+
+  // 自定义校验空格
+  const validateTrim = (_: any, value: string) => {
+    if (value && value.trim() === '') {
+      return Promise.reject(new Error(formatMessage('common.prohibitSpacesTip')));
+    }
+    return Promise.resolve();
   };
 
   const Dom = (
@@ -55,7 +74,11 @@ const Module = ({ successCallBack, changeCurrentPath, setTreeMap, scrollTreeNode
         }}
         disabled={loading}
       >
-        <Form.Item label={formatMessage('common.name')} name="name" rules={[{ required: true }]}>
+        <Form.Item
+          label={formatMessage('common.name')}
+          name="name"
+          rules={[{ required: true }, { max: 63 }, { validator: validateTrim }]}
+        >
           <Input />
         </Form.Item>
       </Form>

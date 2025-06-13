@@ -1,6 +1,6 @@
-import { ApiWrapper } from '@/utils';
+import { ApiWrapper } from '@/utils/request';
 
-export const baseUrl = '/inter-api/supos/external';
+const baseUrl = '/inter-api/supos/external';
 
 const api = new ApiWrapper(baseUrl);
 

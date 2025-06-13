@@ -1,10 +1,7 @@
+import CodeSnippet from '@/components/code-snippet';
 import { FC } from 'react';
-import { CodeSnippet } from '@carbon/react';
-import { useTranslate } from '@/hooks';
 
 const RawData: FC<{ payload?: string }> = ({ payload }) => {
-  const formatMessage = useTranslate();
-
   // 尝试首先解析payload
   let parsedPayload;
   try {
@@ -26,17 +23,7 @@ const RawData: FC<{ payload?: string }> = ({ payload }) => {
   const formattedPayload = JSON.stringify(parsedPayload, null, 2);
 
   return (
-    <CodeSnippet
-      className="codeViewWrap"
-      type="multi"
-      feedback={formatMessage('uns.copiedToClipboard')}
-      minCollapsedNumberOfRows={1}
-      align="top-right"
-      showLessText={formatMessage('uns.showLess')}
-      showMoreText={formatMessage('uns.showMore')}
-      aria-label={formatMessage('uns.copyToClipboard')}
-      copyButtonDescription={formatMessage('uns.copyToClipboard')}
-    >
+    <CodeSnippet className="codeViewWrap" type="multi" minCollapsedNumberOfRows={1}>
       {formattedPayload}
     </CodeSnippet>
   );

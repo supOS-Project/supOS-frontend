@@ -1,10 +1,10 @@
 import { Button, Divider, Flex, Form, Input, message, Select, Typography } from 'antd';
 import { FC, useEffect, useRef, useState } from 'react';
 import { getApps, uploadHtml } from '@/apis/inter-api/apps';
-import { getBaseFileName } from '@/utils';
 import { useNavigate } from 'react-router-dom';
 import styles from './DeployForm.module.scss';
 import { useTranslate } from '@/hooks';
+import { getBaseFileName } from '@/utils/url-util';
 const { Title } = Typography;
 
 const DeployForm: FC<any> = ({ htmlName, appName, show, setShow, htmlContent, getHtmlContent }) => {
@@ -55,7 +55,7 @@ const DeployForm: FC<any> = ({ htmlName, appName, show, setShow, htmlContent, ge
   return success ? (
     <Flex style={{ height: 'calc(100% - 70px)', overflow: 'hidden' }} justify="center" vertical align="center" gap={20}>
       <Title style={{ marginBottom: 0 }} type="secondary" level={5}>
-        {formatMessage('appGui.save')}
+        {formatMessage('appGui.saveSuccess')}
       </Title>
       <div>
         <Button
@@ -65,6 +65,8 @@ const DeployForm: FC<any> = ({ htmlName, appName, show, setShow, htmlContent, ge
             navigate('/app-space', {
               state: { name },
             });
+            setShow(false);
+            setSuccess(false);
           }}
         >
           {formatMessage('appGui.goAppDisplay')}
@@ -75,6 +77,7 @@ const DeployForm: FC<any> = ({ htmlName, appName, show, setShow, htmlContent, ge
           onClick={() => {
             if (originUrl?.current) {
               window.open(originUrl.current);
+              setSuccess(false);
             } else {
               message.error(formatMessage('common.UrlLose'));
             }
@@ -107,14 +110,14 @@ const DeployForm: FC<any> = ({ htmlName, appName, show, setShow, htmlContent, ge
       className={styles['deploy-form']}
     >
       <Form.Item label={formatMessage('appGui.deploy')}></Form.Item>
-      <Form.Item label={formatMessage('appGui.tagetApp')} name="appName" required>
+      <Form.Item label={formatMessage('appGui.targetApp')} name="appName" required>
         <Select placeholder="select app" disabled={!!appName}>
           {options?.map((item) => {
             return <Select.Option value={item}>{item}</Select.Option>;
           })}
         </Select>
       </Form.Item>
-      <Form.Item label={formatMessage('appGui.tagetHtml')} name="htmlName" required>
+      <Form.Item label={formatMessage('appGui.targetHtml')} name="htmlName" required>
         <Input placeholder="type html name" disabled={!!htmlName} />
       </Form.Item>
       <Divider></Divider>

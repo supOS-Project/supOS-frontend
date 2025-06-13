@@ -15,16 +15,35 @@ const useMenuNavigate = (props: { msg?: string } = {}) => {
     if (item.isFrontend) {
       navigate(item.menu!.url);
     } else {
-      navigate(`/${item.key}`, {
-        state: {
-          url: item?.menu?.url,
-          name: item.name,
-          iframeRealUrl:
-            item?.menuProtocol && item?.menuHost && item?.menuPort
-              ? `${item?.menuProtocol}://${item?.menuHost}:${item?.menuPort}`
-              : undefined,
-        },
-      });
+      if (item?.openType !== undefined) {
+        const { port, protocol, host, name } = item.service as any;
+        const path = item.menu?.url?.split(name)?.[1] || '';
+        const realHost = port ? `${protocol}://${host}:${port}` : `${protocol}://${host}`;
+        if (item?.openType === '1') {
+          window.open(realHost + path);
+        } else if (item?.openType === '2') {
+          window.open(item.indexUrl);
+        } else {
+          navigate(`/${item.key}`, {
+            state: {
+              url: path,
+              name: item.name,
+              iframeRealUrl: realHost,
+            },
+          });
+        }
+      } else {
+        navigate(`/${item.key}`, {
+          state: {
+            url: item?.menu?.url,
+            name: item.name,
+            iframeRealUrl:
+              item?.menuProtocol && item?.menuHost && item?.menuPort
+                ? `${item?.menuProtocol}://${item?.menuHost}:${item?.menuPort}${item?.menu?.url}`
+                : undefined,
+          },
+        });
+      }
     }
   };
 

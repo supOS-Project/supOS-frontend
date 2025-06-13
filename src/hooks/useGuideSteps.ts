@@ -1,12 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { filter, find, isEmpty, map } from 'lodash';
-import { storageOpt } from '@/utils';
 import { SUPOS_USER_GUIDE_ROUTES } from '@/common-types/constans';
-import { shepherd } from '@/components';
 import { useTranslate } from '@/hooks';
-import { useThemeContext } from '@/contexts/theme-context';
-import { MenuTypeEnum } from '@/stores/theme-store';
+import { storageOpt } from '@/utils/storage';
+import { shepherd } from '@/components/shepherd';
+import { MenuTypeEnum, setMenuType, useThemeStore } from '@/stores/theme-store.ts';
 
 /**
  * 使用 新人引导 步骤
@@ -14,7 +13,7 @@ import { MenuTypeEnum } from '@/stores/theme-store';
  * @param startStepId 指定起始的步骤id
  */
 export const useGuideSteps = (steps: any[] = [], startStepId?: string) => {
-  const themeStore = useThemeContext();
+  const _menuType = useThemeStore((state) => state.menuType);
   const pathname = useLocation().pathname;
   const tour = useRef(shepherd()).current;
   const formatMessage = useTranslate();
@@ -52,7 +51,7 @@ export const useGuideSteps = (steps: any[] = [], startStepId?: string) => {
                 action() {
                   return tour.next();
                 },
-                text: formatMessage('global.tipNext'),
+                text: formatMessage('common.next'),
               },
             ];
           }
@@ -62,7 +61,7 @@ export const useGuideSteps = (steps: any[] = [], startStepId?: string) => {
                 action() {
                   return this.back();
                 },
-                text: formatMessage('global.tipBack'),
+                text: formatMessage('common.prev'),
                 classes: 'prev-class',
               },
               {
@@ -102,9 +101,9 @@ export const useGuideSteps = (steps: any[] = [], startStepId?: string) => {
     const currentRoute = find(userGuideRoute, (route) => route?.menu?.url === pathname);
     // 当前路由没有被访问过，则初始化当前路由的步骤数据
     if (currentRoute && currentRoute?.isVisited === false) {
-      const menuType = themeStore.menuType;
+      const menuType = _menuType;
       if (menuType !== MenuTypeEnum.Top) {
-        themeStore.setMenuType(MenuTypeEnum.Top);
+        setMenuType(MenuTypeEnum.Top);
         setTimeout(() => {
           // 需要等菜单渲染后才能初始化数据，此时需导航指引的id才存在
           startTour();

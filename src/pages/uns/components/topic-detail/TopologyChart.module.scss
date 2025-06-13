@@ -21,18 +21,69 @@
       display: flex;
       align-items: center;
       padding-left: 10px;
+      padding-right: 12px;
       gap: 10px;
-    }
 
-    .common-node-hover {
-      &:hover {
-        background-color: var(--supos-active-bg-color);
+      .common-node-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        align-items: flex-start;
+        gap: 4px;
+
+        .common-node-subtitle {
+          font-size: 10px;
+          color: #c6c6c6;
+        }
+
+        .common-node-title {
+          font-size: 14px;
+          letter-spacing: 0.16px;
+        }
+      }
+
+      .common-node-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
+
+        &:hover {
+          color: var(--supos-theme-color);
+        }
       }
     }
 
+    .common-node-hover:hover:not(:has(.common-node-btn:hover)) {
+      background-color: var(--supos-primary-bg);
+      border-right: 1px solid var(--supos-mode-color, var(--supos-theme-color));
+      border-top: 1px solid var(--supos-mode-color, var(--supos-theme-color));
+      border-bottom: 1px solid var(--supos-mode-color, var(--supos-theme-color));
+      cursor: pointer;
+    }
+
     .activeBg {
-      background-color: var(--supos-active-bg-color);
+      background-color: var(--supos-bg-color);
+      border-right: 1px solid var(--supos-mode-color, var(--supos-theme-color));
+      border-top: 1px solid var(--supos-mode-color, var(--supos-theme-color));
+      border-bottom: 1px solid var(--supos-mode-color, var(--supos-theme-color));
+    }
+
+    .status-indicator {
+      position: absolute;
+      right: 0;
+      bottom: -20px;
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 4px;
     }
   }
 
@@ -48,22 +99,9 @@
     .customTable {
       width: 100%;
 
-      td {
-        height: 40px;
-        line-height: 40px;
-        padding-left: 20px;
-      }
-
-      thead > tr > td {
-        background-color: var(--supos-table-head-color);
-        color: var(--supos-text-color);
-        font-weight: bold;
-      }
-
-      tbody > tr > td {
-        &:first-child {
-          color: var(--supos-table-first-color);
-          font-weight: bold;
+      :global {
+        .ant-table-tbody .ant-table-cell {
+          background-color: var(--supos-gray-color-10-message) !important;
         }
       }
 
@@ -74,7 +112,7 @@
   }
 
   .name {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
     line-height: 18px;
     letter-spacing: 0.16px;

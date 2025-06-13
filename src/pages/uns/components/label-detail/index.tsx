@@ -1,83 +1,81 @@
-import { useState, useEffect, FC, CSSProperties } from 'react';
-import _ from 'lodash';
-import { getLabelDetail, getLabelPath, updateLabel, getLabelUnsId, deleteLabel } from '@/apis/inter-api/uns';
+import { useState, useEffect, FC, CSSProperties, useRef } from 'react';
+import { getLabelDetail, updateLabel, makeSingleLabel } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
-import { Collapse, theme, Form, Flex, Button, Select, message, App, Typography } from 'antd';
-import { CaretRight, Tag, Document } from '@carbon/icons-react';
-import { AuthButton, AuthWrapper, ProModal, FileEdit } from '@/components';
+import { Collapse, theme, Form, Flex, Button, message, Typography } from 'antd';
+import { CaretRight, Tag } from '@carbon/icons-react';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
-import { hasPermission } from '@/utils';
+import SearchSelect from '@/pages/uns/components/use-create-modal/components/SearchSelect';
 import Icon from '@ant-design/icons';
+import FileList from './FileList';
+import type { InitTreeDataFnType, UnsTreeNode } from '@/pages/uns/types';
+import { AuthButton, AuthWrapper } from '@/components/auth';
+import ProModal from '@/components/pro-modal';
+import FileEdit from '@/components/svg-components/FileEdit';
+import { hasPermission } from '@/utils/auth';
 
-const { Paragraph } = Typography;
+const { Title } = Typography;
 
 const panelStyle: CSSProperties = {
   background: 'val(--supos-bg-color)',
   border: 'none',
 };
 
-const Module: FC<any> = (props) => {
-  const { labelDetailId, initTreeData } = props;
+export interface LabelDetailProps {
+  currentNode: UnsTreeNode;
+  initTreeData: InitTreeDataFnType;
+  handleDelete: (node: UnsTreeNode) => void;
+}
+
+const Module: FC<LabelDetailProps> = (props) => {
+  const {
+    currentNode: { id },
+    initTreeData,
+    handleDelete,
+  } = props;
   const formatMessage = useTranslate();
-  const [activeList, setActiveList] = useState<string[]>(['detail', 'definition', 'document']);
+  const [activeList, setActiveList] = useState<string[]>(['fileList']);
   const { token } = theme.useToken();
   const [topicTitle, setTopicTitle] = useState('');
-  const [modelInfo, setModelInfo] = useState<any>({});
+  const [modelInfo, setModelInfo] = useState<{ [key: string]: any }>({});
   const [isLabelVisible, setIsLabelVisible] = useState(false);
-  const [labelPath, setLabelPath] = useState<any>();
-  const [labelUnsId, setLabelUnsId] = useState();
   const [loading, setLoading] = useState(false);
-  const { modal } = App.useApp();
-  const [form] = Form.useForm();
 
-  const getModel = (id: number) => {
+  const [form] = Form.useForm();
+  const modelInfoRef = useRef(modelInfo);
+  const fileListRef = useRef<any>(null);
+
+  useEffect(() => {
+    modelInfoRef.current = modelInfo;
+  }, [modelInfo]);
+
+  const getModel = (id: string) => {
     getLabelDetail(id)
-      .then((data: any) => {
+      .then((data) => {
         setModelInfo(data);
         setTopicTitle(data?.labelName);
-      })
-      .catch(() => {});
-  };
-  const deleteRow = (id: any) => {
-    const newFileVoList = modelInfo?.fileVoList?.filter((item: any) => item.unsId !== id);
-    updateLabel({ ...modelInfo, fileVoList: newFileVoList }).then((res: any) => {
-      if (res?.code === 200) {
-        message.success(formatMessage('common.optsuccess'));
-        getModel(labelDetailId);
-        setIsLabelVisible(false);
-      }
-    });
-  };
-  useEffect(() => {
-    if (labelDetailId) {
-      getModel(labelDetailId);
-    }
-    getLabelPath()
-      .then((res) => {
-        setLabelPath(res);
       })
       .catch((error) => {
         console.log(error);
       });
-  }, [labelDetailId]);
+  };
+
+  useEffect(() => {
+    if (id) {
+      getModel(id as string);
+    }
+  }, [id]);
 
   const onSave = async () => {
     const values = await form.validateFields();
     if (values) {
       setLoading(true);
-      updateLabel({
-        id: modelInfo?.id,
-        labelName: modelInfo?.labelName,
-        fileVoList: _.concat(modelInfo.fileVoList || [], [{ ...values, unsId: labelUnsId }]),
-      })
-        .then((res: any) => {
-          if (res?.code === 200) {
-            message.success(formatMessage('common.optsuccess'));
-            getModel(labelDetailId);
-            setIsLabelVisible(false);
-            form.resetFields();
-            setLoading(false);
-          }
+      makeSingleLabel(values.unsId, id as string)
+        .then(() => {
+          message.success(formatMessage('common.optsuccess'));
+          fileListRef.current?.getList?.(id);
+          setIsLabelVisible(false);
+          form.resetFields();
+          setLoading(false);
         })
         .catch(() => {
           setLoading(false);
@@ -88,103 +86,46 @@ const Module: FC<any> = (props) => {
     setIsLabelVisible(true);
   };
 
-  const handleSelectChange = (value: any) => {
-    getLabelUnsId(value).then((res: any) => setLabelUnsId(res?.id));
-  };
-
   const onDeleteHandle = () => {
-    modal.confirm({
-      content: formatMessage('common.deleteConfirm'),
-      cancelText: formatMessage('common.cancel'),
-      okText: formatMessage('common.confirm'),
-      onOk() {
-        deleteLabel(labelDetailId).then((res: any) => {
-          if (res?.code === 200) {
-            initTreeData({ reset: true });
-            message.success(formatMessage('common.deleteSuccessfully'));
-          }
-        });
-      },
-    });
+    handleDelete({ key: '', id, type: 9 });
   };
-
   const items = [
     {
-      key: 'definition',
-      label: formatMessage('uns.fileList'),
-      children: (
-        <>
-          <table className="customTable" border={1} cellSpacing="1">
-            <thead>
-              <tr>
-                <td style={{ width: '47%' }}>{formatMessage('common.name')}</td>
-                <td style={{ width: '47%' }}>{formatMessage('uns.position')}</td>
-                <td className="no-border-td"></td>
-              </tr>
-            </thead>
-            <tbody>
-              {(modelInfo?.fileVoList || []).map((e: any) => (
-                <tr key={e.unsId}>
-                  <td>
-                    <Document style={{ marginRight: 5, verticalAlign: 'middle' }} />
-                    {e.name}
-                  </td>
-                  <td>{e.path}</td>
-                  <td className="no-border-td">
-                    <AuthButton
-                      auth={ButtonPermission['label.fileDel']}
-                      className="no-border-td-button"
-                      onClick={() => deleteRow(e.unsId)}
-                      color="default"
-                      variant="filled"
-                      style={{ color: 'var(--supos-text-color)', backgroundColor: 'var(--supos-uns-button-color)' }}
-                    >
-                      —
-                    </AuthButton>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <AuthButton
-            auth={ButtonPermission['label.fileAdd']}
-            className="button-add"
-            onClick={handleAdd}
-            color="default"
-            variant="filled"
-            style={{ color: 'var(--supos-text-color)', backgroundColor: 'var(--supos-uns-button-color)' }}
-          >
-            +
-          </AuthButton>
-        </>
-      ),
+      key: 'fileList',
+      label: formatMessage('common.fileList'),
+      children: <FileList ref={fileListRef} labelId={id as string} />,
       style: panelStyle,
+      extra: (
+        <AuthButton
+          auth={ButtonPermission['uns.labelFileAdd']}
+          onClick={handleAdd}
+          style={{
+            border: '1px solid #C6C6C6',
+            background: 'var(--supos-uns-button-color)',
+            color: 'var(--supos-text-color)',
+            width: '32px',
+          }}
+        >
+          +
+        </AuthButton>
+      ),
     },
   ];
 
-  const selectOptions = labelPath?.map((e: any) => {
-    return {
-      value: e,
-      label: e,
-    };
-  });
-  selectOptions?.forEach((itemOne: any) => {
-    const match = modelInfo?.fileVoList?.some((itemTwo: any) => itemOne.value === itemTwo.path);
-    itemOne.disabled = match;
-  });
   return (
     <div className="topicDetailWrap">
       <div className="topicDetailContent">
         <Flex className="detailTitle" gap={8} justify="flex-start" align="center">
           <Tag style={{ transform: 'rotate(90deg)' }} size={20} />
-          <Paragraph
-            style={{ margin: 0, width: '100%', insetInlineStart: 0, fontSize: 30, lineHeight: 1 }}
+          <Title
+            level={2}
+            style={{ margin: 0, width: '100%', insetInlineStart: 0 }}
             editable={
-              hasPermission(ButtonPermission['label.editName'])
+              hasPermission(ButtonPermission['uns.labelEditName'])
                 ? {
                     icon: (
                       <Icon
-                        data-button-auth={ButtonPermission['label.editName']}
+                        data-button-auth={ButtonPermission['uns.labelEditName']}
                         component={FileEdit}
                         style={{
                           fontSize: 25,
@@ -194,12 +135,18 @@ const Module: FC<any> = (props) => {
                       />
                     ),
                     onChange: (val) => {
+                      if (topicTitle === val || !val || val.trim() === '') return;
+                      if (val.length > 63) {
+                        return message.warning(
+                          formatMessage('uns.labelMaxLength', { label: formatMessage('common.name'), length: 63 })
+                        );
+                      }
                       updateLabel({
-                        id: labelDetailId,
+                        id,
                         labelName: val,
                       }).then(() => {
                         message.success(formatMessage('uns.editSuccessful'));
-                        getModel(labelDetailId);
+                        getModel(id as string);
                         initTreeData?.({});
                       });
                     },
@@ -208,7 +155,7 @@ const Module: FC<any> = (props) => {
             }
           >
             {topicTitle}
-          </Paragraph>
+          </Title>
         </Flex>
         <div className="tableWrap">
           <Collapse
@@ -229,8 +176,8 @@ const Module: FC<any> = (props) => {
             style={{ background: token.colorBgContainer }}
           />
         </div>
-        <AuthWrapper auth={ButtonPermission['label.delete']}>
-          <div className="deleteBtnWrap">
+        <AuthWrapper auth={ButtonPermission['uns.labelDelete']}>
+          <div className="deleteBtnWrap" style={{ marginTop: 0 }}>
             <Button
               type="primary"
               style={{
@@ -257,7 +204,7 @@ const Module: FC<any> = (props) => {
         <Form colon={false} name="labelForm" disabled={loading} form={form}>
           <Form.Item
             label={formatMessage('uns.position')}
-            name="path"
+            name="unsId"
             style={{ marginBottom: 15 }}
             rules={[
               {
@@ -266,7 +213,11 @@ const Module: FC<any> = (props) => {
               },
             ]}
           >
-            <Select onChange={handleSelectChange} options={selectOptions} popupMatchSelectWidth={400} />
+            <SearchSelect
+              popupMatchSelectWidth={400}
+              apiParams={{ type: 2 }}
+              disabledIds={modelInfo?.fileVoList?.map((item: any) => item.unsId) || []}
+            />
           </Form.Item>
         </Form>
         <div style={{ marginTop: '20px' }}>

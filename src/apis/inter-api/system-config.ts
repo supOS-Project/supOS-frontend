@@ -1,4 +1,4 @@
-import { ApiWrapper } from '@/utils';
+import { ApiWrapper } from '@/utils/request';
 
 const baseUrl = '/inter-api/supos';
 

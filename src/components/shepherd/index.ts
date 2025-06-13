@@ -1,6 +1,6 @@
 import Shepherd, { TourOptions } from 'shepherd.js';
 import './index.scss';
-import I18nStore from '@/stores/i18n-store';
+import { getIntl } from '@/stores/i18n-store.ts';
 
 // 统一参数
 export const defaultConfig: TourOptions = {
@@ -29,14 +29,14 @@ export const defaultConfig: TourOptions = {
         action() {
           return this.back();
         },
-        text: I18nStore.getIntl('global.tipBack'),
+        text: getIntl('common.prev'),
         classes: 'prev-class',
       },
       {
         action() {
           return this.next();
         },
-        text: I18nStore.getIntl('global.tipNext'),
+        text: getIntl('common.next'),
       },
     ],
   },

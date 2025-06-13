@@ -1,10 +1,9 @@
-import { TextInput } from '@carbon/react';
 import styles from '@/pages/app-management/components/AppList.module.scss';
 import { useState } from 'react';
 import { createApp } from '@/apis/inter-api/apps';
-import { message } from 'antd';
+import { Input, message } from 'antd';
 import { useTranslate } from '@/hooks';
-import { ProModal } from '@/components';
+import ProModal from '@/components/pro-modal';
 
 const useAddModal = ({ successCallBack }: any) => {
   const [open, setOpen] = useState(false);
@@ -36,12 +35,11 @@ const useAddModal = ({ successCallBack }: any) => {
       onCancel={() => setOpen(false)}
       title={formatMessage('appSpace.name')}
     >
-      <TextInput
-        labelText=""
+      <Input
+        variant="underlined"
         value={name}
-        onChange={(e) => setName(e.target.value)}
-        id="name"
         placeholder={formatMessage('appSpace.yourAppName')}
+        onChange={(e) => setName(e.target.value)}
       />
       <div className="add-button" onClick={addApps}>
         {formatMessage('appSpace.add')}

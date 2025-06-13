@@ -1,18 +1,33 @@
-import { App, Button, Divider, Drawer, Flex, Form, Input, Select, TreeSelect } from 'antd';
-import { useEffect, useRef, useState } from 'react';
+import { App, Button, Divider, Drawer, Flex, Form, Input, Select, TreeSelect, InputNumber } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslate } from '@/hooks';
 import { AddAlt, Close, ConnectSource, SubtractAlt } from '@carbon/icons-react';
 import { addTemplate, getTemplateDetail, getTreeData, getTypes } from '@/apis/inter-api/uns.ts';
-import { noDuplicates } from '@/utils';
 import styles from './index.module.scss';
 const { SHOW_ALL } = TreeSelect;
 
-const getSelectedNodes = (values: any, data: any) => {
-  const _values = values?.map((item: any) => item.value);
-  const result: any = [];
-  const loop = (data: any) => {
-    data.forEach((item: any) => {
-      if (_values.includes(item.path)) {
+import { UnsTreeNode, InitTreeDataFnType, FieldItem } from '@/pages/uns/types';
+import { TreeStoreActions } from '../../store/types';
+
+type SelectNodeType = { value: string };
+interface SelectTreeNode extends Omit<UnsTreeNode, 'children'> {
+  fields: FieldItem[];
+  children: SelectTreeNode[];
+}
+
+export interface TemplateModalProps {
+  successCallBack: InitTreeDataFnType;
+  changeCurrentPath: (node?: UnsTreeNode) => void;
+  scrollTreeNode: (id: string) => void;
+  setTreeMap: TreeStoreActions['setTreeMap'];
+}
+
+const getSelectedNodes = (values: SelectNodeType[], data: SelectTreeNode[]) => {
+  const _values = values?.map((item: SelectNodeType) => item.value);
+  const result: FieldItem[] = [];
+  const loop = (data: SelectTreeNode[]) => {
+    data.forEach((item: SelectTreeNode) => {
+      if (_values.includes(item.id)) {
         result.push(...(item?.fields || []));
       }
       if (item.children) {
@@ -23,7 +38,7 @@ const getSelectedNodes = (values: any, data: any) => {
   loop(data);
   return result;
 };
-const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, setTreeMap }: any) => {
+const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, setTreeMap }: TemplateModalProps) => {
   const formatMessage = useTranslate();
   const { message } = App.useApp();
   const [open, setOpen] = useState(false);
@@ -32,26 +47,31 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState('addTemplate');
-  const [treeData, setTreeData] = useState<any>([]);
+  const [treeData, setTreeData] = useState<SelectTreeNode[]>([]);
   const treeValueList = useRef<any>([]);
 
-  const openTemplateModal = (type: string, id: string) => {
-    setType(type);
-    setOpen(true);
-    if (type === 'copyTemplate' && id) {
-      getTemplateDetail({ id }).then((data: any) => {
-        form.setFieldsValue({
-          path: data?.path + '_Copy',
-          fields: data?.fields,
-          description: data?.description,
+  const fieldList = Form.useWatch('fields', form);
+
+  const openTemplateModal = useCallback(
+    (type: string, id?: string) => {
+      setType(type);
+      setOpen(true);
+      if (type === 'copyTemplate' && id) {
+        getTemplateDetail({ id }).then((data: any) => {
+          form.setFieldsValue({
+            path: data?.path + '_Copy',
+            fields: data?.fields,
+            description: data?.description,
+          });
         });
-      });
-    } else {
-      form.setFieldsValue({
-        fields: [{}],
-      });
-    }
-  };
+      } else {
+        form.setFieldsValue({
+          fields: [{}],
+        });
+      }
+    },
+    [setType, setOpen, form]
+  );
 
   const onClose = () => {
     setSource(false);
@@ -61,24 +81,20 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
 
   useEffect(() => {
     getTypes().then((res: any) => {
-      setTypes(res?.map?.((r: any) => ({ label: r, value: r })) || []);
+      setTypes(res?.map?.((r: string) => ({ label: r, value: r })) || []);
     });
   }, [open]);
   const onSave = async () => {
     const values = await form.validateFields();
-    const allowAddName = noDuplicates(values?.fields.map((e: any) => e.name));
-    if (!allowAddName) {
-      message.error(`${formatMessage('uns.thereAreDuplicate')}${formatMessage('uns.keyName')}`);
-      return;
-    }
+
     setLoading(true);
     addTemplate(values)
       .then((data: any) => {
         onClose();
         successCallBack?.({}, () => {
-          changeCurrentPath({ path: data?.id, type: 1 });
+          changeCurrentPath({ key: data, id: data, type: 1 });
           setTreeMap(false);
-          scrollTreeNode(data?.id);
+          scrollTreeNode(data);
           message.success(formatMessage('common.optsuccess'));
         });
       })
@@ -93,6 +109,37 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
     });
   };
 
+  //重复键名校验
+  const validateUnique = (_: any, value: string) => {
+    const values = form.getFieldValue('fields') || []; // 获取所有表单项的值
+    console.log(values);
+    const isDuplicate = value && values.filter((item: FieldItem) => item?.name === value).length > 1; // 检查是否有重复值
+
+    if (isDuplicate) {
+      return Promise.reject(new Error(formatMessage('uns.duplicateKeyNameTip')));
+    } else {
+      return Promise.resolve();
+    }
+  };
+
+  const triggerNameFieldValidation = () => {
+    const currentNames = form.getFieldValue('fields');
+    if (!Array.isArray(currentNames)) return;
+
+    const fieldsToValidate = currentNames.map((_, i) => ['fields', i, 'name']);
+    setTimeout(() => {
+      form.validateFields(fieldsToValidate).catch(() => {});
+    }, 0);
+  };
+
+  // 自定义校验空格
+  const validateTrim = (_: any, value: string) => {
+    if (value && value.trim() === '') {
+      return Promise.reject(new Error(formatMessage('common.prohibitSpacesTip')));
+    }
+    return Promise.resolve();
+  };
+
   const Dom = (
     <Drawer
       rootClassName={styles['template-modal']}
@@ -105,17 +152,10 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
         color: 'var(--supos-text-color)',
       }}
       maskClosable={false}
-      destroyOnClose={false}
+      destroyOnHidden={false}
       width={680}
     >
-      <div
-        style={{
-          '--cds-focus': 'var(--supos-theme-color)',
-          '--cds-icon-primary': 'var(--supos-text-color)',
-          '--cds-text-disabled': 'var(--supos-select-d-color)',
-          '--cds-icon-disabled': 'var(--supos-select-d-color)',
-        }}
-      >
+      <div>
         <Form
           form={form}
           colon={false}
@@ -127,17 +167,31 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
         >
           <Form.Item
             label={formatMessage('common.name')}
-            name="path"
+            name="name"
             rules={[
               {
                 required: true,
                 message: formatMessage('rule.required'),
               },
+              { max: 63 },
+              { validator: validateTrim },
             ]}
           >
             <Input placeholder={formatMessage('common.name')} />
           </Form.Item>
-          <Form.Item label={formatMessage('uns.templateDescription')} name="description">
+          <Form.Item
+            label={formatMessage('uns.templateDescription')}
+            name="description"
+            rules={[
+              {
+                max: 255,
+                message: formatMessage('uns.labelMaxLength', {
+                  label: formatMessage('uns.templateDescription'),
+                  length: 255,
+                }),
+              },
+            ]}
+          >
             <Input.TextArea rows={2} placeholder={formatMessage('uns.templateDescription')} />
           </Form.Item>
           <Divider style={{ borderColor: '#c6c6c6' }} />
@@ -163,7 +217,7 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
             <Form.List name="fields">
               {(fields, { add, remove }) => (
                 <>
-                  {fields.map(({ key, name, ...restField }) => (
+                  {fields.map(({ key, name, ...restField }, index) => (
                     <Flex key={key} gap="8px">
                       <Form.Item
                         {...restField}
@@ -177,11 +231,23 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
                             pattern: /^[A-Za-z][A-Za-z0-9_]*$/,
                             message: formatMessage('uns.keyNameFormat'),
                           },
+                          { validator: validateUnique }, // 添加自定义校验规则
+                          {
+                            max: 63,
+                            message: formatMessage('uns.labelMaxLength', {
+                              label: formatMessage('common.name'),
+                              length: 63,
+                            }),
+                          },
                         ]}
                         wrapperCol={{ span: 24 }}
                         style={{ flex: 1 }}
                       >
-                        <Input placeholder={formatMessage('common.name')} />
+                        <Input
+                          placeholder={formatMessage('common.name')}
+                          title={fieldList?.[index]?.name || formatMessage('common.name')}
+                          onChange={triggerNameFieldValidation}
+                        />
                       </Form.Item>
                       <Form.Item
                         {...restField}
@@ -193,9 +259,30 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
                           },
                         ]}
                         wrapperCol={{ span: 24 }}
-                        style={{ flex: 0.7 }}
+                        style={{ width: '110px' }}
                       >
-                        <Select placeholder={formatMessage('uns.type')} options={types} />
+                        <Select
+                          placeholder={formatMessage('uns.type')}
+                          title={fieldList?.[index]?.type || formatMessage('uns.type')}
+                          options={types}
+                          onChange={(type) => {
+                            if (type.toLowerCase() !== 'string') {
+                              form.setFieldValue(['fields', key, 'maxLen'], undefined);
+                            }
+                          }}
+                        />
+                      </Form.Item>
+                      <Form.Item {...restField} name={[name, 'maxLen']} wrapperCol={{ span: 24 }} style={{ flex: 1 }}>
+                        <InputNumber
+                          disabled={fieldList?.[key]?.type?.toLowerCase() !== 'string'}
+                          style={{ width: '100%' }}
+                          min={1}
+                          max={10485760}
+                          step={1}
+                          precision={0}
+                          placeholder={formatMessage('common.length')}
+                          title={fieldList?.[index]?.maxLen || formatMessage('common.length')}
+                        />
                       </Form.Item>
                       <Form.Item
                         {...restField}
@@ -203,10 +290,22 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
                         wrapperCol={{ span: 24 }}
                         style={{ flex: 1 }}
                       >
-                        <Input placeholder={`${formatMessage('uns.displayName')}(${formatMessage('uns.optional')})`} />
+                        <Input
+                          placeholder={`${formatMessage('uns.displayName')}(${formatMessage('uns.optional')})`}
+                          title={
+                            fieldList?.[index]?.displayName ||
+                            `${formatMessage('uns.displayName')}(${formatMessage('uns.optional')})`
+                          }
+                        />
                       </Form.Item>
                       <Form.Item {...restField} name={[name, 'remark']} wrapperCol={{ span: 24 }} style={{ flex: 1 }}>
-                        <Input placeholder={`${formatMessage('uns.remark')}(${formatMessage('uns.optional')})`} />
+                        <Input
+                          placeholder={`${formatMessage('uns.remark')}(${formatMessage('uns.optional')})`}
+                          title={
+                            fieldList?.[index]?.remark ||
+                            `${formatMessage('uns.remark')}(${formatMessage('uns.optional')})`
+                          }
+                        />
                       </Form.Item>
                       <Button
                         color="default"
@@ -214,6 +313,7 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
                         icon={<SubtractAlt />}
                         onClick={() => {
                           remove(name);
+                          triggerNameFieldValidation();
                         }}
                         style={{
                           border: '1px solid #CBD5E1',
@@ -242,7 +342,7 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
             <>
               <TreeSelect
                 popupClassName={styles['tree-select']}
-                fieldNames={{ label: 'name', value: 'path' }}
+                fieldNames={{ label: 'pathName', value: 'id' }}
                 rootClassName={styles['tree-select-popup']}
                 showSearch
                 placeholder={formatMessage('common.select')}

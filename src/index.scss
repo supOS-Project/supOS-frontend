@@ -1,24 +1,29 @@
-@use '@carbon/styles/scss/config' with (
-  $font-path: '@ibm/plex'
-);
-@use '@carbon/react';
+@use './reset';
 @use './theme/theme' as *;
-// /// Remove overrides once Carbon bugs are fixed upstream.
-// /// Need grid option to not add page gutters at large viewports, to also use when nesting grids
-// /// @link https://github.com/carbon-design-system/carbon/issues/2792
-// @media (min-width: 42rem) {
-//   .cds--grid--no-gutter {
-//     padding-left: 1rem;
-//     padding-right: 1rem;
-//   }
-// }
 
-// /// Padding was introduced in 10.3.0, needs an option to let grid set the viewport gutter
-// /// @link https://github.com/carbon-design-system/carbon/issues/3010
-// .cds--content {
-//   margin-top: 3rem;
-//   background: var(--cds-background);
-// }
+@use '@ibm/plex-sans/scss' as PlexSans with (
+  $font-prefix: '@ibm/plex-sans',
+  $font-weights: (
+    bold: false,
+    boldItalic: false,
+    extralight: false,
+    extralightItalic: false,
+    // italic: false,
+    // light: false,
+    // lightItalic: false,
+    medium: false,
+    mediumItalic: false,
+    // regular: false,
+    // semibold: false,
+    // semiboldItalic: false,
+    text: false,
+    textItalic: false,
+    thin: false,
+    thinItalic: false,
+  )
+);
+@include PlexSans.all();
+
 * {
   font-family:
     'IBM Plex Sans',
@@ -33,16 +38,6 @@ iframe {
   display: block;
 }
 
-.cds--breadcrumb > li {
-  .cds--link {
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  &:not(:last-child)::after {
-    content: '>';
-  }
-}
 @keyframes ant-line {
   to {
     stroke-dashoffset: -1000;
@@ -54,7 +49,7 @@ iframe {
   --supos-text-color: var(--supos-t-gray-color-100);
   --supos-bg-color: var(--supos-t-white-color);
   --supos-header-bg-color: var(--supos-t-white-color);
-  --supos-header-splitter-color: rgb(0 0 0 / 15%);
+  --supos-color-fill: rgb(0 0 0 / 15%);
   --supos-check-color: #050b14;
   --supos-nocheck-color: var(--supos-t-gray-color-50);
   --supos-table-head-bg-color: var(--supos-t-gray-color-50);
@@ -117,14 +112,22 @@ iframe {
   --supos-promodal-bg-pg-color: var(--supos-t-white-color);
   --supos-modal-mask-bg: rgba(0, 0, 0, 0.45);
   --supos-icon-disabled-color: var(--supos-t-gray-color-40);
+  --supos-t-card-select-bg: var(--supos-t-light-card-select-bg);
+  --supos-t-card-hover-bg: var(--supos-t-table-head-color);
+  --supos-background-selected: rgba(141 141 141 / 20%);
+  --supos-border-interactive: #0f62fe;
+  --supos-craft-bg-color: #f4f4f4;
+  --supos-t-text-disabled-color: var(--supos-t-select-d-color);
+  --supos-t-dividr-color: var(--supos-fill-secondary);
 }
 
 /* dark Theme */
 .dark {
+  --supos-craft-bg-color: #262626;
   --supos-text-color: var(--supos-t-white-color);
   --supos-bg-color: var(--supos-t-gray-color-100);
   --supos-header-bg-color: var(--supos-t-gray-color-100);
-  --supos-header-splitter-color: rgb(255 255 255 / 15%);
+  --supos-color-fill: rgb(255 255 255 / 15%);
   --supos-check-color: var(--supos-t-white-color);
   --supos-table-head-bg-color: var(--supos-t-gray-color-50);
   --supos-nocheck-color: #ffc;
@@ -161,8 +164,6 @@ iframe {
   --supos-input-color: var(--supos-t-gray-color-80);
   --supos-select-active-color: var(--supos-t-gray-color-70);
   --supos-tag-color: var(--supos-t-gray-color-90);
-  --cds-icon-primary: var(--supos-t-gray-color-10);
-  --cds-icon-inverse: var(--supos-t-gray-color-100);
   --supos-icon-color: var(--supos-text-color);
   --supos-shadow-color: var(--supos-t-gray-color-90);
   --supos-select-d-color: rgba(255, 255, 255, 0.25);
@@ -187,6 +188,11 @@ iframe {
   --supos-promodal-bg-pg-color: var(--supos-t-boxshadow-dark-color);
   --supos-modal-mask-bg: rgba(255, 255, 255, 0.45);
   --supos-icon-disabled-color: rgba(255, 255, 255, 0.25);
+  --supos-t-card-select-bg: var(--supos-t-gray-color-80);
+  --supos-t-card-hover-bg: var(--supos-t-menu-hover-color);
+  --supos-layer-selecter-hover: #d1d1d1;
+  --supos-t-text-disabled-color: var(--supos-t-white-select-d-color);
+  --supos-t-dividr-color: #6e6e6e;
 }
 // chartreuse
 .chartreuse {
@@ -204,9 +210,6 @@ iframe {
   --supos-active-with-range-bg: var(--supos-t-chartreuse-color-10);
   --supos-primary-bg: var(--supos-t-chartreuse-color-10);
   --supos-primary-bg-hover: var(--supos-t-chartreuse-color-20);
-  // .cds--btn--primary {
-  //   background-color: var(--supos-theme-color) !important;
-  // }
 }
 // chartreuseDark 用来覆盖亮绿色主题和其它暗主题保持一致
 .chartreuseDark {
@@ -221,9 +224,7 @@ iframe {
 .ant-select-arrow {
   color: var(--supos-text-color) !important; /* 设置下拉箭头的颜色 */
 }
-.cds--breadcrumb > .cds--breadcrumb-item:not(:last-child) span {
-  color: var(--supos-theme-color);
-}
+
 .ant-spin .ant-spin-dot-holder {
   color: var(--supos-theme-color);
 }
@@ -265,4 +266,21 @@ input:-internal-autofill-selected {
 }
 input::placeholder {
   color: var(--supos-t-placeholder-color) !important;
+}
+// 全局分页样式
+.custom-pagination {
+  .ant-pagination-item,
+  .ant-pagination-options-quick-jumper,
+  .ant-pagination-options-quick-jumper input {
+    background-color: var(--supos-header-bg-color) !important;
+  }
+
+  .ant-pagination-item-active,
+  .ant-pagination-options-quick-jumper input:focus-within {
+    border-color: var(--supos-theme-color) !important;
+  }
+
+  .ant-pagination-item-active a {
+    color: var(--supos-theme-color) !important;
+  }
 }

@@ -1,10 +1,14 @@
-import { ComLayout, ComContent, Board, ComDrawer, AuthButton } from '@/components';
 import { Flex } from 'antd';
 import { FC, useRef, useState } from 'react';
 import DeployForm from '@/pages/app-management/components/DeployForm';
 import { PageProps } from '@/common-types';
 import { useTranslate } from '@/hooks';
 import { ButtonPermission } from '@/common-types/button-permission';
+import { AuthButton } from '@/components/auth';
+import ComDrawer from '@/components/com-drawer';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import Board from '@/components/craft';
 const Module: FC<PageProps> = ({ location }) => {
   const formatMessage = useTranslate();
 

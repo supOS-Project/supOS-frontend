@@ -29,11 +29,11 @@
         }
 
         &:has(.rightKeySelected) {
-          background: var(--cds-layer-selected-hover-01);
+          background: var(--supos-t-card-hover-bg);
         }
 
         &:hover {
-          background-color: var(--cds-layer-selected-hover-01);
+          background-color: var(--supos-t-card-hover-bg);
         }
 
         .customTreeNode {
@@ -89,7 +89,7 @@
       }
 
       .ant-tree-treenode-selected {
-        background-color: var(--cds-layer-selected-01);
+        background-color: var(--supos-hover-card-color);
         position: relative;
 
         &::before {

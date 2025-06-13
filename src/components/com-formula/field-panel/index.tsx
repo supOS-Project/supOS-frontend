@@ -5,9 +5,10 @@ const FieldPanel: FC<{
   onClick?: (item: any) => void;
   fieldList?: { label: string; value: string }[];
   style?: CSSProperties;
-}> = ({ onClick, fieldList = [], style }) => {
+  tooltip?: React.ReactNode | false;
+}> = ({ onClick, fieldList = [], style, tooltip }) => {
   return (
-    <Flex wrap gap={'10px 0'} style={style}>
+    <Flex wrap gap={'10px 0'} style={style} align="center">
       {fieldList?.map((item) => (
         <Tag
           key={item.value}
@@ -19,6 +20,7 @@ const FieldPanel: FC<{
           {item.label}
         </Tag>
       ))}
+      {tooltip}
     </Flex>
   );
 };

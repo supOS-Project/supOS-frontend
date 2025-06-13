@@ -2,9 +2,9 @@ import { FC } from 'react';
 import { RenderMessageProps } from '@copilotkit/react-ui';
 import classNames from 'classnames';
 import { ChatBot } from '@carbon/icons-react';
-import { InlineLoading } from '@/components';
 import ReactMarkdown from 'react-markdown';
 import './TextMessage.scss';
+import InlineLoading from '@/components/inline-loading';
 
 const TextMessage: FC<RenderMessageProps & { message: any }> = (props) => {
   const { message, inProgress, isCurrentMessage } = props;

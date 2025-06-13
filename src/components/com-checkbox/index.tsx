@@ -1,21 +1,34 @@
 import { Checkbox, CheckboxProps } from 'antd';
-import { CSSProperties, FC } from 'react';
+import { CSSProperties, FC, ReactNode } from 'react';
 import classNames from 'classnames';
 import './index.scss';
 
 export interface ComCheckboxProps extends CheckboxProps {
-  label?: string;
+  label?: ReactNode;
   disabled?: boolean;
+  readonly?: boolean;
   rootStyle?: CSSProperties;
   rootClassname?: CSSProperties;
 }
 
-const ComCheckbox: FC<ComCheckboxProps> = ({ rootClassname, rootStyle, label, disabled, ...restProps }) => {
+const ComCheckbox: FC<ComCheckboxProps> = ({
+  readonly,
+  rootClassname,
+  rootStyle,
+  label,
+  disabled,
+  children,
+  ...restProps
+}) => {
   return (
     <div className={classNames('custom-checkbox-wrapper', rootClassname)} style={rootStyle}>
-      <Checkbox {...restProps} disabled={disabled} className="com-checkbox">
-        {label}
-      </Checkbox>
+      {readonly ? (
+        (label ?? children)
+      ) : (
+        <Checkbox {...restProps} disabled={disabled} className={classNames('com-checkbox', restProps.className)}>
+          {label ?? children}
+        </Checkbox>
+      )}
     </div>
   );
 };

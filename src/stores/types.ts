@@ -27,6 +27,14 @@ export interface RoutesProps {
    * */
   isFrontend?: boolean;
   /**
+   * @description 用来判断是否是模块联邦远程路由 1 时候是
+   * */
+  isRemote?: string;
+  /**
+   * @description 子页面路由 不会在konga上面注册
+   * */
+  remoteSubPageList?: string[];
+  /**
    * @description 用来判断是否有子建
    * */
   hasChildren?: boolean;
@@ -35,6 +43,9 @@ export interface RoutesProps {
    * */
   service?: {
     id: string;
+    host: string;
+    port: string;
+    protocol: string;
     name: string;
     /**
      * @description iconUrl:  icon地址; root:frontend表示是前端的路由; description: 父级描述；
@@ -46,6 +57,7 @@ export interface RoutesProps {
   // parentName国际化
   parentNameI18?: string;
   key?: string;
+  value?: string;
   parentKey?: string;
   iconComp?: ReactElement;
   iconUrl?: string;
@@ -59,6 +71,14 @@ export interface RoutesProps {
   menuProtocol?: string;
   menuHost?: string;
   status?: number | string;
+  // 0:  iframe打开(自己域名)  1: 打开新页面（自己域名） 默认0  2：打开新页面（同域）
+  openType?: string;
+  // openType为3跳转的地址
+  indexUrl?: string;
+  // 是否是插件注册进来的子菜单
+  isRemoteChildMenu?: boolean;
+  // 子菜单的key 会和父级拼接 比如 AppMangament  key是 detail
+  childrenMenuKey?: string;
 }
 
 export interface DataItem {
@@ -101,6 +121,12 @@ export interface UserInfoProps {
    * @description 按钮权限 button:xxx
    * */
   buttonList?: DataItem[];
+  // 登录后跳转的地址
+  homePage?: string;
+  // 是否是超管
+  superAdmin?: string;
+  // 手机号
+  phone?: string;
 }
 
 export interface ContainerItemProps {
@@ -138,4 +164,9 @@ export interface SystemInfoProps {
   };
   // 单topic还是多topic影响demo的数据展示
   multipleTopic?: boolean;
+  // 是否使用别名作为topic
+  useAliasPathAsTopic?: boolean;
+
+  qualityName?: string;
+  timestampName?: string;
 }

@@ -1,10 +1,19 @@
 import { FC } from 'react';
 import { useTranslate } from '@/hooks';
 
-const History: FC<any> = ({ protocol, dataPath }) => {
+interface HistoryProps {
+  protocol: { [key: string]: any };
+  dataPath: string;
+}
+interface windowContentType {
+  windowType: string;
+  options: { [key: string]: any };
+}
+
+const History: FC<HistoryProps> = ({ protocol, dataPath }) => {
   const formatMessage = useTranslate();
 
-  const windowContent = (window: any) => {
+  const windowContent = (window: windowContentType) => {
     switch (window?.windowType) {
       case 'INTERVAL':
         return (

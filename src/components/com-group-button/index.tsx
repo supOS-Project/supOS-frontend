@@ -1,7 +1,8 @@
 import './index.scss';
 import { CSSProperties, FC, ReactNode } from 'react';
 import UserPopover from './UserPopover';
-import { AuthWrapper } from '@/components';
+import NoticePopover from './NoticePopover';
+import { AuthWrapper } from '../auth';
 
 interface OptionProps {
   onClick?: (item: OptionProps) => void;
@@ -11,6 +12,7 @@ interface OptionProps {
   auth?: string | string[];
   noHoverStyle?: boolean;
   key: string;
+  hidden?: boolean;
 }
 interface ComGroupButtonProps {
   options: (OptionProps | undefined)[];
@@ -21,24 +23,38 @@ const ComGroupButton: FC<ComGroupButtonProps> = ({ options }) => {
   return (
     <div className="com-group-button">
       {filterOptions?.map((item: any) => {
-        return item.title === 'user' ? (
-          <UserPopover key={item.key}>
-            <div style={item.style} className="item">
-              {item.label}
-            </div>
-          </UserPopover>
-        ) : (
-          <AuthWrapper auth={item.auth} key={item.key}>
-            <div
-              style={item.style}
-              onClick={() => item?.onClick?.(item)}
-              className={!item.noHoverStyle ? 'item' : 'no-hover-item'}
-              title={item.title}
-            >
-              {item.label}
-            </div>
-          </AuthWrapper>
-        );
+        if (item.hidden) return null;
+        switch (item.key) {
+          case 'user':
+            return (
+              <UserPopover key={item.key}>
+                <div style={item.style} className="item">
+                  {item.label}
+                </div>
+              </UserPopover>
+            );
+          case 'notice':
+            return (
+              <NoticePopover key={item.key} trigger="click" updateDotStatus={item.onClick}>
+                <div style={item.style} className="item">
+                  {item.label}
+                </div>
+              </NoticePopover>
+            );
+          default:
+            return (
+              <AuthWrapper auth={item.auth} key={item.key}>
+                <div
+                  style={item.style}
+                  onClick={() => item?.onClick?.(item)}
+                  className={!item.noHoverStyle ? 'item' : 'no-hover-item'}
+                  title={item.title}
+                >
+                  {item.label}
+                </div>
+              </AuthWrapper>
+            );
+        }
       })}
     </div>
   );

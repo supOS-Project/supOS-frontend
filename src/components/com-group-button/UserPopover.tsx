@@ -1,17 +1,21 @@
-import { FC, ReactNode, useState } from 'react';
-import { Popover, Divider, Flex, PopoverProps, Button, Form, Input } from 'antd';
-import { ColorPalette, Logout, SettingsEdit, UserAvatar } from '@carbon/icons-react';
-import { removeToken, validSpecialCharacter, storageOpt } from '@/utils';
+import { FC, ReactNode, useEffect, useState } from 'react';
+import { Popover, Divider, Flex, PopoverProps, Button, Form, Input, App, ConfigProvider, Tabs } from 'antd';
+import { Checkmark, ColorPalette, Contrast, Logout, SettingsEdit, UserAvatar } from '@carbon/icons-react';
 import { useTranslate } from '@/hooks';
-import { observer } from 'mobx-react-lite';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
 import ComSelect from '../com-select';
-import { ThemeTypeEnum } from '@/stores/theme-store.ts';
-import { useThemeContext } from '@/contexts/theme-context.ts';
 import ProModal from '../pro-modal';
-import { updateUser, userResetPwd } from '@/apis/inter-api/user-manage';
+import { setHomePageApi, updateUser, userResetPwd } from '@/apis/inter-api/user-manage';
 import { LOGIN_URL } from '@/common-types/constans';
 import { SUPOS_USER_GUIDE_ROUTES, SUPOS_USER_TIPS_ENABLE } from '@/common-types/constans';
+import { RoutesProps } from '@/stores/types.ts';
+import { removeToken } from '@/utils/auth';
+import { storageOpt } from '@/utils/storage';
+import { passwordRegex, phoneRegex, validSpecialCharacter } from '@/utils/pattern';
+import { fetchBaseStore, updateForUserInfo, useBaseStore } from '@/stores/base';
+import { PrimaryColorType, setPrimaryColor, setTheme, ThemeType, useThemeStore } from '@/stores/theme-store.ts';
+// import { initI18n, useI18nStore } from '@/stores/i18n-store.ts';
+// import { getPluginListApi } from '@/apis/inter-api/plugin.ts';
+// import { preloadPluginLang } from '@/utils';
 
 const logout = (path?: string) => {
   removeToken();
@@ -20,6 +24,7 @@ const logout = (path?: string) => {
   storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
   // 退出时重置tips信息
   storageOpt.remove(SUPOS_USER_TIPS_ENABLE);
+  storageOpt.remove('personInfo');
 };
 
 const ComList: FC<{
@@ -47,27 +52,53 @@ const ComList: FC<{
     </>
   );
 };
-
+const colorList = [
+  {
+    code: 'blue',
+    // name: i18n('setting.label.blue'),
+    color: '#1d77fe',
+  },
+  {
+    code: 'chartreuse',
+    // name: i18n('setting.label.violet'),
+    color: '#94c618',
+  },
+];
 const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
   const formatMessage = useTranslate();
-  const routesStore = useRoutesContext();
-  const themeStore = useThemeContext();
+  const { currentUserInfo, systemInfo, pickedRoutesOptionsNoChildrenMenu } = useBaseStore((state) => ({
+    currentUserInfo: state.currentUserInfo,
+    systemInfo: state.systemInfo,
+    pickedRoutesOptionsNoChildrenMenu: state.pickedRoutesOptionsNoChildrenMenu,
+  }));
+  const { _theme, primaryColor } = useThemeStore((state) => ({
+    _theme: state._theme,
+    primaryColor: state.primaryColor,
+  }));
+  // const { lang } = useI18nStore((state) => ({
+  //   lang: state.lang,
+  // }));
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form1] = Form.useForm();
   const [form2] = Form.useForm();
+  const [form3] = Form.useForm();
+  const { message } = App.useApp();
 
   const toggleTheme = (v: string) => {
-    themeStore.setTheme(v as ThemeTypeEnum);
+    setTheme(v as ThemeType);
   };
-  const name = routesStore.currentUserInfo.firstName || routesStore.currentUserInfo.preferredUsername;
-  const version = `${routesStore.systemInfo.appTitle} Version : ${routesStore.systemInfo?.version || '1.0.0'}`;
+  const togglePrimaryColor = (v: string) => {
+    setPrimaryColor(v as PrimaryColorType);
+  };
+  const name = currentUserInfo.firstName || currentUserInfo.preferredUsername;
+  const version = `${systemInfo.appTitle} Version : ${systemInfo?.version || '1.0.0'}`;
   const userContent = (
     <div className="userPopoverWrap">
       <div className="userAvatar">{name?.slice(0, 1)?.toLocaleUpperCase()}</div>
       <div className="userName">{name}</div>
       <Flex
-        title={routesStore.currentUserInfo.roleString}
+        title={currentUserInfo.roleString}
         className="userRole"
         justify="center"
         align="center"
@@ -82,16 +113,16 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
             textOverflow: 'ellipsis',
           }}
         >
-          {routesStore.currentUserInfo.roleString}
+          {currentUserInfo.roleString}
         </div>
       </Flex>
-      {routesStore.currentUserInfo.email && (
-        <div className="userEmail" title={routesStore.currentUserInfo.email}>
+      {currentUserInfo.email && (
+        <div className="userEmail" title={currentUserInfo.email}>
           <div
             className="emailStatus"
-            style={{ backgroundColor: routesStore.currentUserInfo.emailVerified ? '#6fdc8c' : '#ff8389' }}
+            style={{ backgroundColor: currentUserInfo.emailVerified ? '#6fdc8c' : '#ff8389' }}
           />
-          {routesStore.currentUserInfo.email}
+          {currentUserInfo.email}
         </div>
       )}
       <Divider
@@ -103,51 +134,89 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
       <ComList
         list={[
           {
-            icon: <ColorPalette color="var(--supos-text-color)" size={18} />,
+            icon: <Contrast color="var(--supos-text-color)" size={18} />,
             label: <div style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.theme')}</div>,
             key: 'theme',
             children: (
               <ComSelect
-                value={themeStore._theme}
+                value={_theme}
                 style={{ height: 28, width: 94, backgroundColor: 'var(--supos-bg-color) !important' }}
                 onChange={toggleTheme}
                 options={[
                   {
                     label: formatMessage('common.light'),
-                    value: ThemeTypeEnum.LightBlue,
+                    value: ThemeType.Light,
                   },
                   {
                     label: formatMessage('common.dark'),
-                    value: ThemeTypeEnum.DarkBlue,
-                  },
-                  {
-                    label: formatMessage('common.lightChartreuse'),
-                    value: ThemeTypeEnum.LightChartreuse,
-                  },
-                  {
-                    label: formatMessage('common.darkChartreuse'),
-                    value: ThemeTypeEnum.DarkChartreuse,
+                    value: ThemeType.Dark,
                   },
                   {
                     label: formatMessage('common.followSystem'),
-                    value: ThemeTypeEnum.System,
+                    value: ThemeType.System,
                   },
                 ]}
               />
             ),
           },
+          {
+            icon: <ColorPalette color="var(--supos-text-color)" size={18} />,
+            label: <div style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.themeColor')}</div>,
+            key: 'themeColor',
+            children: (
+              <ul style={{ display: 'flex', gap: 12, width: 94 }}>
+                {colorList.map((item) => {
+                  return (
+                    <div key={item.code}>
+                      <div
+                        onClick={togglePrimaryColor.bind(null, item.code)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          flexDirection: 'column',
+                          justifyContent: 'center',
+                          backgroundColor: item.color,
+                          height: 25,
+                          width: 25,
+                          borderRadius: '50%',
+                        }}
+                      >
+                        {primaryColor == item.code && <Checkmark style={{ color: '#fff' }} />}
+                      </div>
+                    </div>
+                  );
+                })}
+              </ul>
+            ),
+          },
           // {
-          //   icon: <Time color="var(--supos-text-color)" size={18} />,
-          //   label: <div style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.timezone')}</div>,
-          //   key: 'timeZone',
+          //   icon: <Earth color="var(--supos-text-color)" size={18} />,
+          //   label: <div style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.language')}</div>,
+          //   key: 'language',
           //   children: (
           //     <ComSelect
-          //       value="UTC+8"
+          //       onChange={(v) => {
+          //         getPluginListApi().then(async (data) => {
+          //           const pluginLang = await preloadPluginLang(
+          //             data
+          //               ?.filter((f: any) => f.installStatus === 'installed')
+          //               ?.filter((f: any) => f?.plugInfoYml?.route?.name)
+          //               ?.map((m: any) => ({ name: `/${m?.plugInfoYml?.route?.name}` })) || [],
+          //             v
+          //           );
+          //           return initI18n(v, pluginLang);
+          //         });
+          //       }}
+          //       value={lang}
           //       style={{ height: 28, width: 94, backgroundColor: 'var(--supos-bg-color) !important' }}
           //       options={[
           //         {
-          //           label: 'UTC+8',
-          //           value: 'UTC+8',
+          //           label: 'English',
+          //           value: 'en-US',
+          //         },
+          //         {
+          //           label: '中文',
+          //           value: 'zh-CN',
           //         },
           //       ]}
           //     />
@@ -181,14 +250,16 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
             key: 'setting',
             onClick: () => {
               setOpen(true);
-              form1.setFieldValue('firstName', routesStore?.currentUserInfo?.firstName);
+              form1.setFieldValue('firstName', currentUserInfo?.firstName);
+              form1.setFieldValue('phone', currentUserInfo?.phone);
+              form1.setFieldValue('email', currentUserInfo?.email);
             },
           },
           {
             icon: <Logout color="var(--supos-text-color)" size={18} />,
             label: <div style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.logout')}</div>,
             key: 'layout',
-            onClick: () => logout(routesStore.systemInfo.loginPath),
+            onClick: () => logout(systemInfo.loginPath),
           },
         ]}
       />
@@ -197,20 +268,26 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
       </span>
     </div>
   );
+  const rest = () => {
+    form1.resetFields();
+    form2.resetFields();
+  };
   const onSave1 = async () => {
     const info = await form1.validateFields();
     setLoading(true);
     updateUser({
       ...info,
-      userId: routesStore.currentUserInfo?.sub,
-      roleList: routesStore.currentUserInfo?.roleList,
+      userId: currentUserInfo?.sub,
+      // roleList: routesStore.currentUserInfo?.roleList,
     })
       .then(() => {
+        message.success(formatMessage('common.settingSuccess'));
         // 修改用户名，手动去更新
-        routesStore.updateFirstNameForUserInfo(info.firstName);
+        updateForUserInfo({
+          ...info,
+        });
         setOpen(false);
         form1.resetFields();
-        form2.resetFields();
       })
       .finally(() => {
         setLoading(false);
@@ -222,127 +299,286 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
     userResetPwd({
       newPassword: info.password,
       password: info.oldPassword,
-      userId: routesStore.currentUserInfo?.sub,
-      username: routesStore.currentUserInfo?.preferredUsername,
+      userId: currentUserInfo?.sub,
+      username: currentUserInfo?.preferredUsername,
     })
       .then(() => {
-        logout(routesStore.systemInfo.loginPath);
+        message.success(formatMessage('common.settingSuccess'));
+        logout(systemInfo.loginPath);
       })
       .finally(() => {
         setLoading(false);
       });
   };
+  const onSave3 = async () => {
+    const info = await form3.validateFields();
+    if (info) {
+      const option = pickedRoutesOptionsNoChildrenMenu?.find((f) => f.value === info.homePage);
+      const getHomePage = (item?: RoutesProps) => {
+        if (!item) return '';
+        if (item.isFrontend) return item.menu!.url;
+        if (item.indexUrl) return item.indexUrl;
+        return `/${item.key}`;
+      };
+      const homePage = getHomePage(option);
+      setHomePageApi({ homePage })?.then(() => {
+        updateForUserInfo({ homePage });
+        message.success(formatMessage('common.settingSuccess'));
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      // 更新路由
+      fetchBaseStore?.().then(() => {
+        const info = pickedRoutesOptionsNoChildrenMenu?.find(
+          (f) =>
+            '/' + f.value === currentUserInfo?.homePage ||
+            f.menu?.url === currentUserInfo?.homePage ||
+            f.indexUrl === currentUserInfo?.homePage
+        );
+        form3.setFieldValue('homePage', info?.value);
+      });
+    }
+  }, [open]);
+
+  const items: any[] = [
+    {
+      label: formatMessage('account.profile'),
+      key: 1,
+      children: (
+        <Flex style={{ height: 300 }} vertical>
+          <Form layout="vertical" form={form1} style={{ flex: 1 }}>
+            <Form.Item
+              label={formatMessage('account.updateDisplayName')}
+              name="firstName"
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage('rule.required'),
+                },
+                {
+                  type: 'string',
+                  min: 1,
+                  max: 200,
+                  message: formatMessage('rule.characterLimit'),
+                },
+                {
+                  pattern: validSpecialCharacter,
+                  message: formatMessage('rule.illegality'),
+                },
+              ]}
+            >
+              <Input className={'input'} placeholder={formatMessage('account.displayName')} />
+            </Form.Item>
+            <Form.Item
+              label={formatMessage('common.update') + formatMessage('account.email')}
+              name="email"
+              rules={[{ type: 'email' }]}
+            >
+              <Input placeholder={formatMessage('account.email')} />
+            </Form.Item>
+            <Form.Item
+              label={formatMessage('common.update') + formatMessage('account.phone')}
+              name="phone"
+              rules={[{ pattern: phoneRegex, message: formatMessage('rule.phone') }]}
+              validateTrigger={['onBlur']}
+            >
+              <Input
+                placeholder={formatMessage('account.phone')}
+                onFocus={() => {
+                  form1.setFields([
+                    {
+                      name: 'phone',
+                      errors: undefined, // 清除校验错误
+                    },
+                  ]);
+                }}
+              />
+            </Form.Item>
+          </Form>
+          <Button onClick={onSave1} style={{ height: 32 }} block type="primary" loading={loading}>
+            {formatMessage('common.save')}
+          </Button>
+        </Flex>
+      ),
+    },
+    {
+      label: formatMessage('common.password'),
+      key: 2,
+      children: (
+        <Flex style={{ height: 300 }} vertical>
+          <Form layout="vertical" form={form2} style={{ flex: 1 }}>
+            <Form.Item
+              label={formatMessage('account.oldPassWord')}
+              name="oldPassword"
+              rules={[
+                {
+                  required: true,
+                  message: '',
+                },
+                {
+                  max: 10,
+                  message: formatMessage('uns.labelMaxLength', {
+                    label: formatMessage('appGui.password'),
+                    length: 10,
+                  }),
+                },
+                { pattern: passwordRegex, message: formatMessage('rule.password') },
+              ]}
+            >
+              <Input.Password placeholder={formatMessage('appGui.password')} />
+            </Form.Item>
+            <Form.Item
+              label={formatMessage('account.newpassWord')}
+              name="password"
+              dependencies={['oldPassword']}
+              rules={[
+                {
+                  required: true,
+                  message: '',
+                },
+                {
+                  max: 10,
+                  message: formatMessage('uns.labelMaxLength', {
+                    label: formatMessage('appGui.password'),
+                    length: 10,
+                  }),
+                },
+                { pattern: passwordRegex, message: formatMessage('rule.password') },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('oldPassword') !== value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error(formatMessage('account.passwordSame')));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password placeholder={formatMessage('appGui.password')} />
+            </Form.Item>
+            <Form.Item
+              label={formatMessage('account.confirmpassWord')}
+              name="confirm_password"
+              dependencies={['password']}
+              rules={[
+                {
+                  required: true,
+                  message: '',
+                },
+                {
+                  max: 10,
+                  message: formatMessage('uns.labelMaxLength', {
+                    label: formatMessage('appGui.password'),
+                    length: 10,
+                  }),
+                },
+                { pattern: passwordRegex, message: formatMessage('rule.password') },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('password') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error(formatMessage('account.passwordMatch')));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password placeholder={formatMessage('appGui.password')} />
+            </Form.Item>
+          </Form>
+          <Button onClick={onSave2} style={{ height: 32 }} block type="primary" loading={loading}>
+            {formatMessage('common.save')}
+          </Button>
+        </Flex>
+      ),
+    },
+    {
+      label: formatMessage('account.homePage'),
+      key: 3,
+      children: (
+        <Form
+          layout="vertical"
+          form={form3}
+          style={{ height: 300, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+        >
+          <Form.Item label={formatMessage('account.homePage')} name="homePage">
+            <ComSelect
+              options={pickedRoutesOptionsNoChildrenMenu}
+              placeholder={formatMessage('common.searchPage')}
+              filterOption={(input, option) =>
+                ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              allowClear
+              showSearch
+            />
+          </Form.Item>
+          <Form.Item shouldUpdate={(pre, cur) => pre.homePage !== cur.homePage} noStyle>
+            {({ getFieldValue }) => {
+              return (
+                <Button
+                  disabled={!getFieldValue('homePage')}
+                  onClick={onSave3}
+                  style={{ height: 32 }}
+                  block
+                  type="primary"
+                  loading={loading}
+                >
+                  {formatMessage('common.save')}
+                </Button>
+              );
+            }}
+          </Form.Item>
+        </Form>
+      ),
+    },
+  ];
   return (
     <>
       <Popover rootClassName="userPopover" placement="bottomRight" {...restProps} content={userContent}>
         {children}
       </Popover>
       <ProModal
-        size="xxs"
+        size="sm"
         onCancel={() => {
           setOpen(false);
-          form1.resetFields();
-          form2.resetFields();
+          rest();
         }}
         title={formatMessage('account.settings')}
         open={open}
+        // open
         maskClosable={false}
       >
-        <Form layout="vertical" form={form1}>
-          <Form.Item
-            label={formatMessage('account.updateDisplayName')}
-            name="firstName"
-            rules={[
-              {
-                required: true,
-                message: formatMessage('rule.required'),
+        <ConfigProvider
+          theme={{
+            components: {
+              Form: {
+                itemMarginBottom: 12,
               },
-              {
-                type: 'string',
-                min: 1,
-                max: 200,
-                message: formatMessage('rule.characterLimit'),
-              },
-              {
-                pattern: validSpecialCharacter,
-                message: formatMessage('rule.illegality'),
-              },
-            ]}
-          >
-            <Input className={'input'} />
-          </Form.Item>
-          <Button onClick={onSave1} style={{ height: 32 }} block type="primary" loading={loading}>
-            {formatMessage('common.save')}
-          </Button>
-        </Form>
-        <Divider
-          style={{
-            background: '#c6c6c6',
-            margin: '15px auto',
+            },
           }}
-        />
-        <Form layout="vertical" form={form2}>
-          <Form.Item
-            label={formatMessage('account.oldPassWord')}
-            name="oldPassword"
-            rules={[
-              {
-                required: true,
-                message: '',
-              },
-            ]}
-          >
-            <Input.Password placeholder={formatMessage('appGui.password')} />
-          </Form.Item>
-          <Form.Item
-            label={formatMessage('account.newpassWord')}
-            name="password"
-            dependencies={['oldPassword']}
-            rules={[
-              {
-                required: true,
-                message: '',
-              },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('oldPassword') !== value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error(formatMessage('account.passwordSame')));
-                },
-              }),
-            ]}
-          >
-            <Input.Password placeholder={formatMessage('appGui.password')} />
-          </Form.Item>
-          <Form.Item
-            label={formatMessage('account.confirmpassWord')}
-            name="confirm_password"
-            dependencies={['password']}
-            rules={[
-              {
-                required: true,
-                message: '',
-              },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error(formatMessage('account.passwordMatch')));
-                },
-              }),
-            ]}
-          >
-            <Input.Password placeholder={formatMessage('appGui.password')} />
-          </Form.Item>
-          <Button onClick={onSave2} style={{ height: 32 }} block type="primary" loading={loading}>
-            {formatMessage('common.save')}
-          </Button>
-        </Form>
+        >
+          <Tabs tabPosition="left" items={items} />
+
+          {/*<Divider*/}
+          {/*  style={{*/}
+          {/*    background: '#c6c6c6',*/}
+          {/*    margin: '16px auto',*/}
+          {/*  }}*/}
+          {/*/>*/}
+
+          {/*<Divider*/}
+          {/*  style={{*/}
+          {/*    background: '#c6c6c6',*/}
+          {/*    margin: '16px auto',*/}
+          {/*  }}*/}
+          {/*/>*/}
+        </ConfigProvider>
       </ProModal>
     </>
   );
 };
 
-export default observer(UserPopover);
+export default UserPopover;

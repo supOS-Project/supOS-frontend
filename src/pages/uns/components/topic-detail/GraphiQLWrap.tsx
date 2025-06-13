@@ -3,11 +3,11 @@ import { GraphiQL } from 'graphiql';
 import { explorerPlugin } from '@graphiql/plugin-explorer';
 import 'graphiql/graphiql.css'; // 引入样式
 import '@graphiql/plugin-explorer/dist/style.css';
-import { useThemeContext } from '@/contexts/theme-context';
 import { useEffect, useRef } from 'react';
+import { useThemeStore } from '@/stores/theme-store.ts';
 
 const GraphiQLWrap = ({ alias }: any) => {
-  const themeStore = useThemeContext();
+  const theme = useThemeStore((state) => state.theme);
   const timer: any = useRef(null);
   // 创建fetcher
   const fetcher = createGraphiQLFetcher({
@@ -69,7 +69,7 @@ const GraphiQLWrap = ({ alias }: any) => {
         visiblePlugin={explorer}
         disableTabs
         showPersistHeadersSettings={false}
-        forcedTheme={(themeStore.theme as any).split('-')[0] || 'light'}
+        forcedTheme={(theme as any) || 'light'}
         query={`query MyQuery {
   ${alias} {
     _ct

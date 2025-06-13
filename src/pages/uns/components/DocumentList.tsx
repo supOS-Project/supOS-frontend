@@ -1,15 +1,17 @@
 import { App, Empty, Flex, Image, Tooltip } from 'antd';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { ComItem, ComCopy } from '@/components';
 import {
   deleteAttachments,
   getAttachment,
   getAttachmentsList,
   previewAttachment,
 } from '@/apis/inter-api/attachments.ts';
-import { validPicRegex, downloadFn } from '@/utils';
 import { Close, Download, View } from '@carbon/icons-react';
 import { useTranslate } from '@/hooks';
+import ComCopy from '@/components/com-copy';
+import ComItem from '@/components/com-item';
+import { downloadFn } from '@/utils/blob';
+import { validPicRegex } from '@/utils/pattern';
 export interface DocumentListRef {
   refresh: () => any;
 }

@@ -1,4 +1,4 @@
-import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils';
+import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils/request';
 
 export const baseUrl = '/chat2db/api';
 

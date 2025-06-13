@@ -1,9 +1,4 @@
 .pro-modal {
-  --cds-focus: var(--supos-theme-color);
-  --cds-icon-primary: var(--supos-text-color);
-  --cds-text-disabled: var(--supos-select-d-color);
-  --cds-icon-disabled: var(--supos-select-d-color);
-
   .ant-modal-content {
     padding: 0 24px 40px;
   }
@@ -18,6 +13,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      line-height: 1;
 
       .drag-handle {
         flex: 1 1 auto;

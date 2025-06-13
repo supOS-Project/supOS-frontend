@@ -1,3 +1,4 @@
+.pro-table,
 .resizable-table {
   .ant-table-thead {
     .ant-table-cell {
@@ -6,20 +7,20 @@
       text-overflow: ellipsis;
 
       .react-resizable-line {
-        background-color: #ccc;
+        background-color: transparent;
         position: absolute;
-        inset-inline-end: -5px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1;
-        width: 7px;
-        height: 60%;
+        inset-inline-end: -3px;
+        top: 0;
+        z-index: 2;
+        width: 6px;
+        height: 100%;
         cursor: col-resize;
-        transition: opacity 0.2s;
+        transition:
+          background-color 0.2s,
+          width 0.2s;
 
         &:hover {
-          opacity: 1;
-          background-color: #666;
+          background-color: var(--supos-theme-color);
         }
       }
     }
@@ -75,4 +76,21 @@
 
 .ant-table-cell.ant-table-cell-scrollbar .react-resizable-line {
   display: none !important;
+}
+
+.hidden-empty {
+  .ant-table-placeholder {
+    display: none;
+  }
+}
+
+.fixed-pagination-bottom {
+  &,
+  .ant-spin-nested-loading {
+    height: 100%;
+
+    .ant-table {
+      height: calc(100% - 76px);
+    }
+  }
 }

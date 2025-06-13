@@ -1,4 +1,4 @@
-import { ApiWrapper } from '@/utils';
+import { ApiWrapper } from '@/utils/request';
 
 const baseUrl = '/inter-api/supos/example';
 
@@ -7,7 +7,7 @@ const api = new ApiWrapper(baseUrl);
 // 获取example列表
 export const queryExamples = async () =>
   api.post('/pageList', {
-    pageNo: 0,
+    pageNo: 1,
     pageSize: 110,
   });
 

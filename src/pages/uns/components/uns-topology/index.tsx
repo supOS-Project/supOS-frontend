@@ -8,18 +8,14 @@ import hasuraio from '@/assets/home-icons/hasuraio.svg';
 import postgresql from '@/assets/home-icons/postgresql.svg';
 import tdengine from '@/assets/home-icons/tdengine.png';
 import timescaleDB from '@/assets/home-icons/timescaleDB.svg';
-import { useTranslate, useMenuNavigate } from '@/hooks';
+import { useTranslate } from '@/hooks';
 import styles from './index.module.scss';
 import { useDeepCompareEffect, useMemoizedFn } from 'ahooks';
-import { observer } from 'mobx-react-lite';
-import routesStore from '@/stores/routes-store.ts';
 import { data } from '@/pages/uns/components/uns-topology/data.ts';
 import classNames from 'classnames';
-import Icon from '@ant-design/icons';
-import { Blend } from '@/components';
-import I18nStore from '@/stores/i18n-store';
 import { useSize } from 'ahooks';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
+import { useBaseStore } from '@/stores/base';
+import { getIntl } from '@/stores/i18n-store.ts';
 
 const Modbus = (nodes: any) => {
   return (
@@ -152,7 +148,7 @@ const NodeRed = () => {
   return (
     <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
       <img src={nodeRed} alt="" width="28px" />
-      {I18nStore.getIntl('common.nodeRed', 'Node-Red')}
+      {getIntl('common.nodeRed', 'Node-Red')}
     </div>
   );
 };
@@ -163,7 +159,7 @@ const StreamProcessing = () => {
   return <div className={styles['common-node']}>Stream Calculation</div>;
 };
 const TDEngine = () => {
-  const { dataBaseType } = useRoutesContext();
+  const dataBaseType = useBaseStore((state) => state.dataBaseType);
   return (
     <div className={styles['common-node']}>
       <img src={dataBaseType.includes('tdengine') ? tdengine : timescaleDB} width="28px" />
@@ -187,28 +183,36 @@ const GraphQL = () => {
     </div>
   );
 };
-const Gui = () => {
-  return (
-    <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
-      <Icon
-        component={Blend}
-        style={{
-          color: 'var(--supos-text-color)',
-          fontSize: 28,
-        }}
-      />
-      {I18nStore.getIntl('common.gui', 'GUI')}
-    </div>
-  );
-};
-const Apps = () => {
+const Grafana = () => {
   return (
     <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
       <ApplicationWeb size={28} />
-      {I18nStore.getIntl('common.apps', 'APPs')}
+      {getIntl('uns.autoDashboard', 'Dashboard')}
     </div>
   );
 };
+// const Gui = () => {
+//   return (
+//     <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
+//       <Icon
+//         component={Blend}
+//         style={{
+//           color: 'var(--supos-text-color)',
+//           fontSize: 28,
+//         }}
+//       />
+//       {getIntl('common.gui', 'GUI')}
+//     </div>
+//   );
+// };
+// const Apps = () => {
+//   return (
+//     <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
+//       <ApplicationWeb size={28} />
+//       {getIntl('common.apps', 'APPs')}
+//     </div>
+//   );
+// };
 
 register({
   shape: 'modbus',
@@ -289,17 +293,23 @@ register({
   component: GraphQL,
 });
 register({
-  shape: 'apps',
+  shape: 'grafana',
   width: 150,
   height: 40,
-  component: Apps,
+  component: Grafana,
 });
-register({
-  shape: 'gui',
-  width: 150,
-  height: 40,
-  component: Gui,
-});
+// register({
+//   shape: 'apps',
+//   width: 150,
+//   height: 40,
+//   component: Apps,
+// });
+// register({
+//   shape: 'gui',
+//   width: 150,
+//   height: 40,
+//   component: Gui,
+// });
 
 const TopologyChart = (datas: any) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -308,9 +318,6 @@ const TopologyChart = (datas: any) => {
   const graphRef = useRef<any>(null);
   const navigate = useNavigate();
   const formatMessage = useTranslate();
-  const handleNavigate = useMenuNavigate({
-    msg: formatMessage('common.menuNotFound'),
-  });
 
   const datahandle = useMemoizedFn(() => {
     if (!datas) return;
@@ -374,7 +381,10 @@ const TopologyChart = (datas: any) => {
           navigate('/collection-flow');
           break;
         case 'graphQL':
-          handleNavigate(routesStore?.pickedRoutesOptions?.find((item) => item?.menu?.url === '/hasura/home/'));
+          window.open('/hasura/home/');
+          break;
+        case 'grafana':
+          window.open('/grafana/home/dashboards/');
           break;
         case 'gui':
           navigate('/app-gui');
@@ -430,4 +440,4 @@ const TopologyChart = (datas: any) => {
     </div>
   );
 };
-export default observer(TopologyChart);
+export default TopologyChart;

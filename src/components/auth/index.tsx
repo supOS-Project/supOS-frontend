@@ -1,6 +1,6 @@
-import { hasPermission } from '@/utils';
 import { cloneElement, ComponentType, FC, Children, ReactNode, isValidElement } from 'react';
 import { Button } from 'antd';
+import { hasPermission } from '@/utils/auth';
 
 const withAuth =
   <T extends { auth?: string | string[] }>(Component: ComponentType<T>) =>

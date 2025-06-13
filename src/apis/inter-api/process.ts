@@ -1,6 +1,6 @@
-import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils';
+import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils/request';
 
-export const baseUrl = '/inter-api/supos/process';
+const baseUrl = '/inter-api/supos/process';
 
 const api = new ApiWrapper(baseUrl);
 

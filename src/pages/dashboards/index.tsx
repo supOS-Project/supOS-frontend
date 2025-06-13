@@ -1,32 +1,34 @@
 import { FC, useState } from 'react';
-import {
-  ComLayout,
-  ComContent,
-  OperationForm,
-  ComCardList,
-  ComPaginationNav,
-  ComDrawer,
-  ComSearch,
-} from '@/components';
-import { Form } from 'antd';
-import dashboardGrey from '@/assets/dashboard/dashboard-gray.svg';
-import dashboardBlue from '@/assets/dashboard/dashboard-blue.svg';
-import dashboardGreen from '@/assets/dashboard/dashboard-green.svg';
-import dashboardDark from '@/assets/dashboard/dashboard-dark.svg';
+import { App, Form, Pagination } from 'antd';
+// import dashboardGrey from '@/assets/dashboard/dashboard-gray.svg';
+// import dashboardBlue from '@/assets/dashboard/dashboard-blue.svg';
+// import dashboardGreen from '@/assets/dashboard/dashboard-green.svg';
+// import dashboardDark from '@/assets/dashboard/dashboard-dark.svg';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardList, addDashboard, editDashboard, deleteDashboard } from '@/apis/inter-api/uns';
 import { usePagination, useTranslate } from '@/hooks';
-import ThemeStore from '@/stores/theme-store';
 import { useActivate } from '@/contexts/tabs-lifecycle-context';
-import { validInputPattern, getSearchParamsString } from '@/utils';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
 import { PageProps } from '@/common-types.ts';
-import { Search } from '@carbon/icons-react';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
-import { observer } from 'mobx-react-lite';
+import { Dashboard, Search } from '@carbon/icons-react';
+import ComCardListVertical from '@/components/com-card-list-vertical';
+import ComDrawer from '@/components/com-drawer';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import ComSearch from '@/components/com-search';
+import OperationForm from '@/components/operation-form';
+import { validInputPattern } from '@/utils/pattern';
+import { getSearchParamsString } from '@/utils/url-util';
+import { useBaseStore } from '@/stores/base';
+import { AuthButton } from '@/components/auth';
+import { DeleteOutlined } from '@ant-design/icons';
+// import { useThemeStore } from '@/stores/theme-store.ts';
+
 const CollectionFlow: FC<PageProps> = ({ title }) => {
+  const { modal } = App.useApp();
   const formatMessage = useTranslate();
-  const { dashboardType } = useRoutesContext();
+  const dashboardType = useBaseStore((state) => state.dashboardType);
+  // const theme = useThemeStore((state) => state.theme);
 
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -129,6 +131,11 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
       .catch(() => {});
   };
 
+  const onEditHandle = (item: any) => {
+    setIsEdit(true);
+    edit(item);
+  };
+
   return (
     <ComLayout loading={loading}>
       <ComContent
@@ -141,33 +148,39 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           height: '100%',
         }}
         extra={
-          <ComSearch
-            form={searchForm}
-            formItemOptions={[
-              {
-                name: 'k',
-                properties: {
-                  prefix: <Search />,
-                  placeholder: formatMessage('uns.inputText'),
-                  style: { width: 300 },
-                  allowClear: true,
+          <>
+            <ComSearch
+              form={searchForm}
+              formItemOptions={[
+                {
+                  name: 'k',
+                  properties: {
+                    prefix: <Search />,
+                    placeholder: formatMessage('common.searchPlaceholder'),
+                    style: { width: 300 },
+                    allowClear: true,
+                  },
                 },
-              },
-            ]}
-            formConfig={{
-              onFinish: () => {
-                setSearchParams(searchForm.getFieldsValue());
-              },
-            }}
-            onSearch={() => setSearchParams(searchForm.getFieldsValue())}
-          />
+              ]}
+              formConfig={{
+                onFinish: () => {
+                  setSearchParams(searchForm.getFieldsValue());
+                },
+              }}
+              onSearch={() => setSearchParams(searchForm.getFieldsValue())}
+            />
+            <AuthButton auth={ButtonPermission['dashboards.add']} type="primary" onClick={onAddHandle}>
+              + {formatMessage('dashboards.newDashboard')}
+            </AuthButton>
+          </>
         }
       >
-        <ComCardList
+        <ComCardListVertical
           style={{ flex: 1 }}
-          addAuth={ButtonPermission['dashboards.add']}
-          deleteAuth={ButtonPermission['dashboards.delete']}
-          onAddHandle={onAddHandle}
+          // addAuth={ButtonPermission['dashboards.add']}
+          // onAddHandle={onAddHandle}
+          editAuth={ButtonPermission['dashboards.edit']}
+          onEditHandle={onEditHandle}
           list={(data || []).map((e: any) => {
             return {
               ...e,
@@ -176,15 +189,11 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                 : typeOptions.find((o) => o.value === 1)?.label,
             };
           })}
-          imgSrc={ThemeStore.theme.includes('dark') ? dashboardDark : dashboardGrey}
-          hoverImgSrc={
-            ThemeStore.theme.includes('dark')
-              ? dashboardDark
-              : ThemeStore.theme.includes('chartreuse')
-                ? dashboardGreen
-                : dashboardBlue
-          }
-          onDeleteHandle={onDeleteHandle}
+          cardIcon={<Dashboard size="40" />}
+          // imgSrc={theme.includes('dark') ? dashboardDark : dashboardGrey}
+          // hoverImgSrc={
+          //   theme.includes('dark') ? dashboardDark : theme.includes('chartreuse') ? dashboardGreen : dashboardBlue
+          // }
           viewOptions={[
             {
               label: formatMessage('dashboards.dashboardsTemplate'),
@@ -197,39 +206,54 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           ]}
           operationOptions={[
             {
-              label: formatMessage('common.edit'),
-              onClick: (item: any) => {
-                setIsEdit(true);
-                edit(item);
-              },
-              type: 'block',
-              auth: ButtonPermission['dashboards.edit'],
-            },
-            {
-              label: formatMessage('collectionFlow.design'),
-              onClick: (item: any) => {
-                setClickItem(item);
-                navigate(
-                  `/dashboards-preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'design', name: item.name })}`
-                );
-              },
-              type: 'blue',
-              auth: ButtonPermission['dashboards.design'],
-            },
-            {
               label: formatMessage('dashboards.preview'),
               onClick: (item: any) => {
                 setClickItem(item);
                 navigate(
-                  `/dashboards-preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'preview', name: item.name })}`
+                  `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'preview', name: item.name })}`
                 );
               },
-              type: 'blue',
+              type: 'outlined',
               auth: ButtonPermission['dashboards.preview'],
+            },
+            {
+              label: formatMessage('common.design'),
+              onClick: (item: any) => {
+                setClickItem(item);
+                navigate(
+                  `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'design', name: item.name })}`
+                );
+              },
+              type: 'primary',
+              auth: ButtonPermission['dashboards.design'],
+            },
+            {
+              label: formatMessage('common.delete'),
+              onClick: (item) =>
+                modal.confirm({
+                  title: formatMessage('common.deleteConfirm'),
+                  onOk: () => onDeleteHandle(item),
+                  okText: formatMessage('common.confirm'),
+                }),
+              type: 'dark',
+              btnProps: {
+                icon: <DeleteOutlined />,
+              },
+              auth: ButtonPermission['dashboards.delete'],
             },
           ]}
         />
-        <ComPaginationNav {...pagination} />
+        <Pagination
+          size="small"
+          className="custom-pagination"
+          align="center"
+          style={{ margin: '20px 0' }}
+          pageSize={pagination?.pageSize || 20}
+          current={pagination?.page}
+          showSizeChanger={false}
+          total={pagination?.total}
+          onChange={pagination.onChange}
+        />
         {/*  <SvgIcon name="up-dark" /> */}
       </ComContent>
       <ComDrawer title=" " open={show} onClose={onClose}>
@@ -239,4 +263,4 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
   );
 };
 
-export default observer(CollectionFlow);
+export default CollectionFlow;

@@ -1,0 +1,33 @@
+.custom-card {
+  padding: 16px;
+  background: var(--supos-uns-button-color);
+  border-radius: 3px;
+  color: var(--supos-table-first-color);
+
+  .card-title {
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }
+
+  .card-secondary-title {
+    opacity: 0.6;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 18px;
+    letter-spacing: 0.16px;
+  }
+
+  .card-description {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 18.2px;
+    letter-spacing: 0.16px;
+    flex: 1;
+  }
+}

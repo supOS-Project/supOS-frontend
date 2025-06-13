@@ -8,13 +8,17 @@ import { FC, useState } from 'react';
 import { AddLarge, Close } from '@carbon/icons-react';
 import { destroyApp } from '@/apis/inter-api/apps';
 import styles from './AppList.module.scss';
-import ThemeStore from '@/stores/theme-store';
-import { AuthWrapper } from '@/components';
 
 import { ButtonPermission } from '@/common-types/button-permission';
+import { AuthWrapper } from '@/components/auth';
+import { useThemeStore } from '@/stores/theme-store.ts';
 
 const AppList: FC<any> = ({ list, successCallBack }) => {
   const navigate = useNavigate();
+  const { theme, primaryColor } = useThemeStore((state) => ({
+    theme: state.theme,
+    primaryColor: state.primaryColor,
+  }));
   const { ModalDom, setModalOpen } = useAddModal({ successCallBack });
   const [hoveredItemId, setHoveredItemId] = useState(null);
   const onAddHandle = () => {
@@ -38,11 +42,11 @@ const AppList: FC<any> = ({ list, successCallBack }) => {
     });
   };
   const imgHandle = (name: string, hoveredItemId: string) => {
-    if (ThemeStore.theme.includes('dark')) {
+    if (theme.includes('dark')) {
       return cardDark;
     }
     if (hoveredItemId === name) {
-      if (ThemeStore.theme.includes('chartreuse')) {
+      if (primaryColor.includes('chartreuse')) {
         return cardChartBg;
       }
       return cardBg;

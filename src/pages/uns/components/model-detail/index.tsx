@@ -1,34 +1,48 @@
 import { useState, useEffect, FC, CSSProperties, useRef } from 'react';
-import { getModelInfo, editModel } from '@/apis/inter-api/uns';
-import { formatTimestamp, hasPermission } from '@/utils';
+import { getModelInfo, modifyModel } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
-import { Collapse, App, theme, Typography } from 'antd';
+import { Collapse, App, theme, Typography, Flex, Tag } from 'antd';
 import { CaretRight, Folder } from '@carbon/icons-react';
+import Icon from '@ant-design/icons';
 import DocumentList from '@/pages/uns/components/DocumentList.tsx';
 import UploadButton from '@/pages/uns/components/UploadButton.tsx';
 import EditButton from '@/pages/uns/components/EditButton.tsx';
-import Icon from '@ant-design/icons';
-import { FileEdit } from '@/components';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
-const { Paragraph } = Typography;
+import EditDetailButton from '@/pages/uns/components/EditDetailButton.tsx';
+import type { InitTreeDataFnType, UnsTreeNode } from '@/pages/uns/types';
+import { formatTimestamp } from '@/utils/format';
+import ProTable from '@/components/pro-table';
+import FileEdit from '@/components/svg-components/FileEdit';
+import { hasPermission } from '@/utils/auth';
+import { useBaseStore } from '@/stores/base';
+const { Title } = Typography;
 
 const panelStyle: CSSProperties = {
   background: 'val(--supos-bg-color)',
   border: 'none',
 };
 
-const Module: FC<any> = (props) => {
+export interface FolderDetailProps {
+  currentNode: UnsTreeNode;
+  initTreeData: InitTreeDataFnType;
+}
+
+const Module: FC<FolderDetailProps> = (props) => {
   const { message } = App.useApp();
-  const { currentPath, nodeValue } = props;
+  const {
+    currentNode: { id, countChildren },
+    initTreeData,
+  } = props;
   const documentListRef = useRef();
   const formatMessage = useTranslate();
+  const systemInfo = useBaseStore((state) => state.systemInfo);
   const [activeList, setActiveList] = useState<string[]>(['detail', 'definition', 'document']);
   const { token } = theme.useToken();
 
-  const [modelInfo, setModelInfo] = useState<any>({});
+  const [modelInfo, setModelInfo] = useState<{ [key: string]: any }>({});
 
-  const getModel = (topic: any) => {
-    getModelInfo({ topic })
+  const getModel = (id: string) => {
+    getModelInfo({ id })
       .then((data: any) => {
         setModelInfo(data || {});
       })
@@ -36,10 +50,10 @@ const Module: FC<any> = (props) => {
   };
 
   useEffect(() => {
-    if (currentPath) {
-      getModel(currentPath);
+    if (id) {
+      getModel(id as string);
     }
-  }, [currentPath]);
+  }, [id]);
 
   const items = [
     {
@@ -52,41 +66,16 @@ const Module: FC<any> = (props) => {
             <div>{modelInfo.alias}</div>
           </div>
           <div className="detailItem">
-            <div className="detailKey"> {formatMessage('uns.description')}</div>
-            <div style={{ width: '70%' }}>
-              <Paragraph
-                style={{ margin: 0, width: '100%' }}
-                editable={
-                  hasPermission(ButtonPermission['uns.editFolderDescription'])
-                    ? {
-                        icon: (
-                          <Icon
-                            data-button-auth={ButtonPermission['uns.editFolderDescription']}
-                            component={FileEdit}
-                            style={{
-                              fontSize: 17,
-                              color: 'var(--supos-text-color)',
-                            }}
-                          />
-                        ),
-                        onChange: (val) => {
-                          console.log(val);
-                          editModel({ alias: modelInfo.alias, modelDescription: val }).then(() => {
-                            message.success(formatMessage('uns.editSuccessful'));
-                            getModel(currentPath);
-                          });
-                        },
-                      }
-                    : false
-                }
-              >
-                {modelInfo.description}
-              </Paragraph>
-            </div>
+            <div className="detailKey">{formatMessage('uns.displayName')}</div>
+            <div>{modelInfo.displayName}</div>
           </div>
           <div className="detailItem">
-            <div className="detailKey"> {formatMessage('uns.referenceTemplate')}</div>
-            <div>{modelInfo.modelName}</div>
+            <div className="detailKey"> {formatMessage('uns.description')}</div>
+            <div>{modelInfo.description}</div>
+          </div>
+          <div className="detailItem">
+            <div className="detailKey"> {formatMessage('uns.sourceTemplate')}</div>
+            <div>{modelInfo.modelName ? `${modelInfo.modelName}（${modelInfo.templateAlias}）` : ''}</div>
           </div>
           <div className="detailItem">
             <div className="detailKey">{formatMessage('common.creationTime')}</div>
@@ -94,15 +83,43 @@ const Module: FC<any> = (props) => {
           </div>
           <div className="detailItem">
             <div className="detailKey">{formatMessage('uns.namespace')}</div>
-            <div>{modelInfo.topic}</div>
+            <div>{modelInfo.path}</div>
           </div>
           <div className="detailItem">
             <div className="detailKey">{formatMessage('uns.instanceCountStatistics')}</div>
-            <div>{nodeValue}</div>
+            <div>{countChildren}</div>
           </div>
+          <div className="detailItem">
+            <div className="detailKey">{formatMessage('uns.originalName')}</div>
+            <div>{modelInfo.name}</div>
+          </div>
+          <div className="detailItem">
+            <div className="detailKey">{formatMessage('common.latestUpdate')}</div>
+            {(modelInfo.updateTime || modelInfo.createTime) && (
+              <div>{formatTimestamp(modelInfo.updateTime || modelInfo.createTime)}</div>
+            )}
+          </div>
+          {modelInfo.extend &&
+            Object.keys(modelInfo.extend).map((item: string, index: number) => (
+              <div className="detailItem" key={index}>
+                <div className="detailKey">{item}</div>
+                <div>
+                  {modelInfo.extend[item]}
+                  <Tag style={{ marginLeft: '8px' }}>{formatMessage('uns.expandedInformation')}</Tag>
+                </div>
+              </div>
+            ))}
         </>
       ),
       style: panelStyle,
+      extra: (
+        <EditDetailButton
+          auth={ButtonPermission['uns.editFolderDetail']}
+          type="folder"
+          modelInfo={modelInfo}
+          getModel={() => getModel(id as string)}
+        />
+      ),
     },
     {
       key: 'definition',
@@ -111,30 +128,50 @@ const Module: FC<any> = (props) => {
         <EditButton
           auth={ButtonPermission['uns.definition']}
           modelInfo={modelInfo}
-          getModel={() => getModel(currentPath)}
+          getModel={() => getModel(id as string)}
         />
       ),
       children: (
-        <table className="customTable" border={1} cellSpacing="1">
-          <thead>
-            <tr>
-              <td style={{ width: '25%' }}>{formatMessage('common.name')}</td>
-              <td style={{ width: '25%' }}>{formatMessage('uns.type')}</td>
-              <td style={{ width: '25%' }}>{formatMessage('uns.displayName')}</td>
-              <td style={{ width: '25%' }}>{formatMessage('uns.remark')}</td>
-            </tr>
-          </thead>
-          <tbody>
-            {(modelInfo?.fields || []).map((e: any) => (
-              <tr key={e.name}>
-                <td>{e.name}</td>
-                <td>{e.type}</td>
-                <td>{e.displayName}</td>
-                <td>{e.remark}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ProTable
+          rowKey={'name'}
+          bordered={true}
+          rowHoverable={false}
+          columns={[
+            {
+              title: formatMessage('common.name'),
+              dataIndex: 'name',
+              width: '20%',
+            },
+            {
+              title: formatMessage('uns.type'),
+              dataIndex: 'type',
+              width: '20%',
+              render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+            },
+            {
+              title: formatMessage('common.length'),
+              dataIndex: 'maxLen',
+              width: '20%',
+              render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+            },
+            {
+              title: formatMessage('uns.displayName'),
+              dataIndex: 'displayName',
+              width: '20%',
+              render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+            },
+            {
+              title: formatMessage('uns.remark'),
+              dataIndex: 'remark',
+              width: '20%',
+              render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+            },
+          ]}
+          dataSource={modelInfo?.fields || []}
+          hiddenEmpty
+          pagination={false}
+          size="middle"
+        />
       ),
       style: panelStyle,
     },
@@ -155,15 +192,44 @@ const Module: FC<any> = (props) => {
   return (
     <div className="topicDetailWrap">
       <div className="topicDetailContent">
-        <div className="detailTitle">
-          <Folder
-            size={20}
-            style={{
-              marginRight: '8px',
-            }}
-          />
-          {modelInfo.name}
-        </div>
+        <Flex className="detailTitle" gap={8} align="center">
+          <Folder size={20} />
+          <Title
+            level={2}
+            style={{ margin: 0, width: '100%', insetInlineStart: 0 }}
+            editable={
+              hasPermission(ButtonPermission['uns.editFolderName']) && systemInfo?.useAliasPathAsTopic
+                ? {
+                    icon: (
+                      <Icon
+                        data-button-auth={ButtonPermission['uns.editFolderName']}
+                        component={FileEdit}
+                        style={{
+                          fontSize: 25,
+                          color: 'var(--supos-text-color)',
+                        }}
+                      />
+                    ),
+                    onChange: (val) => {
+                      if (val === modelInfo.pathName || !val) return;
+                      if (val.length > 63) {
+                        return message.warning(
+                          formatMessage('uns.labelMaxLength', { label: formatMessage('common.name'), length: 63 })
+                        );
+                      }
+                      modifyModel({ id, name: val }).then(() => {
+                        message.success(formatMessage('uns.editSuccessful'));
+                        getModel(id as string);
+                        initTreeData({ queryType: 'editFolderName' });
+                      });
+                    },
+                  }
+                : false
+            }
+          >
+            {modelInfo.pathName}
+          </Title>
+        </Flex>
         <div className="tableWrap">
           <Collapse
             bordered={false}

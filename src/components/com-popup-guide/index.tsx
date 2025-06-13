@@ -3,8 +3,7 @@ import { cloneElement, FC, isValidElement, ReactNode, useEffect, useRef, useStat
 import { CloseOutline } from '@carbon/icons-react';
 import classNames from 'classnames';
 import './index.scss';
-import { observer } from 'mobx-react-lite';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
+import { useBaseStore } from '@/stores/base';
 import { I18nEnum } from '@/stores/i18n-store.ts';
 
 type ComPopupGuideProps = TooltipProps & {
@@ -27,7 +26,7 @@ const ComPopupGuide: FC<ComPopupGuideProps> = ({
   steps = [],
   ...restProps
 }) => {
-  const routesStore = useRoutesContext();
+  const systemInfo = useBaseStore((state) => state.systemInfo);
 
   const [percent, setPercent] = useState(100);
   const [open, setOpen] = useState(stepName === currentStep);
@@ -78,7 +77,7 @@ const ComPopupGuide: FC<ComPopupGuideProps> = ({
     setOpen(false);
     onFinish?.(stepName, info.nextStep, info);
   };
-  const title = routesStore?.systemInfo?.lang !== I18nEnum.EnUS ? info?.titleEnglish : info?.title;
+  const title = systemInfo?.lang !== I18nEnum.EnUS ? info?.titleEnglish : info?.title;
   const customTitle = typeof title === 'function' ? title?.() : title;
   const Children = isValidElement(children) ? (
     cloneElement(children, {
@@ -119,4 +118,4 @@ const ComPopupGuide: FC<ComPopupGuideProps> = ({
   );
 };
 
-export default observer(ComPopupGuide);
+export default ComPopupGuide;

@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import mermaid from 'mermaid';
-import { ProModal } from '@/components';
-import CommonTextMessage from './CommonTextMessage';
+import { Modal } from 'antd';
 
-const Mermaid = ({ code }: any) => {
+const Mermaid = ({ code }: { code: string }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isInvalid, setIsInvalid] = useState<boolean>(false);
 
-  const graphDivRef = useRef<any>(null);
-  const graphPreviewRef = useRef<any>(null);
+  const graphDivRef = useRef<HTMLDivElement | null>(null);
+  const graphPreviewRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (code) {
@@ -17,8 +16,10 @@ const Mermaid = ({ code }: any) => {
         .then(() => {
           setIsInvalid(false);
           mermaid.render(`mermaid-${new Date().valueOf()}`, code).then(({ svg }) => {
-            console.log('mermaid', code, svg);
-            graphDivRef.current.innerHTML = svg;
+            // console.log('mermaid', code, svg);
+            if (graphDivRef.current) {
+              graphDivRef.current.innerHTML = svg;
+            }
           });
         })
         .catch((error) => {
@@ -35,12 +36,14 @@ const Mermaid = ({ code }: any) => {
   return (
     <div>
       {isInvalid ? (
-        <CommonTextMessage>Load Fail</CommonTextMessage>
+        <>Chart loading error!</>
       ) : (
         <>
-          <ProModal
-            // title="Basic Modal"
+          <Modal
+            width={1200}
+            // height={1000}
             forceRender
+            centered
             open={isModalOpen}
             onOk={() => {
               setIsModalOpen(false);
@@ -49,13 +52,22 @@ const Mermaid = ({ code }: any) => {
               setIsModalOpen(false);
             }}
           >
-            <div ref={graphPreviewRef}></div>
-          </ProModal>
+            <div
+              ref={graphPreviewRef}
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            ></div>
+          </Modal>
           <div
             ref={graphDivRef}
             onClick={() => {
-              setIsModalOpen(true);
-              graphPreviewRef.current.innerHTML = graphDivRef.current?.innerHTML;
+              if (graphPreviewRef.current) {
+                setIsModalOpen(true);
+                graphPreviewRef.current.innerHTML = graphDivRef.current?.innerHTML || '';
+              }
             }}
           ></div>
         </>

@@ -31,16 +31,6 @@
     }
   }
 
-  .treeSearchBox {
-    .cds--search-close {
-      block-size: 32px !important;
-    }
-
-    .cds--search--sm .cds--search-input {
-      block-size: 32px !important;
-    }
-  }
-
   .unsTreeRightMenuMask {
     .unsTreeRightMenuWrap {
       width: 160px;
@@ -55,7 +45,7 @@
         cursor: pointer;
 
         &:hover {
-          background: var(--cds-layer-selected-hover-01);
+          background: var(--supos-layer-selecter-hover);
         }
       }
 

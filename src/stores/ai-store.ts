@@ -1,23 +1,28 @@
-import { makeAutoObservable } from 'mobx';
+import { createWithEqualityFn, UseBoundStoreWithEqualityFn } from 'zustand/traditional';
+import { StoreApi } from 'zustand/index';
+import { shallow } from 'zustand/vanilla/shallow';
 
 interface AiResultProps {
   [key: string]: any;
 }
-
-export class AiStore {
+export type TAiStore = {
   aiResult?: AiResultProps;
   aiOperationName?: string;
-  constructor() {
-    makeAutoObservable(this);
-  }
+};
 
-  setAiResult(key: string, result?: any) {
-    this.aiResult = { ...this.aiResult, [key]: result };
-  }
+export const useAiStore: UseBoundStoreWithEqualityFn<StoreApi<TAiStore>> = createWithEqualityFn(() => ({}), shallow);
 
-  setAiOperationName(name: string) {
-    this.aiOperationName = name;
-  }
-}
+export const setAiResult = (key: string, result?: any) => {
+  useAiStore.setState({
+    aiResult: {
+      ...useAiStore.getState().aiResult,
+      [key]: result,
+    },
+  });
+};
 
-export default new AiStore();
+export const setAiOperationName = (aiOperationName: string) => {
+  useAiStore.setState({
+    aiOperationName,
+  });
+};

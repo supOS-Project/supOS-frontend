@@ -1,6 +1,6 @@
-import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils';
+import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils/request';
 
-export const baseUrl = '/inter-api/supos/uns';
+const baseUrl = '/inter-api/supos/uns';
 
 const api = new ApiWrapper(baseUrl);
 
@@ -12,12 +12,8 @@ export const editRule = async (data: any) => api.put('/alarm/rule', data);
 export const deleteRule = async (params: any) => api.delete(``, { params });
 // 分页获取报警列表
 export const getAlarmList = async (data: any) =>
-  api.post(
-    '/alarm/pageList',
-    { ...data, pageNo: data?.page, pageSize: data?.pageSize },
-    {
-      [CustomAxiosConfigEnum.BusinessResponse]: true,
-    }
-  );
+  api.post('/alarm/pageList', data, {
+    [CustomAxiosConfigEnum.BusinessResponse]: true,
+  });
 // 确认报警
 export const confirmAlarm = async (data: any) => api.post('/alarm/confirm', data);

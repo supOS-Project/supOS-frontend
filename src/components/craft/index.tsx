@@ -1,20 +1,18 @@
 import { FC, useEffect, useState } from 'react';
-import { Button, Flex, Input, message, Typography } from 'antd';
+import { Button, Flex, Input, message, Table, Typography } from 'antd';
 import CodeEditorWithPreview from '../craft/CodeEditorWithPreview';
 import { CopilotTask, useCopilotContext } from '@copilotkit/react-core';
-import { TextArea, Table, TableBody, TableRow, TableCell } from '@carbon/react';
 import { Subtract } from '@carbon/icons-react';
-import { getBaseUrl } from '@/utils';
 import { searchGraphql } from '@/apis/hasura/graphql.ts';
 import { getGeneratedPrompt } from '../craft/util.ts';
 import ComSelect from '../com-select';
-import { useAiContext } from '@/contexts/ai-context.ts';
-import { observer } from 'mobx-react-lite';
 import { useCopilotOperationContext } from '@/layout/context';
 import { useTranslate } from '@/hooks';
 import { AuthButton } from '../auth';
 import { ButtonPermission } from '@/common-types/button-permission';
-import { ProModal, InlineLoading } from '@/components';
+import { getBaseUrl } from '@/utils/url-util.ts';
+import ProModal from '../pro-modal/index.tsx';
+import { setAiResult, useAiStore } from '@/stores/ai-store.ts';
 const { Title } = Typography;
 
 export const defaultUI = [
@@ -107,7 +105,7 @@ export const defaultUI = [
 
 const Board: FC<any> = ({ boardCodeRef }) => {
   const formatMessage = useTranslate();
-  const aiStore = useAiContext();
+  const aiResult = useAiStore((state) => state.aiResult);
   const copilotOperation = useCopilotOperationContext();
   const apiUrl = getBaseUrl();
   const initialCode = () => {
@@ -154,20 +152,20 @@ const Board: FC<any> = ({ boardCodeRef }) => {
   }, [code]);
 
   useEffect(() => {
-    if (aiStore.aiResult?.['app-gui']) {
+    if (aiResult?.['app-gui']) {
       if (isLoading) {
         message.error(formatMessage('appGui.aiError'));
         return;
       }
       console.log(copilotOperation);
       copilotOperation?.current?.setOpen?.(false);
-      const prompt = aiStore.aiResult?.['app-gui'] || '';
-      aiStore.setAiResult('app-gui', null);
+      const prompt = aiResult?.['app-gui'] || '';
+      setAiResult('app-gui', null);
       setIsLoading(true);
       setCodeCommand({ ...codeCommand, prompt: prompt });
       getBaseDataFields();
     }
-  }, [aiStore.aiResult?.['app-gui']]);
+  }, [aiResult?.['app-gui']]);
 
   const tuneComponents = new CopilotTask({
     instructions: `当前页面的代码为${codeToDisplay}.` + tuneCommand,
@@ -366,7 +364,7 @@ const Board: FC<any> = ({ boardCodeRef }) => {
           {formatMessage('appSpace.newgenerate')}
         </AuthButton>
         <Title level={5} style={{ marginBottom: 0, marginTop: 5 }}>
-          {formatMessage('appGui.history')}
+          {formatMessage('common.history')}
         </Title>
         <div
           style={{
@@ -374,78 +372,64 @@ const Board: FC<any> = ({ boardCodeRef }) => {
             marginTop: 8,
             overflow: 'auto',
             padding: '10px 8px 8px',
-            backgroundColor: 'var(--cds-field)',
+            backgroundColor: 'var(--supos-craft-bg-color)',
           }}
         >
-          <Table size="sm">
-            <TableBody>
-              {code?.map((c: any, i: any) => (
-                <TableRow key={i}>
-                  <TableCell
-                    style={{
-                      borderBottom: '1px solid var(--cds-border-strong)',
-                      cursor: 'pointer',
-                      backgroundColor: i === selectedIndex ? '#acaeb1' : 'inherit',
-                    }}
-                    onClick={() => {
-                      const codeCommandStor = localStorage.getItem('codeCommand');
-                      if (codeCommandStor) {
-                        const codeCommandItems = JSON.parse(codeCommandStor)[i];
-                        setCodeCommand({ ...codeCommand, prompt: codeCommandItems?.prompt || '' });
-                      } else {
-                        setCodeCommand({
-                          ...codeCommand,
-                          prompt: '',
-                        });
-                      }
-                      setSelectedIndex(i);
-                      setCodeToDisplayFn(c);
-                    }}
-                  >
-                    <Flex justify="space-between">
-                      <span>v1.0.0-beta.{i}</span>
-                      {code?.length > 1 && (
-                        <Subtract
-                          onClick={() => {
-                            if (code?.length === 1) return;
-                            setCode((pre: any) => {
-                              const newCode = pre?.filter((_p: any, index: number) => index !== i) || [];
-                              const oldCodeCommand: any = localStorage.getItem('codeCommand');
-                              if (oldCodeCommand) {
-                                const oldList: any[] = JSON.parse(oldCodeCommand) || [];
-                                localStorage.setItem(
-                                  'codeCommand',
-                                  JSON.stringify(oldList?.filter((_p: any, index: number) => index !== i))
-                                );
-                              } else {
-                                localStorage.setItem(
-                                  'codeCommand',
-                                  JSON.stringify(
-                                    newCode?.map(() => ({
-                                      prompt: '',
-                                      databaseName: null,
-                                    }))
-                                  )
-                                );
-                              }
-                              return newCode;
-                            });
-                          }}
-                        />
-                      )}
-                    </Flex>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {isLoading && (
-                <TableRow>
-                  <TableCell>
-                    <InlineLoading status="active" description="Loading data..." />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <Table
+            className="carft-table"
+            size="small"
+            columns={[
+              {
+                dataIndex: 'version',
+                render: (_, __, index) => (
+                  <Flex justify="space-between" align="center">
+                    <span>v1.0.0-beta.{index}</span>
+                    {code.length > 1 && (
+                      <Subtract
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (code.length === 1) return;
+                          setCode((pre: any) => {
+                            const newCode = pre?.filter((_p: any, i: number) => i !== index) || [];
+                            const oldCodeCommand: any = localStorage.getItem('codeCommand');
+                            if (oldCodeCommand) {
+                              const oldList: any[] = JSON.parse(oldCodeCommand) || [];
+                              localStorage.setItem(
+                                'codeCommand',
+                                JSON.stringify(oldList?.filter((_p: any, i: number) => i !== index))
+                              );
+                            }
+                            return newCode;
+                          });
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    )}
+                  </Flex>
+                ),
+              },
+            ]}
+            dataSource={code.map((c: any, index: number) => ({
+              key: index,
+              index,
+              code: c,
+            }))}
+            rowClassName={(record) => (record.index === selectedIndex ? 'selected-row' : '')}
+            onRow={(record: any) => ({
+              onClick: () => {
+                const codeCommandStor = localStorage.getItem('codeCommand');
+                if (codeCommandStor) {
+                  const codeCommandItems = JSON.parse(codeCommandStor)[record.index];
+                  setCodeCommand({ ...codeCommand, prompt: codeCommandItems?.prompt || '' });
+                }
+                setSelectedIndex(record.index);
+                setCodeToDisplayFn(record.code);
+              },
+            })}
+            loading={isLoading}
+            pagination={false}
+            rowKey="index"
+          />
         </div>
       </Flex>
       <div
@@ -468,11 +452,11 @@ const Board: FC<any> = ({ boardCodeRef }) => {
         <Title style={{ margin: 0 }} type="secondary" level={5}>
           Now you are changing element username only.
         </Title>
-        <TextArea
-          labelText=""
+        <Input.TextArea
+          rows={6}
           value={tuneCommand}
           onChange={(e) => setTuneCommand(e.target.value)}
-          id="code"
+          // id="code"
           placeholder="Type your description here"
           style={{ backgroundColor: 'white', marginTop: 20 }}
         />
@@ -494,4 +478,4 @@ const Board: FC<any> = ({ boardCodeRef }) => {
   );
 };
 
-export default observer(Board);
+export default Board;

@@ -1,18 +1,20 @@
-import { useRef, useState } from 'react';
-import { ComLayout, ComContent } from '@/components';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, message, Modal, Tabs, TabsProps, Typography } from 'antd';
 import OverviewList from '@/pages/home/components/OverviewList.tsx';
-import { useRoutesContext } from '@/contexts/routes-context';
 import { RoutesProps } from '@/stores/types';
 import styles from './index.module.scss';
 import StickyBox from 'react-sticky-box';
 import { useGuideSteps, useTranslate } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 import { guideSteps } from './guide-steps';
-import { observer } from 'mobx-react-lite';
 import { queryExamples, installExample, unInstallExample } from '@/apis/inter-api/example';
 import { Code, Pin, TemperatureWater } from '@carbon/icons-react';
-import { useThemeContext } from '@/contexts/theme-context';
+import { useActivate } from '@/contexts/tabs-lifecycle-context.ts';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import { fetchBaseStore, useBaseStore } from '@/stores/base';
+import { useThemeStore } from '@/stores/theme-store.ts';
+
 const { Title, Paragraph } = Typography;
 
 // example 返回的数据结构
@@ -34,15 +36,36 @@ const exampleTypes: { [x: string | number]: string } = {
 
 const Index = () => {
   const selectedIdRef = useRef<string | number>();
-
-  const routesStore = useRoutesContext();
+  const { pickedGroupRoutesForHome, systemInfo } = useBaseStore((state) => ({
+    pickedGroupRoutesForHome: state.pickedGroupRoutesForHome,
+    systemInfo: state.systemInfo,
+  }));
   const formatMessage = useTranslate();
   const navigate = useNavigate();
+  const [pathname, setPathname] = useState('');
   const [exampleDataSource, setExampleDataSource] = useState<RoutesProps[]>([]);
   const [loadingViews, setLoadingViews] = useState<string[]>([]);
-  const themeStore = useThemeContext();
 
-  useGuideSteps(guideSteps(navigate, { appTitle: routesStore.systemInfo.appTitle }, themeStore));
+  useEffect(() => {
+    fetchBaseStore?.();
+  }, []);
+  const primaryColor = useThemeStore((state) => state.primaryColor);
+
+  // 解决routesStore?.fetchRoutes导致跳转路由方法失效的问题：通过state改变再触发navigate跳转
+  const handleNavigate = useCallback((path: string) => {
+    setPathname(path);
+  }, []);
+  useEffect(() => {
+    if (pathname) {
+      navigate(pathname);
+    }
+  }, [pathname]);
+  useGuideSteps(guideSteps(handleNavigate, { appTitle: systemInfo.appTitle }, primaryColor));
+
+  useActivate(() => {
+    // 每次进home页刷新下，保持页面完整
+    fetchBaseStore?.();
+  });
 
   // 获取example列表
   const getExamples = (open = true) => {
@@ -60,7 +83,7 @@ const Index = () => {
         selectedIdRef.current = undefined;
         if (dashboardId) {
           window.open(
-            `/dashboards-preview?id=${dashboardId}&type=${dashboardType}&status=preview&name=${dashboardName}`
+            `/dashboards/preview?id=${dashboardId}&type=${dashboardType}&status=preview&name=${dashboardName}`
           );
         }
       }
@@ -70,7 +93,7 @@ const Index = () => {
 
         if (!newExamplesMap.has(type)) {
           newExamplesMap.set(type, {
-            name: formatMessage(`common.${type}`) || type,
+            name: item.name,
             key: type,
             hasChildren: true,
             children: [],
@@ -174,8 +197,9 @@ const Index = () => {
       <ComContent title={<div></div>} hasBack={false} mustShowTitle={false}>
         <div className={styles['home-title']}>
           <Title style={{ fontWeight: 400, marginBottom: 5 }} type="secondary" level={2}>
-            {formatMessage('common.welcome', { appTitle: routesStore.systemInfo?.appTitle })}
+            {formatMessage('common.welcome', { appTitle: systemInfo?.appTitle })}
           </Title>
+
           <Paragraph style={{ marginBottom: 0 }}>{formatMessage('common.excellence')}</Paragraph>
         </div>
         <div className={styles['home-tabs']}>
@@ -185,14 +209,12 @@ const Index = () => {
             onChange={handleChangeTab}
             items={[
               {
-                label: formatMessage('home.overview'),
+                label: formatMessage('common.overview'),
                 key: 'overview',
-                children: (
-                  <OverviewList list={routesStore.pickedGroupRoutesForHome?.filter((i) => i?.menu?.url !== '/home')} />
-                ),
+                children: <OverviewList list={pickedGroupRoutesForHome?.filter((i) => i?.menu?.url !== '/home')} />,
               },
               {
-                label: formatMessage('home.example'),
+                label: formatMessage('common.example'),
                 key: 'example',
                 children: (
                   <OverviewList
@@ -211,4 +233,4 @@ const Index = () => {
   );
 };
 
-export default observer(Index);
+export default Index;

@@ -9,10 +9,20 @@
       padding: 0 12px;
     }
 
-    .cds--modal-container {
-      background-color: var(--supos-modal-color);
-      width: 420px;
+    .ant-tabs-tab-btn {
+      &:focus {
+        color: var(--supos-theme-color) !important;
+      }
     }
+  }
+
+  &:global(.ant-modal .ant-tabs-content-holder) {
+    height: calc(100vh - 320px);
+    overflow: auto;
+  }
+
+  &:global(.fullscreen-mode .ant-tabs-content-holder) {
+    height: calc(100vh - 210px);
   }
 }
 

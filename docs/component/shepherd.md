@@ -7,7 +7,7 @@
 - 注意：在下一步等中使用tour.addStep(step)时，需判断需添加的步骤是否存在，避免上一步后再触发下一步时产生重复数据
 
 ```javascript
-import { shepherd } from '@/components';
+import { shepherd } from '@/components/shepherd';
 // ...
 
 // 生成导航实例

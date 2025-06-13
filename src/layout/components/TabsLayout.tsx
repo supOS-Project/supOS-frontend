@@ -4,11 +4,11 @@ import { useTabs } from '@/layout/useTabs';
 import styles from './index.module.scss';
 import { createPortal } from 'react-dom';
 import ComTags from './com-tags';
-import { MenuTypeEnum, MenuTypeProps } from '@/stores/theme-store';
-import { injectPropsToRouteNode } from '@/utils';
 import { useLocationNavigate } from '@/routers';
 import { TabWrapper } from '@/layout/components/TabWrapper.tsx';
 import { useMemoizedFn } from 'ahooks';
+import { injectPropsToRouteNode } from '@/utils/node-utils';
+import { MenuTypeEnum, MenuTypeProps } from '@/stores/theme-store.ts';
 
 const TabsLayout: FC<{
   menuType: MenuTypeProps;
@@ -82,7 +82,7 @@ const TabsLayout: FC<{
   });
   return (
     <Tabs
-      destroyInactiveTabPane={false}
+      destroyOnHidden={false}
       animated={false}
       style={{ color: 'var(--supos-text-color)' }}
       renderTabBar={() => {

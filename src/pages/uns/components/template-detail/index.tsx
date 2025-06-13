@@ -1,20 +1,27 @@
 import { CSSProperties, FC, useEffect, useState } from 'react';
-import { CaretRight, Document, Folder, WatsonHealth3DMprToggle } from '@carbon/icons-react';
+import { CaretRight, WatsonHealth3DMprToggle } from '@carbon/icons-react';
 import { App, Button, Collapse, Flex, theme, Typography } from 'antd';
 import { useTranslate } from '@/hooks';
-import { AuthWrapper, ComDetailList, FileEdit } from '@/components';
 import Icon from '@ant-design/icons';
 import EditButton from '@/pages/uns/components/EditButton.tsx';
-import { editModel, editTemplateName, getTemplateDetail } from '@/apis/inter-api/uns.ts';
-import { formatTimestamp, hasPermission } from '@/utils';
+import FileList from './FileList';
+import { editTemplateName, getTemplateDetail } from '@/apis/inter-api/uns.ts';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
-const { Paragraph } = Typography;
+const { Paragraph, Title } = Typography;
+
+import type { InitTreeDataFnType, UnsTreeNode } from '@/pages/uns/types';
+import { AuthWrapper } from '@/components/auth';
+import ComDetailList from '@/components/com-detail-list';
+import ProTable from '@/components/pro-table';
+import FileEdit from '@/components/svg-components/FileEdit';
+import { hasPermission } from '@/utils/auth';
+import { formatTimestamp } from '@/utils/format';
 
 interface TemplateDetailProps {
   // id
-  currentPath: string;
-  setDeleteOpen?: any;
-  initTreeData?: any;
+  currentNode: UnsTreeNode;
+  handleDelete?: (node: UnsTreeNode) => void;
+  initTreeData?: InitTreeDataFnType;
 }
 
 const panelStyle: CSSProperties = {
@@ -22,15 +29,17 @@ const panelStyle: CSSProperties = {
   border: 'none',
 };
 
-const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, initTreeData }) => {
+const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDelete, initTreeData }) => {
   const [activeList, setActiveList] = useState<string[]>(['detail', 'definition', 'fileList']);
   const { token } = theme.useToken();
   const { message } = App.useApp();
-  const [info, setInfo] = useState<any>({});
+  const [info, setInfo] = useState<{ [key: string]: any }>({});
   const formatMessage = useTranslate();
 
   const onDeleteHandle = () => {
-    setDeleteOpen(currentPath);
+    if (id) {
+      handleDelete?.({ id: id as string, key: '', type: 1 });
+    }
   };
 
   const getModel = (id: string) => {
@@ -41,10 +50,10 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, i
   };
 
   useEffect(() => {
-    if (currentPath) {
-      getModel(currentPath);
+    if (id) {
+      getModel(id as string);
     }
-  }, [currentPath]);
+  }, [id]);
 
   const items = [
     {
@@ -54,17 +63,21 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, i
         <ComDetailList
           list={[
             {
+              label: formatMessage('uns.alias'),
+              key: 'alias',
+            },
+            {
               label: formatMessage('uns.description'),
               key: 'description',
-              render: (item, modelInfo: any) => (
+              render: (item) => (
                 <Paragraph
                   style={{ margin: 0, width: '100%' }}
                   editable={
-                    hasPermission(ButtonPermission['template.editDescription'])
+                    hasPermission(ButtonPermission['uns.editTemplateDescription'])
                       ? {
                           icon: (
                             <Icon
-                              data-button-auth={ButtonPermission['template.editDescription']}
+                              data-button-auth={ButtonPermission['uns.editTemplateDescription']}
                               component={FileEdit}
                               style={{
                                 fontSize: 17,
@@ -73,11 +86,22 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, i
                             />
                           ),
                           onChange: (val) => {
-                            editModel({ alias: modelInfo.alias, modelDescription: val }).then(() => {
+                            if (item === val || (!item && !val)) return;
+                            if (val.length > 255) {
+                              message.warning(
+                                formatMessage('uns.labelMaxLength', {
+                                  label: formatMessage('uns.description'),
+                                  length: 255,
+                                })
+                              );
+                              return;
+                            }
+                            editTemplateName({ id, description: val }).then(() => {
                               message.success(formatMessage('uns.editSuccessful'));
-                              getModel(currentPath);
+                              getModel(id as string);
                             });
                           },
+                          // maxLength: 255,
                         }
                       : false
                   }
@@ -102,68 +126,59 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, i
       label: <span>{formatMessage('uns.definition')}</span>,
       extra: (
         <EditButton
-          auth={ButtonPermission['template.definition']}
+          auth={ButtonPermission['uns.templateDefinition']}
           modelInfo={info}
-          getModel={() => getModel(currentPath)}
+          getModel={() => getModel(id as string)}
         />
       ),
       children: (
-        <table className="customTable" border={1} cellSpacing="1">
-          <thead>
-            <tr>
-              <td style={{ width: '25%' }}>{formatMessage('common.name')}</td>
-              <td style={{ width: '25%' }}>{formatMessage('uns.type')}</td>
-              <td style={{ width: '25%' }}>{formatMessage('uns.displayName')}</td>
-              <td style={{ width: '25%' }}>{formatMessage('uns.remark')}</td>
-            </tr>
-          </thead>
-          <tbody>
-            {(info?.fields || []).map((e: any) => (
-              <tr key={e.name}>
-                <td>{e.name}</td>
-                <td>{e.type}</td>
-                <td>{e.displayName}</td>
-                <td>{e.remark}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ProTable
+          rowHoverable={false}
+          columns={[
+            {
+              title: formatMessage('common.name'),
+              dataIndex: 'name',
+              width: '20%',
+            },
+            {
+              title: formatMessage('uns.type'),
+              dataIndex: 'type',
+              width: '20%',
+              render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+            },
+            {
+              title: formatMessage('common.length'),
+              dataIndex: 'maxLen',
+              width: '20%',
+              render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+            },
+            {
+              title: formatMessage('uns.displayName'),
+              dataIndex: 'displayName',
+              width: '20%',
+              render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+            },
+            {
+              title: formatMessage('uns.remark'),
+              dataIndex: 'remark',
+              width: '20%',
+              render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+            },
+          ]}
+          dataSource={info?.fields || []}
+          rowKey="name"
+          pagination={false}
+          size="middle"
+          hiddenEmpty
+          bordered
+        />
       ),
       style: panelStyle,
     },
     {
       key: 'fileList',
       label: <span>{formatMessage('common.fileList')}</span>,
-      children: (
-        <table className="customTable" border={1} cellSpacing="1">
-          <thead>
-            <tr>
-              <td style={{ width: '25%' }}>{formatMessage('common.name')}</td>
-              <td style={{ width: '75%' }}>{formatMessage('uns.position')}</td>
-            </tr>
-          </thead>
-          <tbody>
-            {(info?.fileList || []).map((e: any, index: number) => (
-              <tr key={e.name + index}>
-                <td>
-                  {e.pathType === 0 ? (
-                    <Folder style={{ marginRight: 5, verticalAlign: 'middle' }} />
-                  ) : (
-                    <Document
-                      style={{
-                        marginRight: 5,
-                        verticalAlign: 'middle',
-                      }}
-                    />
-                  )}
-                  {e.name}
-                </td>
-                <td style={{ color: 'var(--supos-table-first-color)' }}>{e.path}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ),
+      children: <FileList templateId={id as string} />,
       style: panelStyle,
     },
   ];
@@ -173,14 +188,15 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, i
       <div className="topicDetailContent">
         <Flex className="detailTitle" gap={8} justify="flex-start" align="center">
           <WatsonHealth3DMprToggle size={30} />
-          <Paragraph
-            style={{ margin: 0, width: '100%', insetInlineStart: 0, fontSize: 30, lineHeight: 1 }}
+          <Title
+            level={2}
+            style={{ margin: 0, width: '100%', insetInlineStart: 0 }}
             editable={
-              hasPermission(ButtonPermission['template.editName'])
+              hasPermission(ButtonPermission['uns.editTemplateName'])
                 ? {
                     icon: (
                       <Icon
-                        data-button-auth={ButtonPermission['template.editName']}
+                        data-button-auth={ButtonPermission['uns.editTemplateName']}
                         component={FileEdit}
                         style={{
                           fontSize: 25,
@@ -190,9 +206,15 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, i
                       />
                     ),
                     onChange: (val) => {
-                      editTemplateName(currentPath, val).then(() => {
+                      if (info?.name === val || !val || val.trim() === '') return;
+                      if (val.length > 63) {
+                        return message.warning(
+                          formatMessage('uns.labelMaxLength', { label: formatMessage('common.name'), length: 63 })
+                        );
+                      }
+                      editTemplateName({ id, name: val }).then(() => {
                         message.success(formatMessage('uns.editSuccessful'));
-                        getModel(currentPath);
+                        getModel(id as string);
                         initTreeData?.({});
                       });
                     },
@@ -200,8 +222,8 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, i
                 : false
             }
           >
-            {info?.path}
-          </Paragraph>
+            {info?.name}
+          </Title>
         </Flex>
         <div className="tableWrap">
           <Collapse
@@ -222,8 +244,8 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentPath, setDeleteOpen, i
             style={{ background: token.colorBgContainer }}
           />
         </div>
-        <AuthWrapper auth={ButtonPermission['template.delete']}>
-          <div className="deleteBtnWrap">
+        <AuthWrapper auth={ButtonPermission['uns.templateDelete']}>
+          <div className="deleteBtnWrap" style={{ marginTop: 0 }}>
             <Button
               type="primary"
               style={{

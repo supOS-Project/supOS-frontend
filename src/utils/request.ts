@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from 'axios';
 import { getToken } from './auth';
 import { message, notification } from 'antd';
 import qs from 'qs';
-import I18nStore from '@/stores/i18n-store';
+import { getIntl } from '@/stores/i18n-store.ts';
 
 /**
  * 接口请求通用业务错误码
@@ -107,7 +107,7 @@ service.interceptors.response.use(
     if (response?.request?.responseURL?.includes('/403') && response?.request?.responseText?.includes('html>')) {
       // 特殊处理403弹框（后端接口直接重定向了）
       notification.error({
-        message: I18nStore.getIntl(
+        message: getIntl(
           'common.noPermissionMessage',
           {},
           "You don't have permission to do this, contact your administrator."
@@ -132,7 +132,7 @@ service.interceptors.response.use(
     } else {
       if (config?.[CustomAxiosConfigEnum.NoMessage] !== true) {
         // HttpCode.Fail 的情况，这里提示，上层接失败处理
-        message.error(res.msg ?? I18nStore.getIntl('common.serverBusy', {}, 'Server is busy, please try again later'));
+        message.error(res.msg ?? getIntl('common.serverBusy', {}, 'Server is busy, please try again later'));
       }
     }
     // 如果 是业务上的错误，reject {code,msg,data} 给业务层自己处理
@@ -152,21 +152,18 @@ service.interceptors.response.use(
         if (error.response.status === 401) {
           return Promise.reject(error);
         } else if (error.response.status === 403) {
-          message.error(I18nStore.getIntl('common.noPermission', {}, 'No Permission'));
+          message.error(getIntl('common.noPermission', {}, 'No Permission'));
         } else if (error.response.status === 404) {
-          message.error(I18nStore.getIntl('common.interfaceNotExist', {}, 'Interface does not exist'));
+          message.error(getIntl('common.interfaceNotExist', {}, 'Interface does not exist'));
         } else {
           message.error(
-            error.response?.data?.msg ||
-              I18nStore.getIntl('common.serverBusy', {}, 'Server is busy, please try again later')
+            error.response?.data?.msg || getIntl('common.serverBusy', {}, 'Server is busy, please try again later')
           );
         }
       } else if (error.message === 'Network Error') {
-        message.error(
-          I18nStore.getIntl('common.networkFailed', {}, 'Network connection failed, please check your network')
-        );
+        message.error(getIntl('common.networkFailed', {}, 'Network connection failed, please check your network'));
       } else {
-        message.error(I18nStore.getIntl('common.serverBusy', {}, 'Server is busy, please try again later'));
+        message.error(getIntl('common.serverBusy', {}, 'Server is busy, please try again later'));
       }
     }
 
@@ -184,7 +181,7 @@ export class ApiWrapper {
     this.baseUrl = `//${hostUrl}${requestBaseUrl}`;
   }
 
-  private request = async (apiConfig: AxiosWrapperRequestConfig) => {
+  private request = async (apiConfig: AxiosWrapperRequestConfig): Promise<any> => {
     try {
       return await service.request(apiConfig);
     } catch (error) {
@@ -218,10 +215,11 @@ export class ApiWrapper {
     });
   };
 
-  delete = (url: string, config?: AxiosWrapperRequestConfig) => {
+  delete = <T = any>(url: string, config?: AxiosWrapperRequestConfig, data?: T) => {
     return this.request({
       url: this.baseUrl + url,
       method: 'delete',
+      data,
       ...config,
     });
   };

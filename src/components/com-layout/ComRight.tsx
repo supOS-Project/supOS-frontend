@@ -2,7 +2,6 @@ import { CSSProperties, FC, ReactNode } from 'react';
 import { Close } from '@carbon/icons-react';
 import classNames from 'classnames';
 import styles from './index.module.scss';
-import { observer } from 'mobx-react-lite';
 
 export interface ComRightProps {
   children?: ReactNode;
@@ -24,4 +23,4 @@ const ComRight: FC<ComRightProps> = ({ children, style, onCancel, className }) =
   );
 };
 
-export default observer(ComRight);
+export default ComRight;

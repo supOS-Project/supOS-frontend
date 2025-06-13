@@ -1,13 +1,17 @@
-import { ComLayout, ComContent, ComMenuList, ProModal, AuthButton, ComCopy } from '@/components';
 import { useTranslate } from '@/hooks';
 import styles from './index.module.scss';
 import { useState } from 'react';
 import defaultIconUrl from '@/assets/home-icons/default.svg';
 import { Divider, Flex, Form, Image, Input, Typography } from 'antd';
 import { Launch } from '@carbon/icons-react';
-import { observer } from 'mobx-react-lite';
-import { useRoutesContext } from '@/contexts/routes-context';
 import { Original_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans.ts';
+import { AuthButton } from '@/components/auth';
+import ComCopy from '@/components/com-copy';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import ComMenuList from '@/components/com-menu-list';
+import ProModal from '@/components/pro-modal';
+import { useBaseStore } from '@/stores/base';
 
 const { Title, Paragraph } = Typography;
 
@@ -16,7 +20,7 @@ const Index = () => {
   const [open, setOpen] = useState(false);
   const [openInfo, setOpenInfo] = useState<any>();
   const formatMessage = useTranslate();
-  const { containerList } = useRoutesContext();
+  const containerList = useBaseStore((state) => state.containerList);
 
   return (
     <ComLayout>
@@ -99,4 +103,4 @@ const Index = () => {
   );
 };
 
-export default observer(Index);
+export default Index;

@@ -1,3 +1,8 @@
+import { v4 as uuidv4 } from 'uuid';
+import { pinyin } from 'pinyin-pro';
+
+import type { UnsTreeNode } from '@/pages/uns/types';
+
 export const noDuplicates = (arr: any) => {
   return new Set(arr).size === arr.length;
 };
@@ -50,20 +55,20 @@ export const loadIbmFont = () => {
 };
 
 //递归查询模糊命中节点的所有父级节点
-export const findParentIds = (searchString: string, tree: any): number[] => {
+export const findParentIds = (searchString: string, tree: UnsTreeNode[]): string[] => {
   // 使用 const 定义结果数组
-  const result: any[] = [];
+  const result: string[] = [];
 
   // 使用 const 定义辅助函数：递归搜索树
-  const search = (node: any, parentPaths: any[]): void => {
-    if (node.name.toLowerCase().includes(searchString.toLowerCase())) {
+  const search = (node: UnsTreeNode, parentIds: string[]): void => {
+    if (node?.name?.toLowerCase()?.includes(searchString.toLowerCase())) {
       // 如果匹配，则将当前父级path加入结果
-      result.push(...parentPaths);
+      result.push(...parentIds);
     }
     if (Array.isArray(node.children)) {
       // 对每个子节点，更新其父级path链并递归搜索
-      const updatedParentIds = [...parentPaths, node.path];
-      node.children.forEach((child: any) => search(child, updatedParentIds));
+      const updatedParentIds = [...parentIds, node.id] as string[];
+      node.children.forEach((child: UnsTreeNode) => search(child, updatedParentIds));
     }
   };
 
@@ -74,30 +79,26 @@ export const findParentIds = (searchString: string, tree: any): number[] => {
   return [...new Set(result)];
 };
 
-interface TreeNode {
-  path: string;
-  children?: TreeNode[];
-}
 //获取目标节点下所有带children的节点path
-export const collectChildrenIds = (tree: TreeNode[], targetPath: string): string[] => {
+export const collectChildrenIds = (tree: UnsTreeNode[], targetId: string): string[] => {
   const result: string[] = [];
 
-  const recurseForChildren = (node: TreeNode): void => {
+  const recurseForChildren = (node: UnsTreeNode): void => {
     // 如果当前节点有children并且children数组不为空，则收集其id
     if (node.children && node.children.length > 0) {
-      result.push(node.path);
+      result.push(node.id as string);
       // 对每个子节点递归调用recurseForChildren
       node.children.forEach((child) => recurseForChildren(child));
     }
   };
 
-  const searchTree = (nodes: TreeNode[]): boolean => {
+  const searchTree = (nodes: UnsTreeNode[]): boolean => {
     for (let i = 0; i < nodes.length; i++) {
-      const node: TreeNode = nodes[i];
+      const node: UnsTreeNode = nodes[i];
       // 如果targetPath为空字符串，则直接开始收集所有带children的节点
-      if (targetPath === '') {
+      if (targetId === '') {
         recurseForChildren(node);
-      } else if (node.path === targetPath) {
+      } else if (node.id === targetId) {
         // 如果找到了目标节点，则从该节点开始递归收集其下所有带children的节点id
         recurseForChildren(node);
         return true;
@@ -110,7 +111,7 @@ export const collectChildrenIds = (tree: TreeNode[], targetPath: string): string
   };
 
   // 开始搜索
-  if (targetPath === '') {
+  if (targetId === '') {
     tree.forEach((node) => recurseForChildren(node)); // 直接遍历树的所有节点
   } else {
     searchTree(tree);
@@ -165,7 +166,7 @@ export const parseTime = (input: number | string): [number] | [number, string] =
 };
 
 interface ExpressionItem {
-  topic: string;
+  id: string;
   field: string;
 }
 
@@ -177,7 +178,7 @@ export const getExpression = (items: ExpressionItem[], inputStr: string, history
 
   // 预编译正则表达式
   items.forEach((item, index) => {
-    const placeholder = `\\$${item.topic}\\.${item.field}#`;
+    const placeholder = `\\$${item.id}\\.${item.field}#`;
     patterns.push([new RegExp(placeholder, 'g'), history ? `$${item.field}#` : `$a${index + 1}#`]);
   });
 
@@ -187,4 +188,28 @@ export const getExpression = (items: ExpressionItem[], inputStr: string, history
   });
 
   return cleanedStr;
+};
+
+export const generateAlias = (name: string) => {
+  return `_${pinyin(name || '', { toneType: 'none' })
+    ?.replace(/\s+/g, '')
+    ?.replace(/-/g, '_')
+    .slice(0, 38)}_${uuidv4().replace(/-/g, '').slice(0, 20)}`;
+};
+
+//根据dataPath获取目标树节点信息
+export const getTargetNode = (treeData: UnsTreeNode[], targetId: string): UnsTreeNode | null => {
+  for (const node of treeData) {
+    if (node.id === targetId) {
+      return { ...node };
+    }
+    // 如果存在子节点并且还没有找到目标节点，则递归搜索子节点
+    if (node.children && node.children.length > 0) {
+      const foundNode = getTargetNode(node.children, targetId);
+      if (foundNode) {
+        return { ...foundNode }; // 找到目标节点后立即返回
+      }
+    }
+  }
+  return null; // 如果遍历完整个树都没有找到，则返回null
 };

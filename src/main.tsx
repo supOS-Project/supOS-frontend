@@ -1,13 +1,8 @@
 // import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import routesStore from '@/stores/routes-store';
-import themeStore from '@/stores/theme-store';
-import { RoutesContext } from '@/contexts/routes-context';
-import { ThemeContext } from '@/contexts/theme-context';
 import App from './App.tsx';
-import { AiContext } from '@/contexts/ai-context';
-import aiStore from '@/stores/ai-store';
 import { CopilotKit } from '@copilotkit/react-core';
+
 import './index.scss';
 
 console.info(
@@ -16,13 +11,18 @@ console.info(
 );
 
 createRoot(document.getElementById('root')!).render(
-  <CopilotKit runtimeUrl={`/copilotkit`} showDevConsole={false}>
-    <ThemeContext.Provider value={themeStore}>
-      <RoutesContext.Provider value={routesStore}>
-        <AiContext.Provider value={aiStore}>
-          <App />
-        </AiContext.Provider>
-      </RoutesContext.Provider>
-    </ThemeContext.Provider>
+  <CopilotKit
+    // 也可以直接换成 mcpclient 的agent服务地址，不再使用.docker-nodejs 代理
+    // runtimeUrl="/mcpclient/home/api/copilotkit"
+    runtimeUrl="/copilotkit"
+    // mcpEndpoints={[
+    //   {
+    //     endpoint: 'your_mcp_sse_url',
+    //   },
+    // ]}
+    agent="sample_agent"
+    showDevConsole={false}
+  >
+    <App />
   </CopilotKit>
 );

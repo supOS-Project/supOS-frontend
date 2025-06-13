@@ -9,7 +9,7 @@ import { Copy } from '@carbon/icons-react';
 import { useClipboard } from '@/hooks';
 import './index.scss';
 
-const CodeEditor: FC<any> = ({ height, code, setCode, width, readOnly = false, language = 'javascript' }) => {
+const CodeEditor: FC<any> = ({ height, code, setCode, width, readOnly = false, theme, language = 'javascript' }) => {
   const buttonRef = useRef(null);
   useClipboard(buttonRef, code, 'copy success！');
 
@@ -41,7 +41,14 @@ const CodeEditor: FC<any> = ({ height, code, setCode, width, readOnly = false, l
     >
       <div
         ref={buttonRef}
-        style={{ position: 'absolute', right: 4, top: 4, color: '#fff', zIndex: 1, cursor: 'pointer' }}
+        style={{
+          position: 'absolute',
+          right: 4,
+          top: 4,
+          color: theme === 'light' ? '#000' : '#fff',
+          zIndex: 1,
+          cursor: 'pointer',
+        }}
       >
         <Copy />
       </div>
@@ -54,7 +61,7 @@ const CodeEditor: FC<any> = ({ height, code, setCode, width, readOnly = false, l
         onChange={(value) => {
           setCode(value);
         }}
-        theme="dark"
+        theme={theme || 'dark'}
         basicSetup={{ foldGutter: true }}
         readOnly={readOnly}
       />

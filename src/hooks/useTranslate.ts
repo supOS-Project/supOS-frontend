@@ -6,15 +6,21 @@
   const formatMessage = useTranslate();
   formatMessage('common.chatbot')
 */
-import { useIntl } from 'react-intl';
+import { getIntl, useI18nStore } from '@/stores/i18n-store.ts';
+import { useCallback } from 'react';
 
-// 自定义的 useTranslate 钩子
-const useTranslate = () => {
-  const { formatMessage } = useIntl();
-
-  // 简化调用，只传入 id，返回翻译文本, opt是配置项
-  return (id: string, opt?: any, defaultMessage?: string, description?: string | object) =>
-    formatMessage({ id: id, defaultMessage: defaultMessage, description: description }, opt);
+/**
+ * 自定义的 useTranslate 钩子
+ * @param prefix remote名称 如：OpenData，不传，则用主项目的翻译
+ * @returns
+ */
+const useTranslate = (prefix?: string) => {
+  const lang = useI18nStore((state) => state.lang);
+  return useCallback(
+    (id: string, opt?: any, defaultMessage?: string, description?: string | object) =>
+      getIntl(prefix ? `${prefix}.${id}` : id, opt, defaultMessage, description),
+    [lang]
+  );
 };
 
 export default useTranslate;

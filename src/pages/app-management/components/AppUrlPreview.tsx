@@ -1,12 +1,12 @@
 import { Code, Copy, DashboardReference, Delete, Home } from '@carbon/icons-react';
 import { useClipboard } from '@/hooks';
 import { FC, useRef, useState } from 'react';
-import { getBaseFileName, getBaseUrl } from '@/utils';
 import { useTranslate } from '@/hooks';
 import { Tooltip } from 'antd';
-import { AuthWrapper } from '@/components';
 import { ButtonPermission } from '@/common-types/button-permission';
 import styles from './AppUrlPreview.module.scss';
+import { AuthWrapper } from '@/components/auth';
+import { getBaseUrl, getBaseFileName } from '@/utils/url-util';
 
 const AppUrlPreview: FC<any> = ({ editHandle, setHomepage, item, deleteHandle }) => {
   const formatMessage = useTranslate();
@@ -39,7 +39,7 @@ const AppUrlPreview: FC<any> = ({ editHandle, setHomepage, item, deleteHandle })
         <div title={originUrl} className="single-url">
           {originUrl}
         </div>
-        <Tooltip placement="top" title={formatMessage('appSpace.copy')}>
+        <Tooltip placement="top" title={formatMessage('common.copy')}>
           <div ref={buttonRef} style={{ display: 'flex' }}>
             <Copy style={{ cursor: 'pointer' }} />
           </div>
@@ -69,7 +69,7 @@ const AppUrlPreview: FC<any> = ({ editHandle, setHomepage, item, deleteHandle })
                 transform: 'rotate(180deg)',
               }}
             />
-            {formatMessage('appSpace.delete')}
+            {formatMessage('common.delete')}
           </div>
         </Tooltip>
       </AuthWrapper>

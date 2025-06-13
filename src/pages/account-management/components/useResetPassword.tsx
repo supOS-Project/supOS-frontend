@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { useTranslate } from '@/hooks';
-import { ProModal } from '@/components';
 import { App, Button, Form, Input } from 'antd';
 import { resetPwd } from '@/apis/inter-api/user-manage';
+import ProModal from '@/components/pro-modal';
+import { passwordRegex } from '@/utils';
 
 const useResetPassword = ({ onSaveBack }: any) => {
   const { message } = App.useApp();
@@ -51,6 +52,14 @@ const useResetPassword = ({ onSaveBack }: any) => {
               required: true,
               message: '',
             },
+            {
+              max: 10,
+              message: formatMessage('uns.labelMaxLength', {
+                label: formatMessage('appGui.password'),
+                length: 10,
+              }),
+            },
+            { pattern: passwordRegex, message: formatMessage('rule.password') },
           ]}
         >
           <Input.Password placeholder={formatMessage('appGui.password')} />
@@ -64,6 +73,14 @@ const useResetPassword = ({ onSaveBack }: any) => {
               required: true,
               message: '',
             },
+            {
+              max: 10,
+              message: formatMessage('uns.labelMaxLength', {
+                label: formatMessage('appGui.password'),
+                length: 10,
+              }),
+            },
+            { pattern: passwordRegex, message: formatMessage('rule.password') },
             ({ getFieldValue }) => ({
               validator(_, value) {
                 if (!value || getFieldValue('password') === value) {

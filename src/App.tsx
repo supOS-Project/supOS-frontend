@@ -1,27 +1,40 @@
 import { useEffect, useMemo } from 'react';
-import { observer } from 'mobx-react-lite';
-import { useRoutesContext } from '@/contexts/routes-context';
-import { ConfigProvider, App as AntApp } from 'antd';
+import { App as AntApp } from 'antd';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import routes from '@/routers';
 import DynamicIframe from '@/pages/dynamic-iframe';
-import { useThemeContext } from '@/contexts/theme-context';
-import { Theme } from '@carbon/react';
-import { IntlProvider } from 'react-intl';
-import I18nStore from '@/stores/i18n-store';
 import CookieContext from '@/CookieContext';
 import themeToken from './theme/theme-token.ts';
 import 'shepherd.js/dist/css/shepherd.css';
 import './App.css';
-import { ThemeTypeEnum } from '@/stores/theme-store.ts';
-import { checkImageExists, getBaseUrl, queryChat2dbCurUser } from '@/utils';
 import { userLogin } from '@/apis/chat2db';
 import { UnsTreeMapProvider } from '@/UnsTreeMapContext';
 import { MENU_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans.ts';
+import LanguageProvider from './LanguageProvider.tsx';
+import { queryChat2dbCurUser } from '@/utils/chat2db.ts';
+import { checkImageExists, getBaseUrl } from '@/utils/url-util.ts';
+import DynamicMFComponent from '@/components/dynamic-mf-component';
+import { fetchBaseStore, useBaseStore } from '@/stores/base';
+import { setThemeBySystem, ThemeType, useThemeStore } from '@/stores/theme-store.ts';
+import { cleanupI18nSubscriptions, getIntl } from './stores/i18n-store.ts';
 
 function App() {
-  const routesStore = useRoutesContext();
-  const themeStore = useThemeContext();
+  const { currentUserInfo, systemInfo, pickedRoutesOptions, loading, routesStatus } = useBaseStore((state) => ({
+    currentUserInfo: state.currentUserInfo,
+    systemInfo: state.systemInfo,
+    pickedRoutesOptions: state.pickedRoutesOptions,
+    loading: state.loading,
+    routesStatus: state.routesStatus,
+  }));
+  const _theme = useThemeStore((state) => state._theme);
+
+  useEffect(() => {
+    // 初始化
+    fetchBaseStore(true);
+    return () => {
+      cleanupI18nSubscriptions();
+    };
+  }, []);
 
   const router: any = useMemo(() => {
     return routes.map((route, index) => {
@@ -32,7 +45,7 @@ function App() {
             // 前端路由
             ...((route.children ?? [])
               ?.map((child) => {
-                const info = routesStore?.pickedRoutesOptions?.find((f) => child.path === f?.menu?.url);
+                const info = pickedRoutesOptions?.find((f) => child.path === f?.menu?.url);
                 if (info) {
                   return {
                     ...child,
@@ -46,12 +59,13 @@ function App() {
                 } else if (child.handle?.parentPath === '/_common') {
                   // 开发环境打开方便调试
                   if (import.meta.env.DEV) return child;
+                  if (child.handle?.type === 'all') {
+                    return child;
+                  }
                   // 没有正真父级菜单情况
                   if (
-                    routesStore.systemInfo?.authEnable &&
-                    !routesStore.currentUserInfo?.pageList?.some(
-                      (s: any) => s.uri?.toLowerCase?.() === child.path?.toLowerCase?.()
-                    )
+                    systemInfo?.authEnable &&
+                    !currentUserInfo?.pageList?.some((s: any) => s.uri?.toLowerCase?.() === child.path?.toLowerCase?.())
                   ) {
                     return null;
                   }
@@ -80,25 +94,57 @@ function App() {
                 }
               })
               ?.filter((f) => f) || []),
-            // 后端路由
-            ...(routesStore?.pickedRoutesOptions
+            // 后端路由（及前端模块联邦路由）
+            ...(pickedRoutesOptions
               ?.filter((item) => !item.isFrontend)
               ?.map((d) => {
+                // 模块联邦 子路由
+                if (d.isRemoteChildMenu) {
+                  return {
+                    path: '/' + d?.key,
+                    Component: DynamicMFComponent,
+                    handle: {
+                      parentPath: '/' + d?.parentKey,
+                      name: getIntl(`${d?.parentKey}.${d?.childrenMenuKey}PageName`),
+                      menuNameKey: `${d?.parentKey}.${d?.childrenMenuKey}PageName`,
+                      key: d?.key,
+                      path: '/' + d?.key,
+                      moduleName: d?.childrenMenuKey,
+                    },
+                  };
+                }
+                // 模块联邦
+                if (d.isRemote === '1') {
+                  return {
+                    path: '/' + d?.key,
+                    Component: DynamicMFComponent,
+                    handle: {
+                      key: d?.key,
+                      name: d?.name,
+                      icon: d?.iconUrl,
+                      path: '/' + d?.key,
+                    },
+                  };
+                }
                 if (!d) return null;
+                let iframeRealUrl;
+                if (d.openType !== undefined) {
+                  if (d.openType === '0') {
+                    const { port, protocol, host, name } = d.service as any;
+                    const path = d.menu?.url?.split(name)?.[1] || '';
+                    iframeRealUrl = port ? `${protocol}://${host}:${port}${path}` : `${protocol}://${host}${path}`;
+                  } else {
+                    iframeRealUrl =
+                      d?.menuProtocol && d?.menuHost && d?.menuPort
+                        ? `${d?.menuProtocol}://${d?.menuHost}:${d?.menuPort}${d?.menu?.url}`
+                        : undefined;
+                  }
+                }
                 return {
                   path: '/' + d?.key,
-                  element: (
-                    <DynamicIframe
-                      url={d?.menu?.url}
-                      name={d?.name}
-                      iframeRealUrl={
-                        d?.menuProtocol && d?.menuHost && d?.menuPort
-                          ? `${d?.menuProtocol}://${d?.menuHost}:${d?.menuPort}`
-                          : ''
-                      }
-                    />
-                  ),
+                  element: <DynamicIframe url={d?.menu?.url} name={d?.name} iframeRealUrl={iframeRealUrl} />,
                   handle: {
+                    openType: d?.openType,
                     key: d?.key,
                     name: d?.name,
                     icon: d?.iconUrl,
@@ -113,24 +159,25 @@ function App() {
         return route;
       }
     });
-  }, [routesStore?.pickedRoutesOptions]);
-
+  }, [pickedRoutesOptions]);
   const browserRouter = createBrowserRouter(router);
 
   useEffect(() => {
-    // chat2db登录逻辑
-    try {
-      queryChat2dbCurUser?.()?.then(async (res) => {
-        if (!res) {
-          // 重新登录
-          await userLogin?.();
-          await queryChat2dbCurUser?.();
-        }
-      });
-    } catch (e) {
-      console.log(e);
+    if (systemInfo?.containerMap?.chat2db) {
+      // chat2db登录逻辑
+      try {
+        queryChat2dbCurUser?.()?.then(async (res) => {
+          if (!res) {
+            // 重新登录
+            await userLogin?.();
+            await queryChat2dbCurUser?.();
+          }
+        });
+      } catch (e) {
+        console.log(e);
+      }
     }
-  }, []);
+  }, [systemInfo?.containerMap]);
 
   useEffect(() => {
     const loadFavicon = async () => {
@@ -159,9 +206,9 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (themeStore._theme === ThemeTypeEnum.System) {
+    if (_theme === ThemeType.System) {
       const mediaChange = (event: any) => {
-        themeStore.setThemeBySystem(event.matches);
+        setThemeBySystem(event.matches);
       };
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       mediaQuery.addEventListener('change', mediaChange);
@@ -169,45 +216,29 @@ function App() {
         mediaQuery.removeEventListener('change', mediaChange);
       };
     }
-  }, [themeStore._theme]);
+  }, [_theme]);
 
-  if (routesStore.loading) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 
-  if (routesStore.routesStatus === 401) {
+  if (routesStatus === 401) {
     return <div></div>;
   }
-
-  const ibmStyle = {
-    '--cds-interactive': 'var(--supos-theme-color)',
-    '--cds-focus': 'var(--supos-theme-color)',
-    '--cds-border-interactive': 'var(--supos-theme-color)',
-  };
 
   return (
     <>
       <CookieContext />
-      <IntlProvider
-        messages={I18nStore?.langMessage['messages'] as any}
-        locale={I18nStore?.lang}
-        defaultLocale={'en'}
-        onError={(error) => console.error(error)}
-      >
-        {/*ibm组件库的主题*/}
-        <Theme theme={themeStore.theme.includes('dark') ? 'g100' : 'white'} style={ibmStyle}>
-          {/*antd组件库的主题*/}
-          <ConfigProvider locale={I18nStore.langMessage['antd'] as any} theme={themeToken}>
-            <UnsTreeMapProvider>
-              <AntApp>
-                <RouterProvider router={browserRouter} />
-              </AntApp>
-            </UnsTreeMapProvider>
-          </ConfigProvider>
-        </Theme>
-      </IntlProvider>
+      <LanguageProvider config={{ theme: themeToken }}>
+        {/*antd组件库的主题*/}
+        <UnsTreeMapProvider>
+          <AntApp>
+            <RouterProvider router={browserRouter} />
+          </AntApp>
+        </UnsTreeMapProvider>
+      </LanguageProvider>
     </>
   );
 }
 
-export default observer(App);
+export default App;

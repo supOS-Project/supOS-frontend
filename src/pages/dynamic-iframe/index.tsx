@@ -10,9 +10,9 @@ interface DynamicIframeProps extends PageProps {
 const DynamicIframe: FC<DynamicIframeProps> = ({ url, name, iframeRealUrl, location }) => {
   const { state, search } = location || {};
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const iframeRealHost = iframeRealUrl ?? state?.iframeRealUrl;
+  const _iframeRealUrl = iframeRealUrl ?? state?.iframeRealUrl;
   const src = state?.forceUrl ?? url ?? state?.url;
-  const iframeSrc = (iframeRealHost ? iframeRealHost + src : src) + search;
+  const iframeSrc = (_iframeRealUrl ? _iframeRealUrl : src) + search;
   useEffect(() => {
     const iframe = iframeRef.current;
     // 监听 iframe 加载完成

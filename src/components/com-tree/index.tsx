@@ -1,7 +1,7 @@
 import { ReactNode, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Tree, TreeProps } from 'antd';
-import { loadIbmFont } from '@/utils';
 import './index.scss';
+import { loadIbmFont } from '@/utils/uns';
 
 export interface ComTreeProps extends TreeProps {
   notDataContent?: ReactNode;

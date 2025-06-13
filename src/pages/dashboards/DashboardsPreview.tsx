@@ -1,14 +1,17 @@
 import { FC, useState, useEffect, useRef } from 'react';
-import { ComLayout, ComContent } from '@/components';
 import { Button, Space, Breadcrumb } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { PageProps } from '@/common-types';
 import { getDashboardDetail } from '@/apis/inter-api/uns';
 import { useActivate } from '@/contexts/tabs-lifecycle-context';
-import { getSearchParamsObj } from '@/utils';
 import { usePrevious } from 'ahooks';
 import { useTranslate } from '@/hooks';
 import ComText from '@/components/com-text';
+import { ButtonPermission } from '@/common-types/button-permission.ts';
+import { getSearchParamsObj } from '@/utils/url-util';
+import { AuthButton } from '@/components/auth';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
 
 const FlowPreview: FC<PageProps> = ({ location }) => {
   const formatMessage = useTranslate();
@@ -155,18 +158,21 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
                 <Space>
                   {status === 'design' && (
                     <>
-                      <Button onClick={() => handleClick('save')}>{formatMessage('common.save')}</Button>
-                      <Button onClick={() => handleClick('export')}>{formatMessage('uns.export')}</Button>
-                      <Button onClick={() => handleClick('import')}>{formatMessage('common.import')}</Button>
+                      <AuthButton auth={ButtonPermission['dashboards.save']} onClick={() => handleClick('save')}>
+                        {formatMessage('common.save')}
+                      </AuthButton>
+                      <AuthButton auth={ButtonPermission['dashboards.export']} onClick={() => handleClick('export')}>
+                        {formatMessage('uns.export')}
+                      </AuthButton>
+                      <AuthButton auth={ButtonPermission['dashboards.import']} onClick={() => handleClick('import')}>
+                        {formatMessage('common.import')}
+                      </AuthButton>
                     </>
                   )}
                   <Button onClick={() => handleClick('share')}>{formatMessage('common.share')}</Button>
                 </Space>
               </div>
             )}
-            {/* <Button type="primary" onClick={save}>
-              Save
-            </Button> */}
           </div>
         }
       >

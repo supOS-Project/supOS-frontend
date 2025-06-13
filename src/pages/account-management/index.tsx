@@ -1,17 +1,19 @@
-import { Flex, message, App, Typography } from 'antd';
-import { useTranslate, usePagination } from '@/hooks';
+import { Flex, message, App, Tag } from 'antd';
+import { useTranslate, usePagination, useMediaSize } from '@/hooks';
 import { Add, Delete, Edit, Password, UserIdentification } from '@carbon/icons-react';
-import { Tag } from '@carbon/react';
-import { ComTable, AuthButton, ComLayout, ComContent } from '@/components';
 import { deleteUser, getUserManageList, updateUser } from '@/apis/inter-api/user-manage';
 import useResetPassword from '@/pages/account-management/components/useResetPassword';
 import useAddUser from '@/pages/account-management/components/useAddUser';
 import { FC } from 'react';
 import { PageProps } from '@/common-types.ts';
 import { ButtonPermission } from '@/common-types/button-permission';
-import useRoleSetting from '@/pages/account-management/components/useRoleSetting';
-import { useThemeContext } from '@/contexts/theme-context';
-const { Text } = Typography;
+import useRoleSetting from './components/useRoleSetting';
+import type { PaginationProps } from 'antd';
+import { AuthButton } from '@/components/auth';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import ProTable from '@/components/pro-table';
+import { useThemeStore } from '@/stores/theme-store.ts';
 
 const apiObj: any = {
   updateUser,
@@ -19,17 +21,17 @@ const apiObj: any = {
 
 const AccountManagement: FC<PageProps> = ({ title }) => {
   const formatMessage = useTranslate();
-  const themeStore = useThemeContext();
+  const theme = useThemeStore((state) => state.theme);
 
-  const buttonBg = themeStore.theme.includes('dark') ? '#393939' : '#c6c6c6';
+  const buttonBg = theme.includes('dark') ? '#393939' : '#c6c6c6';
   const { modal } = App.useApp();
-
+  const { isH5 } = useMediaSize();
   const { data, pagination, setLoading, loading, refreshRequest } = usePagination({
     initPageSize: 100,
     fetchApi: getUserManageList,
-    simple: false,
   });
-
+  const showTotal: PaginationProps['showTotal'] = (total) =>
+    isH5 ? null : `${formatMessage('common.total')}  ${total}  ${formatMessage('common.items')}`;
   const handle = (params: any, apiKey: string) => {
     setLoading(true);
     apiObj?.[apiKey]?.(params)
@@ -48,10 +50,195 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
   const { ModalAddDom, onAddOpen } = useAddUser({
     onSaveBack: refreshRequest,
   });
-  const { onRoleModalOpen, RoleModal } = useRoleSetting();
+  const { onRoleModalOpen, RoleModal } = useRoleSetting({
+    onSaveBack: refreshRequest,
+  });
   const onAddHandle = () => {
     onAddOpen();
   };
+
+  const columns: any = [
+    {
+      dataIndex: 'preferredUsername',
+      ellipsis: true,
+      title: formatMessage('account.account'),
+      width: '10%',
+    },
+    {
+      width: '10%',
+      dataIndex: 'firstName',
+      ellipsis: true,
+      title: formatMessage('common.name'),
+    },
+    {
+      width: '10%',
+      dataIndex: 'phone',
+      ellipsis: true,
+      title: formatMessage('account.phone'),
+    },
+    {
+      width: '10%',
+      dataIndex: 'email',
+      ellipsis: true,
+      title: formatMessage('account.email'),
+    },
+    {
+      width: '10%',
+      dataIndex: 'roleList',
+      ellipsis: true,
+      title: formatMessage('account.role'),
+      render: (text: any) => {
+        return text?.map((i: any) => i.roleName)?.join(',');
+      },
+    },
+    {
+      width: '10%',
+      dataIndex: 'enabled',
+      ellipsis: true,
+      title: formatMessage('common.status'),
+      render: (text: any) => {
+        return text ? (
+          <Tag bordered={false} style={{ borderRadius: 15 }} color={'green'}>
+            {formatMessage('account.available')}
+          </Tag>
+        ) : (
+          <Tag bordered={false} style={{ borderRadius: 15 }} color={'magenta'}>
+            {formatMessage('account.unavailable')}
+          </Tag>
+        );
+      },
+    },
+    {
+      dataIndex: 'edit',
+      width: '15%',
+      ellipsis: true,
+      title: formatMessage('common.operation'),
+      render: (_: any, record: any) => {
+        return (
+          <Flex>
+            {record?.enabled ? (
+              <AuthButton
+                color="danger"
+                variant="text"
+                auth={ButtonPermission['accountManagement.disable']}
+                style={{ height: 18, fontSize: 12, textDecoration: 'underline', textUnderlineOffset: 4 }}
+                onClick={() => {
+                  handle(
+                    {
+                      userId: record.id,
+                      enabled: false,
+                      roleList: record.roleList,
+                    },
+                    'updateUser'
+                  );
+                }}
+              >
+                {formatMessage('account.disable')}
+              </AuthButton>
+            ) : (
+              <AuthButton
+                auth={ButtonPermission['accountManagement.enable']}
+                style={{ height: 18, fontSize: 12 }}
+                color="primary"
+                variant="link"
+                onClick={() => {
+                  handle(
+                    {
+                      userId: record.id,
+                      enabled: true,
+                      roleList: record.roleList,
+                    },
+                    'updateUser'
+                  );
+                }}
+              >
+                {formatMessage('account.enable')}
+              </AuthButton>
+            )}
+          </Flex>
+        );
+      },
+    },
+    {
+      title: formatMessage('common.edit'),
+      dataIndex: 'Operation',
+      width: '15%',
+      minWidth: 350,
+      ellipsis: true,
+      render(_: any, record: any) {
+        return (
+          <Flex gap={16} style={{ fontSize: 12 }}>
+            <AuthButton
+              auth={ButtonPermission['accountManagement.edit']}
+              style={{
+                height: 18,
+                fontSize: 12,
+                backgroundColor: buttonBg,
+              }}
+              color="default"
+              variant="filled"
+              onClick={() => {
+                onAddOpen?.(record);
+              }}
+            >
+              {formatMessage('common.edit')}
+              <Edit size={14} />
+            </AuthButton>
+            <AuthButton
+              auth={ButtonPermission['accountManagement.resetPassword']}
+              style={{
+                height: 18,
+                fontSize: 12,
+                backgroundColor: buttonBg,
+              }}
+              color="default"
+              variant="filled"
+              onClick={() => {
+                onOpen?.(record);
+              }}
+            >
+              {formatMessage('account.resetpassword')}
+              <Password size={14} />
+            </AuthButton>
+            {record?.preferredUsername !== 'supos' ? (
+              <AuthButton
+                auth={ButtonPermission['accountManagement.delete']}
+                style={{
+                  height: 18,
+                  fontSize: 12,
+                }}
+                color="default"
+                variant="filled"
+                onClick={() => {
+                  modal.confirm({
+                    title: formatMessage('common.deleteConfirm'),
+                    onOk: () => {
+                      setLoading(true);
+                      deleteUser(record.id)
+                        .then(() => {
+                          message.success(formatMessage('common.optsuccess'));
+                          refreshRequest();
+                        })
+                        .finally(() => {
+                          setLoading(false);
+                        });
+                    },
+                    cancelButtonProps: {
+                      // style: { color: '#000' },
+                    },
+                    okText: formatMessage('common.confirm'),
+                  });
+                }}
+              >
+                {formatMessage('common.delete')}
+                <Delete size={14} />
+              </AuthButton>
+            ) : null}
+          </Flex>
+        );
+      },
+    },
+  ];
   return (
     <ComLayout loading={loading}>
       <ComContent
@@ -66,7 +253,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
               type="primary"
             >
               <Flex align="center" gap={6}>
-                {formatMessage('account.add')}
+                {formatMessage('account.newUsers')}
                 <Add size={16} />
               </Flex>
             </AuthButton>
@@ -85,176 +272,26 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
           </>
         }
         style={{
-          '--cds-layer': 'var(--supos-header-bg-color)',
-          padding: 40,
+          padding: '20px 20px 0',
         }}
       >
-        <ComTable
+        <ProTable
+          resizeable
           style={{ height: '100%' }}
-          scroll={{ y: 'calc(100%  - 32px)' }}
-          data={data}
-          columns={[
-            {
-              dataIndex: 'preferredUsername',
-              title: formatMessage('account.account'),
-              render: (text) => {
-                return (
-                  <Text style={{ maxWidth: 400 }} ellipsis title={text}>
-                    {text}
-                  </Text>
-                );
-              },
-            },
-            {
-              dataIndex: 'firstName',
-              title: formatMessage('account.name'),
-              render: (text) => {
-                return (
-                  <Text style={{ maxWidth: 400 }} ellipsis title={text}>
-                    {text}
-                  </Text>
-                );
-              },
-            },
-            {
-              dataIndex: 'email',
-              title: formatMessage('account.email'),
-            },
-            {
-              dataIndex: 'roleList',
-              title: formatMessage('account.role'),
-              render: (text) => {
-                return <div style={{ width: 'max-content' }}>{text?.map((i: any) => i.roleName)?.join(',')}</div>;
-              },
-            },
-            {
-              dataIndex: 'enabled',
-              title: formatMessage('common.status'),
-              render: (text) => {
-                return text ? (
-                  <Tag size="sm" type={'green'}>
-                    {formatMessage('account.available')}
-                  </Tag>
-                ) : (
-                  <Tag size="sm" type={'magenta'}>
-                    {formatMessage('account.unavailable')}
-                  </Tag>
-                );
-              },
-            },
-            {
-              dataIndex: 'edit',
-              title: formatMessage('common.operation'),
-              render: (_, record: any) => {
-                return (
-                  <Flex>
-                    {record?.enabled ? (
-                      <AuthButton
-                        color="danger"
-                        variant="text"
-                        auth={ButtonPermission['accountManagement.disable']}
-                        style={{ height: 18, fontSize: 12, textDecoration: 'underline', textUnderlineOffset: 4 }}
-                        onClick={() => {
-                          handle(
-                            {
-                              userId: record.id,
-                              enabled: false,
-                              roleList: record.roleList,
-                            },
-                            'updateUser'
-                          );
-                        }}
-                      >
-                        {formatMessage('account.disable')}
-                      </AuthButton>
-                    ) : (
-                      <AuthButton
-                        auth={ButtonPermission['accountManagement.enable']}
-                        style={{ height: 18, fontSize: 12 }}
-                        color="primary"
-                        variant="link"
-                        onClick={() => {
-                          handle(
-                            {
-                              userId: record.id,
-                              enabled: true,
-                              roleList: record.roleList,
-                            },
-                            'updateUser'
-                          );
-                        }}
-                      >
-                        {formatMessage('account.enable')}
-                      </AuthButton>
-                    )}
-                  </Flex>
-                );
-              },
-            },
-          ]}
-          pagination={pagination}
-          operationOptions={{
-            title: formatMessage('common.edit'),
-            render(record: any) {
-              return (
-                <Flex gap={16} style={{ fontSize: 12 }}>
-                  <AuthButton
-                    auth={ButtonPermission['accountManagement.edit']}
-                    style={{ height: 18, fontSize: 12, backgroundColor: buttonBg }}
-                    color="default"
-                    variant="filled"
-                    onClick={() => {
-                      onAddOpen?.(record);
-                    }}
-                  >
-                    {formatMessage('common.edit')}
-                    <Edit size={14} />
-                  </AuthButton>
-                  <AuthButton
-                    auth={ButtonPermission['accountManagement.resetPassword']}
-                    style={{ height: 18, fontSize: 12, backgroundColor: buttonBg }}
-                    color="default"
-                    variant="filled"
-                    onClick={() => {
-                      onOpen?.(record);
-                    }}
-                  >
-                    {formatMessage('account.resetpassword')}
-                    <Password size={14} />
-                  </AuthButton>
-                  {record.preferredUsername !== 'supos' ? (
-                    <AuthButton
-                      auth={ButtonPermission['accountManagement.delete']}
-                      style={{ height: 18, fontSize: 12 }}
-                      color="default"
-                      variant="filled"
-                      onClick={() => {
-                        modal.confirm({
-                          title: formatMessage('common.deleteConfirm'),
-                          onOk: () => {
-                            setLoading(true);
-                            deleteUser(record.id)
-                              .then(() => {
-                                message.success(formatMessage('common.optsuccess'));
-                                refreshRequest();
-                              })
-                              .finally(() => {
-                                setLoading(false);
-                              });
-                          },
-                          cancelButtonProps: {
-                            // style: { color: '#000' },
-                          },
-                          okText: formatMessage('appSpace.confirm'),
-                        });
-                      }}
-                    >
-                      {formatMessage('common.delete')}
-                      <Delete size={14} />
-                    </AuthButton>
-                  ) : null}
-                </Flex>
-              );
+          scroll={{ y: 'calc(100vh  - 240px)', x: 'max-content' }}
+          dataSource={data as any}
+          columns={columns}
+          pagination={{
+            total: pagination?.total,
+            showTotal: showTotal,
+            style: { display: 'flex', justifyContent: 'flex-end', padding: '10px 0' },
+            pageSize: pagination?.pageSize || 20,
+            current: pagination?.page,
+            showQuickJumper: true,
+            pageSizeOptions: pagination?.pageSizes,
+            onChange: pagination.onChange,
+            onShowSizeChange: (current, size) => {
+              pagination.onChange({ page: current, pageSize: size });
             },
           }}
         />

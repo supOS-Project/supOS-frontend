@@ -1,13 +1,12 @@
 import { FC, useState } from 'react';
 import CommonTextMessage from './CommonTextMessage';
 import { useDeepCompareEffect } from 'ahooks';
-import { InlineLoading } from '@/components';
-import { useRoutesContext } from '@/contexts/routes-context.ts';
-import { observer } from 'mobx-react-lite';
+import InlineLoading from '@/components/inline-loading';
+import { useBaseStore } from '@/stores/base';
 
 const DifyMessage: FC<any> = (props) => {
   const { args, handler, status } = props;
-  const routesStore = useRoutesContext();
+  const currentUserInfo = useBaseStore((state) => state.currentUserInfo);
 
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -61,7 +60,7 @@ const DifyMessage: FC<any> = (props) => {
           query,
           response_mode: 'streaming',
           conversation_id: '',
-          user: routesStore.currentUserInfo.preferredUsername,
+          user: currentUserInfo.preferredUsername,
           files: [],
         }),
       });
@@ -117,4 +116,4 @@ const DifyMessage: FC<any> = (props) => {
   );
 };
 
-export default observer(DifyMessage);
+export default DifyMessage;

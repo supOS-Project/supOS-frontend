@@ -1,6 +1,7 @@
 import './index.scss';
 import { FC } from 'react';
 import { AuthWrapper } from '../auth';
+import cx from 'classnames';
 
 const colorList = [
   {
@@ -27,6 +28,7 @@ export interface FooterOperationProps {
     onClick: (item: any) => void;
     type: string;
     auth?: string | string[];
+    disabled?: (item: any) => boolean;
   }[];
   record?: any;
 }
@@ -38,8 +40,8 @@ const FooterOperation: FC<FooterOperationProps> = ({ options, record }) => {
         <AuthWrapper auth={item.auth} key={item.label}>
           <div
             style={colorList?.find((f) => f.type === item.type)?.style}
-            className="item"
-            onClick={() => item?.onClick?.(record, item)}
+            className={cx('item', { 'item-disable': item.disabled ? item.disabled(record) : false })}
+            onClick={() => !(item?.disabled ? item.disabled(record) : false) && item?.onClick?.(record, item)}
           >
             {item.label}
           </div>

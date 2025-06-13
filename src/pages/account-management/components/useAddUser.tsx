@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslate } from '@/hooks';
-import { ProModal, ComSelect } from '@/components';
 import { App, Button, Col, Form, Input, Row } from 'antd';
 import { createUser, getRoleList, updateUser } from '@/apis/inter-api/user-manage';
-import { validNameRegex, validSpecialCharacter } from '@/utils';
 import styles from './RoleSetting.module.scss';
+import ComSelect from '@/components/com-select';
+import ProModal from '@/components/pro-modal';
+import { validNameRegex, phoneRegex, passwordRegex } from '@/utils/pattern';
 
 const useAddUser = ({ onSaveBack }: any) => {
   const { message } = App.useApp();
@@ -87,7 +88,7 @@ const useAddUser = ({ onSaveBack }: any) => {
         <Row gutter={32}>
           <Col span={12}>
             <Form.Item
-              label={formatMessage('account.username')}
+              label={formatMessage('account.account')}
               name="username"
               rules={[
                 {
@@ -106,7 +107,7 @@ const useAddUser = ({ onSaveBack }: any) => {
                 },
               ]}
             >
-              <Input className="username" disabled={isEdit} placeholder={formatMessage('account.username')} />
+              <Input className="username" disabled={isEdit} placeholder={formatMessage('account.account')} />
             </Form.Item>
           </Col>
           {!isEdit && (
@@ -119,6 +120,14 @@ const useAddUser = ({ onSaveBack }: any) => {
                     required: true,
                     message: formatMessage('rule.required'),
                   },
+                  {
+                    max: 10,
+                    message: formatMessage('uns.labelMaxLength', {
+                      label: formatMessage('appGui.password'),
+                      length: 10,
+                    }),
+                  },
+                  { pattern: passwordRegex, message: formatMessage('rule.password') },
                 ]}
               >
                 <Input.Password placeholder={formatMessage('appGui.password')} autoComplete="new-password" />
@@ -126,7 +135,62 @@ const useAddUser = ({ onSaveBack }: any) => {
             </Col>
           )}
           <Col span={12}>
-            <Form.Item label={formatMessage('account.role')} name="roleList">
+            <Form.Item
+              label={formatMessage('common.name')}
+              name="firstName"
+              rules={[
+                {
+                  type: 'string',
+                  min: 1,
+                  max: 200,
+                  message: formatMessage('rule.characterLimit'),
+                },
+                {
+                  pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_\-.@&+]*$/,
+                  message: formatMessage('rule.invalidChars'),
+                },
+              ]}
+            >
+              <Input placeholder={formatMessage('common.name')} />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              label={formatMessage('account.phone')}
+              name="phone"
+              rules={[{ pattern: phoneRegex, message: formatMessage('rule.phone') }]}
+              validateTrigger={['onBlur']}
+            >
+              <Input
+                placeholder={formatMessage('account.phone')}
+                onFocus={() => {
+                  form.setFields([
+                    {
+                      name: 'phone',
+                      errors: undefined, // 清除校验错误
+                    },
+                  ]);
+                }}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label={formatMessage('account.email')} name="email" rules={[{ type: 'email' }]}>
+              <Input placeholder={formatMessage('account.email')} />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label={formatMessage('account.role')}
+              name="roleList"
+              rules={[
+                {
+                  required: true,
+                  message: formatMessage('rule.required'),
+                },
+              ]}
+            >
               <ComSelect
                 placeholder={formatMessage('account.role')}
                 options={options}
@@ -137,31 +201,6 @@ const useAddUser = ({ onSaveBack }: any) => {
                 }}
                 labelInValue
               />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label={formatMessage('account.displayName')}
-              name="firstName"
-              rules={[
-                {
-                  type: 'string',
-                  min: 1,
-                  max: 200,
-                  message: formatMessage('rule.characterLimit'),
-                },
-                {
-                  pattern: validSpecialCharacter,
-                  message: formatMessage('rule.illegality'),
-                },
-              ]}
-            >
-              <Input placeholder={formatMessage('account.displayName')} />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item label={formatMessage('account.email')} name="email" rules={[{ type: 'email' }]}>
-              <Input placeholder={formatMessage('account.email')} />
             </Form.Item>
           </Col>
         </Row>

@@ -1,5 +1,6 @@
 // 模板实例的文件上传
-import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils';
+
+import { ApiWrapper, CustomAxiosConfigEnum } from '@/utils/request';
 
 const baseUrl = '/inter-api/supos/uns';
 

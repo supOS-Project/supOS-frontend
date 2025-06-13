@@ -1,29 +1,31 @@
 import { FC, useState } from 'react';
-import {
-  ComLayout,
-  ComContent,
-  OperationForm,
-  ComCardList,
-  ComPaginationNav,
-  ComDrawer,
-  ComSearch,
-} from '@/components';
-import { Form } from 'antd';
-import flowGrey from '@/assets/collection-flow/flow-grey.svg';
-import flowBlue from '@/assets/collection-flow/flow-blue.svg';
-import flowGreen from '@/assets/collection-flow/flow-green.svg';
-import flowDark from '@/assets/collection-flow/flow-dark.svg';
+import { App, Form, Pagination } from 'antd';
+// import flowGrey from '@/assets/collection-flow/flow-grey.svg';
+// import flowBlue from '@/assets/collection-flow/flow-blue.svg';
+// import flowGreen from '@/assets/collection-flow/flow-green.svg';
+// import flowDark from '@/assets/collection-flow/flow-dark.svg';
 import { useNavigate } from 'react-router-dom';
 import { addFlow, copyFlow, deleteFlow, editFlow, flowPage } from '@/apis/inter-api/event-flow';
-import { TransformFieldNameOutData, validInputPattern, getSearchParamsString } from '@/utils';
 import { usePagination, useTranslate } from '@/hooks';
 import { PageProps } from '@/common-types.ts';
 import { useActivate } from '@/contexts/tabs-lifecycle-context';
-import ThemeStore from '@/stores/theme-store';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
 import { Search } from '@carbon/icons-react';
+import ComCardListVertical from '@/components/com-card-list-vertical';
+import ComDrawer from '@/components/com-drawer';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import ComSearch from '@/components/com-search';
+import OperationForm from '@/components/operation-form';
+import { validInputPattern } from '@/utils/pattern';
+import { TransformFieldNameOutData } from '@/utils/transform';
+import { getSearchParamsString } from '@/utils/url-util';
+import { AuthButton } from '@/components/auth';
+import { DeleteOutlined } from '@ant-design/icons';
+// import { useThemeStore } from '@/stores/theme-store.ts';
 
 const CollectionFlow: FC<PageProps> = ({ title }) => {
+  const { modal } = App.useApp();
   const formatMessage = useTranslate();
   const navigate = useNavigate();
   const [isEdit, setIsEdit] = useState('create');
@@ -31,6 +33,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
   const [form] = Form.useForm();
   const [searchForm] = Form.useForm();
   const [show, setShow] = useState(false);
+  // const theme = useThemeStore((state) => state.theme);
   const { loading, pagination, data, reload, refreshRequest, setSearchParams } = usePagination({
     fetchApi: flowPage,
   });
@@ -42,8 +45,8 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
       label: formatMessage('common.name'),
       name: 'flowName',
       rules: [
-        { required: true, message: '' },
-        { pattern: validInputPattern, message: '' },
+        { required: true, message: formatMessage('rule.required') },
+        { pattern: validInputPattern, message: formatMessage('rule.illegality') },
       ],
     },
     {
@@ -116,6 +119,14 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
       reload();
     });
   };
+  const onEditHandle = (item: any) => {
+    setIsEdit('edit');
+    setShow(true);
+    form.setFieldsValue({
+      ...item,
+      flowName: item.name,
+    });
+  };
   return (
     <ComLayout loading={loading}>
       <ComContent
@@ -128,49 +139,48 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           height: '100%',
         }}
         extra={
-          <ComSearch
-            form={searchForm}
-            formItemOptions={[
-              {
-                name: 'k',
-                properties: {
-                  prefix: <Search />,
-                  placeholder: formatMessage('uns.inputText'),
-                  style: { width: 300 },
-                  allowClear: true,
+          <>
+            <ComSearch
+              form={searchForm}
+              formItemOptions={[
+                {
+                  name: 'k',
+                  properties: {
+                    prefix: <Search />,
+                    placeholder: formatMessage('common.searchPlaceholder'),
+                    style: { width: 300 },
+                    allowClear: true,
+                  },
                 },
-              },
-            ]}
-            formConfig={{
-              onFinish: () => {
+              ]}
+              formConfig={{
+                onFinish: () => {
+                  setSearchParams(searchForm.getFieldsValue());
+                },
+              }}
+              onSearch={() => {
                 setSearchParams(searchForm.getFieldsValue());
-              },
-            }}
-            onSearch={() => {
-              setSearchParams(searchForm.getFieldsValue());
-            }}
-          />
+              }}
+            />
+            <AuthButton auth={ButtonPermission['eventFlow.add']} type="primary" onClick={onAddHandle}>
+              + {formatMessage('eventFlow.newFlow')}
+            </AuthButton>
+          </>
         }
       >
-        <ComCardList
+        <ComCardListVertical
           style={{ flex: 1 }}
-          addAuth={ButtonPermission['eventFlow.add']}
-          deleteAuth={ButtonPermission['eventFlow.delete']}
-          onAddHandle={onAddHandle}
-          onDeleteHandle={onDeleteHandle}
+          // addAuth={ButtonPermission['eventFlow.add']}
+          // onAddHandle={onAddHandle}
+          editAuth={ButtonPermission['eventFlow.edit']}
+          onEditHandle={onEditHandle}
           list={TransformFieldNameOutData(data, {
             status: 'flowStatus',
             name: 'flowName',
             type: 'template',
           })}
-          imgSrc={ThemeStore.theme.includes('dark') ? flowDark : flowGrey}
-          hoverImgSrc={
-            ThemeStore.theme.includes('dark')
-              ? flowDark
-              : ThemeStore.theme.includes('chartreuse')
-                ? flowGreen
-                : flowBlue
-          }
+          // imgSrc={theme.includes('dark') ? flowDark : flowGrey}
+          // hoverImgSrc={theme.includes('dark') ? flowDark : theme.includes('chartreuse') ? flowGreen : flowBlue}
           runStatusOptions={[
             {
               value: 'RUNNING',
@@ -195,7 +205,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           ]}
           operationOptions={[
             {
-              label: formatMessage('collectionFlow.copy'),
+              label: formatMessage('common.copy'),
               onClick: (item: any) => {
                 setIsEdit('copy');
                 setShow(true);
@@ -203,35 +213,46 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                   id: item.id,
                 });
               },
-              type: 'block',
+              type: 'outlined',
               auth: ButtonPermission['eventFlow.copy'],
             },
             {
-              label: formatMessage('collectionFlow.edit'),
-              onClick: (item: any) => {
-                setIsEdit('edit');
-                setShow(true);
-                form.setFieldsValue({
-                  ...item,
-                  flowName: item.name,
-                });
-              },
-              type: 'block',
-              auth: ButtonPermission['eventFlow.edit'],
-            },
-            {
-              label: formatMessage('collectionFlow.design'),
+              label: formatMessage('common.design'),
               onClick: (item: any) => {
                 navigate(
-                  `/EvenFlowEditor?${getSearchParamsString({ id: item.id, name: item.name, status: item.status, flowId: item.flowId })}`
+                  `/EvenFlow/Editor?${getSearchParamsString({ id: item.id, name: item.name, status: item.status, flowId: item.flowId })}`
                 );
               },
-              type: 'blue',
+              type: 'primary',
               auth: ButtonPermission['eventFlow.design'],
+            },
+            {
+              label: formatMessage('common.delete'),
+              onClick: (item) =>
+                modal.confirm({
+                  title: formatMessage('common.deleteConfirm'),
+                  onOk: () => onDeleteHandle(item),
+                  okText: formatMessage('common.confirm'),
+                }),
+              type: 'dark',
+              btnProps: {
+                icon: <DeleteOutlined />,
+              },
+              auth: ButtonPermission['eventFlow.delete'],
             },
           ]}
         />
-        <ComPaginationNav {...pagination} />
+        <Pagination
+          size="small"
+          className="custom-pagination"
+          align="center"
+          style={{ margin: '20px 0' }}
+          pageSize={pagination?.pageSize || 20}
+          showSizeChanger={false}
+          current={pagination?.page}
+          total={pagination?.total}
+          onChange={pagination.onChange}
+        />
       </ComContent>
       <ComDrawer title=" " open={show} onClose={onClose}>
         <OperationForm

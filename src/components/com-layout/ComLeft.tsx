@@ -1,12 +1,11 @@
 import { CSSProperties, FC, ReactNode, useState, useRef } from 'react';
 import classNames from 'classnames';
 import styles from './index.module.scss';
-import { useThemeContext } from '@/contexts/theme-context.ts';
-import { observer } from 'mobx-react-lite';
 import { debounce } from 'lodash';
 import { useMediaSize } from '@/hooks';
 import { Close } from '@carbon/icons-react';
 import { useUnsTreeMapContext } from '@/UnsTreeMapContext';
+import { useThemeStore } from '@/stores/theme-store.ts';
 
 export interface ComLeftProps {
   children?: ReactNode;
@@ -29,7 +28,7 @@ const ComLeft: FC<ComLeftProps> = ({
 }) => {
   const { isH5 } = useMediaSize();
   const { setTreeMapVisible } = useUnsTreeMapContext();
-  const themeStore = useThemeContext();
+  const isTop = useThemeStore((state) => state.isTop);
   const [width, setWidth] = useState(defaultWidth); // 默认宽度为300px
   const [isResizing, setIsResizing] = useState(false); // 调整大小
   const [mouseEnter, setMouseEnter] = useState(false); // 鼠标移入
@@ -101,7 +100,7 @@ const ComLeft: FC<ComLeftProps> = ({
             overflow: 'auto',
             flex: 1,
             ...style,
-            ...(styleCallBack?.(!themeStore.isTop) || {}),
+            ...(styleCallBack?.(!isTop) || {}),
           }}
         >
           {children}
@@ -142,4 +141,4 @@ const ComLeft: FC<ComLeftProps> = ({
   );
 };
 
-export default observer(ComLeft);
+export default ComLeft;

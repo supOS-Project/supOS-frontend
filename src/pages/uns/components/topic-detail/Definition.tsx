@@ -1,43 +1,73 @@
 import { FC } from 'react';
 import { useTranslate } from '@/hooks';
 import Icon from '@ant-design/icons';
-import { MainKey } from '@/components';
+import ProTable from '@/components/pro-table';
+import MainKey from '@/components/svg-components/MainKey';
 
-const Definition: FC<any> = ({ instanceInfo }) => {
+interface DefinitionProps {
+  instanceInfo: { [key: string]: any };
+}
+
+const Definition: FC<DefinitionProps> = ({ instanceInfo }) => {
   const formatMessage = useTranslate();
 
   return (
-    <table className="customTable" border={1} cellSpacing="1">
-      <thead>
-        <tr>
-          <td style={{ width: '20%' }}>{formatMessage('uns.key')}</td>
-          <td style={{ width: '20%' }}>{formatMessage('uns.type')}</td>
-          <td style={{ width: '20%' }}>{formatMessage('uns.displayName')}</td>
-          <td style={{ width: '20%' }}>{formatMessage('uns.remark')}</td>
-          <td>{formatMessage('uns.index')}</td>
-        </tr>
-      </thead>
-      <tbody>
-        {(instanceInfo?.fields || []).map((e: any) => (
-          <tr key={e.name}>
-            <td>
-              {e.unique && (
+    <ProTable
+      bordered
+      columns={[
+        {
+          title: formatMessage('uns.key'),
+          dataIndex: 'name',
+          width: '20%',
+          render: (text, record) => (
+            <div>
+              {record.unique && (
                 <Icon
-                  style={{ color: 'var(--supos-theme-color)', marginRight: '5px' }}
+                  style={{
+                    color: 'var(--supos-theme-color)',
+                    marginRight: '5px',
+                    verticalAlign: 'middle',
+                  }}
                   title={formatMessage('uns.mainKey')}
                   component={MainKey}
                 />
               )}
-              {e.name}
-            </td>
-            <td>{e.type}</td>
-            <td>{e.displayName}</td>
-            <td>{e.remark}</td>
-            <td>{e.index}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+              {text}
+            </div>
+          ),
+        },
+        {
+          title: formatMessage('uns.type'),
+          dataIndex: 'type',
+          width: '20%',
+          render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+        },
+        {
+          title: formatMessage('common.length'),
+          dataIndex: 'maxLen',
+          width: '20%',
+          render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+        },
+        {
+          title: formatMessage('uns.displayName'),
+          dataIndex: 'displayName',
+          width: '20%',
+          render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+        },
+        {
+          title: formatMessage('uns.remark'),
+          dataIndex: 'remark',
+          width: '20%',
+          render: (text) => <span style={{ color: 'var(--supos-theme-color)' }}>{text}</span>,
+        },
+      ]}
+      dataSource={instanceInfo?.fields || []}
+      rowKey="name"
+      pagination={false}
+      size="middle"
+      hiddenEmpty
+      rowHoverable={false}
+    />
   );
 };
 export default Definition;

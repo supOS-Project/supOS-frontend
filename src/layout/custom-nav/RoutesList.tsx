@@ -2,13 +2,12 @@ import { Dispatch, FC, SetStateAction, useEffect, useRef, useState } from 'react
 import { Button as AntButton, Checkbox, Col, ConfigProvider, Flex, message, Row } from 'antd';
 import { RoutesProps } from '@/stores/types';
 import { getGroupedData } from '@/stores/utils';
-import { useRoutesContext } from '@/contexts/routes-context';
 import { useTranslate } from '@/hooks';
-import { IconImage } from '@/components';
-import { useThemeContext } from '@/contexts/theme-context.ts';
-import { observer } from 'mobx-react-lite';
+import IconImage from '@/components/icon-image';
+import { fetchBaseStore, postRoutes, useBaseStore } from '@/stores/base';
+import { useThemeStore } from '@/stores/theme-store.ts';
 
-const theme = {
+const _theme = {
   token: {
     colorBgContainer: 'white', // 修改主色调
     colorPrimary: '#000',
@@ -19,9 +18,12 @@ const theme = {
 const RoutesList: FC<{ open: boolean; setOpen: Dispatch<SetStateAction<boolean>> }> = ({ open, setOpen }) => {
   const [routes, setRoutes] = useState<RoutesProps[]>([]);
   const originRoutes = useRef<RoutesProps[]>([]);
-  const routesStore = useRoutesContext();
   const formatMessage = useTranslate();
-  const themeStore = useThemeContext();
+  const primaryColor = useThemeStore((state) => state.primaryColor);
+
+  const { parentOrderMap } = useBaseStore((state) => ({
+    parentOrderMap: state.parentOrderMap,
+  }));
 
   // father
   const [checkAllList, setCheckAllList] = useState<boolean[]>([]);
@@ -31,9 +33,9 @@ const RoutesList: FC<{ open: boolean; setOpen: Dispatch<SetStateAction<boolean>>
 
   useEffect(() => {
     if (!open) return;
-    routesStore?.fetchRoutes?.()?.then((data: RoutesProps[]) => {
+    fetchBaseStore?.()?.then((data: RoutesProps[]) => {
       originRoutes.current = data;
-      const allRoutes = getGroupedData(data, routesStore.parentOrderMap);
+      const allRoutes = getGroupedData(data, parentOrderMap);
       setRoutes(allRoutes);
       const checkeds: string[][] = [];
       const checksAll: boolean[] = [];
@@ -66,7 +68,7 @@ const RoutesList: FC<{ open: boolean; setOpen: Dispatch<SetStateAction<boolean>>
         };
       }
     });
-    routesStore?.postRoutes?.(params).then(() => {
+    postRoutes?.(params).then(() => {
       setCheckAllList([]);
       setIndeterminateList([]);
       setCheckedLists([]);
@@ -102,7 +104,7 @@ const RoutesList: FC<{ open: boolean; setOpen: Dispatch<SetStateAction<boolean>>
     setCheckAllList(updatedCheckAllList);
   };
   return (
-    <ConfigProvider theme={theme}>
+    <ConfigProvider theme={_theme}>
       <div style={{ maxHeight: 400, overflow: 'auto', marginBottom: 20 }}>
         {routes?.map?.((route, index) => {
           return (
@@ -115,7 +117,7 @@ const RoutesList: FC<{ open: boolean; setOpen: Dispatch<SetStateAction<boolean>>
                   }}
                 >
                   <Flex align="center" gap={4}>
-                    <IconImage theme={themeStore.theme} iconName={route.iconUrl} width={20} height={20} />
+                    <IconImage theme={primaryColor} iconName={route.iconUrl} width={20} height={20} />
                     {route.name}
                   </Flex>
                 </Col>
@@ -146,7 +148,7 @@ const RoutesList: FC<{ open: boolean; setOpen: Dispatch<SetStateAction<boolean>>
                       }}
                     >
                       <Flex align="center" gap={4}>
-                        <IconImage theme={themeStore.theme} iconName={childRoute.iconUrl} width={20} height={20} />
+                        <IconImage theme={primaryColor} iconName={childRoute.iconUrl} width={20} height={20} />
                         {childRoute.name}
                       </Flex>
                     </Col>
@@ -167,4 +169,4 @@ const RoutesList: FC<{ open: boolean; setOpen: Dispatch<SetStateAction<boolean>>
   );
 };
 
-export default observer(RoutesList);
+export default RoutesList;

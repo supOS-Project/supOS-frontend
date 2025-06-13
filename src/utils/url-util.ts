@@ -57,8 +57,37 @@ export const getImageSrcByTheme = (theme: string, iconName?: string) => {
   }
   const baseUrl = `${getBaseUrl()}${STORAGE_PATH}${MENU_TARGET_PATH}/`;
   const themeSuffix = theme.includes('chartreuse') ? '-chartreuse' : ''; // 根据主题添加后缀
-  const themeImageUrl = `${baseUrl}${iconName}${themeSuffix}.svg`; // 拼接带主题后缀的文件名
-  const defaultImageUrl = `${baseUrl}${iconName}.svg`; // 默认文件名
+
+  // 检查iconName是否已经包含有效的文件后缀
+  // 常见的图片扩展名列表
+  const validExtensions = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
+  let iconNameWithoutExt = iconName;
+  let extension = '.svg';
+  let hasExtension = false;
+
+  // 获取最后一个点的位置
+  const lastDotIndex = iconName.lastIndexOf('.');
+
+  // 如果存在点，并且点后面的内容是有效的扩展名
+  if (lastDotIndex !== -1) {
+    const possibleExt = iconName.substring(lastDotIndex).toLowerCase();
+    hasExtension = validExtensions.includes(possibleExt);
+
+    if (hasExtension) {
+      extension = possibleExt; // 获取扩展名（包括点）
+      iconNameWithoutExt = iconName.substring(0, lastDotIndex); // 获取不包含扩展名的文件名
+    }
+  }
+
+  // 如果没有有效扩展名，则整个iconName作为文件名，使用默认扩展名
+  if (!hasExtension) {
+    iconNameWithoutExt = iconName;
+  }
+
+  // 拼接带主题后缀的文件名
+  const themeImageUrl = `${baseUrl}${iconNameWithoutExt}${themeSuffix}${extension}`;
+  // 默认文件名
+  const defaultImageUrl = `${baseUrl}${iconNameWithoutExt}${extension}`;
   return { themeImageUrl, defaultImageUrl, fallbackImageUrl };
 };
 

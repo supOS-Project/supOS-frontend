@@ -1,19 +1,20 @@
 import { FC, useEffect, useState } from 'react';
 import { attempt, isEmpty, isError, map } from 'lodash';
 import { useWebSocket } from 'ahooks';
-import { formatTimestamp, isJsonString } from '@/utils';
 import { Copy } from '@carbon/icons-react';
 import Clipboard from 'clipboard';
 import { useTranslate } from '@/hooks';
 import { Button, Empty, message, Tooltip } from 'antd';
 import { ClearOutlined } from '@ant-design/icons';
+import type { UnsTreeNode } from '@/pages/uns/types';
+import { isJsonString } from '@/utils/common';
+import { formatTimestamp } from '@/utils/format';
 
 interface IProps {
-  topic: string;
-  showType: number | null;
+  currentNode: UnsTreeNode;
 }
 
-const RealTimeData: FC<IProps> = ({ topic, showType }) => {
+const RealTimeData: FC<IProps> = ({ currentNode: { id, type, name } }) => {
   const formatMessage = useTranslate();
   const [dataSource, setDataSource] = useState<any[]>([]);
   const [socketUrl, setSocketUrl] = useState<string>('');
@@ -61,21 +62,21 @@ const RealTimeData: FC<IProps> = ({ topic, showType }) => {
 
   useEffect(() => {
     setDataSource([]);
-    if (showType === 2) {
+    if (type === 2) {
       setSocketUrl(
-        `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?topic=${encodeURIComponent(topic)}`
+        `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?topic=${encodeURIComponent(id as string)}`
       );
     } else {
       setSocketUrl('');
       webSocketIns?.close();
     }
-  }, [topic, showType]);
+  }, [id, type]);
 
-  const topicFileName = topic.split('/').slice(-1)[0];
+  if (type === 0) return null;
 
   return (
     <div className="unsRealTimeWrap">
-      {topicFileName ? (
+      {name ? (
         <>
           <h3
             style={{
@@ -86,7 +87,7 @@ const RealTimeData: FC<IProps> = ({ topic, showType }) => {
               gap: '20px',
             }}
           >
-            {topicFileName}
+            {name}
             <Tooltip title={formatMessage('uns.clearMsg')}>
               <Button
                 icon={<ClearOutlined />}

@@ -2,10 +2,9 @@ import { FC, useEffect, useRef, useState } from 'react';
 import { RoutesProps } from '@/stores/types';
 import { ConfigProvider, Flex, Menu, MenuProps } from 'antd';
 import { useMenuNavigate } from '@/hooks';
-import { observer } from 'mobx-react-lite';
 import styles from './index.module.scss';
-import { IconImage } from '@/components';
-import { useThemeContext } from '@/contexts/theme-context.ts';
+import IconImage from '@/components/icon-image';
+import { useThemeStore } from '@/stores/theme-store.ts';
 
 type MenuItem = Required<MenuProps>['items'][number];
 const SideMenuList: FC<{
@@ -14,7 +13,7 @@ const SideMenuList: FC<{
   setOpenHoverNav: any;
   selectedKeys: string[];
 }> = ({ navList, openHoverNav, setOpenHoverNav, selectedKeys }) => {
-  const themeStore = useThemeContext();
+  const primaryColor = useThemeStore((state) => state.primaryColor);
   const handleNavigate = useMenuNavigate();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [menuSelectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -40,7 +39,7 @@ const SideMenuList: FC<{
               key: parent.key!,
               label: (
                 <Flex align="center" gap={4} className={styles['side-menu-list-item']}>
-                  <IconImage theme={themeStore.theme} iconName={parent.iconUrl} width={24} height={24} />
+                  <IconImage theme={primaryColor} iconName={parent.iconUrl} width={24} height={24} />
                   {parent.name}
                 </Flex>
               ),
@@ -52,7 +51,7 @@ const SideMenuList: FC<{
                 },
                 label: (
                   <Flex align="center" gap={4} className={styles['side-menu-list-item']}>
-                    <IconImage theme={themeStore.theme} iconName={child.iconUrl} width={24} height={24} />
+                    <IconImage theme={primaryColor} iconName={child.iconUrl} width={24} height={24} />
                     {child.name}
                   </Flex>
                 ),
@@ -63,7 +62,7 @@ const SideMenuList: FC<{
               key: parent.key!,
               label: (
                 <Flex align="center" gap={4} className={styles['side-menu-list-item']}>
-                  <IconImage theme={themeStore.theme} iconName={parent.iconUrl} width={24} height={24} />
+                  <IconImage theme={primaryColor} iconName={parent.iconUrl} width={24} height={24} />
                   {parent.name}
                 </Flex>
               ),
@@ -112,4 +111,4 @@ const SideMenuList: FC<{
   ) : null;
 };
 
-export default observer(SideMenuList);
+export default SideMenuList;

@@ -1,10 +1,10 @@
 import { Image as AntImage, ImageProps } from 'antd';
 import { FC, useEffect, useState } from 'react';
-import { checkImageExists, getBaseUrl } from '@/utils';
 import logoBlackWhite from '@/assets/custom-nav/logo-white.png';
 import logoBlack from '@/assets/custom-nav/logo-black.png';
 import LoadingDots from '@/layout/custom-menu-header/components/LoadingDots.tsx';
 import { MENU_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans';
+import { checkImageExists, getBaseUrl } from '@/utils/url-util';
 
 interface IconImgProps extends Partial<ImageProps> {
   isDark: boolean;

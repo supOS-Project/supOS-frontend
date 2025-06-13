@@ -1,15 +1,18 @@
-import { ComLayout, ComMenuList, ComContent } from '@/components';
 import { useTranslate } from '@/hooks';
 import styles from './index.module.scss';
-import { observer } from 'mobx-react-lite';
-import { useRoutesContext } from '@/contexts/routes-context';
 import { Typography } from 'antd';
+import ComLayout from '@/components/com-layout';
+import ComContent from '@/components/com-layout/ComContent';
+import ComMenuList from '@/components/com-menu-list';
+import { useBaseStore } from '@/stores/base';
 const { Title, Paragraph } = Typography;
 
 const Index = () => {
   const formatMessage = useTranslate();
-  const routesStore = useRoutesContext();
-  const { containerList } = routesStore;
+  const { containerList, systemInfo } = useBaseStore((state) => ({
+    containerList: state.containerList,
+    systemInfo: state.systemInfo,
+  }));
   return (
     <ComLayout>
       <ComContent title={<div></div>} hasBack={false} mustShowTitle={false}>
@@ -18,10 +21,10 @@ const Index = () => {
             {formatMessage('aboutus.aboutus')}
           </Title>
           <Paragraph style={{ marginBottom: 0 }}>
-            {formatMessage('aboutus.overview', { appTitle: routesStore.systemInfo.appTitle })}
+            {formatMessage('aboutus.overview', { appTitle: systemInfo.appTitle })}
           </Paragraph>
           <Paragraph style={{ marginBottom: 0 }}>
-            {formatMessage('aboutus.overview2', { appTitle: routesStore.systemInfo.appTitle })}
+            {formatMessage('aboutus.overview2', { appTitle: systemInfo.appTitle })}
           </Paragraph>
           {/*<Paragraph style={{ marginBottom: 0 }}>{formatMessage('aboutus.openSourceLicense')}</Paragraph>*/}
         </div>
@@ -33,4 +36,4 @@ const Index = () => {
   );
 };
 
-export default observer(Index);
+export default Index;

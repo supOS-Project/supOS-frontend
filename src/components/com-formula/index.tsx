@@ -10,6 +10,7 @@ import codemirror from 'codemirror';
 import './index.scss';
 import { Calculator } from '@carbon/icons-react';
 import { useUpdateEffect } from 'ahooks';
+import HelpTooltip from '../help-tooltip';
 
 export interface ComFormulaProps {
   style?: CSSProperties;
@@ -25,6 +26,7 @@ export interface ComFormulaProps {
   showDetail?: boolean;
   readonly?: boolean;
   required?: boolean;
+  showTooltip?: boolean;
 }
 
 const ComFormula: FC<ComFormulaProps> = ({
@@ -40,6 +42,7 @@ const ComFormula: FC<ComFormulaProps> = ({
   showDetail,
   readonly,
   required,
+  showTooltip,
 }) => {
   const formatMessage = useTranslate();
   const codeEditorRef = useRef<CodeEditorRef>();
@@ -234,14 +237,22 @@ const ComFormula: FC<ComFormulaProps> = ({
 
   return (
     <div className={classNames('comFormula', className)} style={style}>
-      <FieldPanel onClick={onFieldClick} fieldList={fieldList} style={{ display: readonly ? 'none' : 'block' }} />
+      <FieldPanel
+        onClick={onFieldClick}
+        fieldList={fieldList}
+        style={{ display: readonly ? 'none' : 'flex' }}
+        tooltip={showTooltip ? <HelpTooltip title={formatMessage('uns.variableChipsTooltip')} /> : false}
+      />
       <Flex
         justify="space-between"
         className={classNames('expression', {
           'expression-readonly': readonly,
         })}
       >
-        <div className={required ? 'require' : undefined}>{formatMessage('common.expression')}</div>
+        <Flex align="center" gap={8}>
+          <div className={required ? 'require' : undefined}>{formatMessage('common.expression')}</div>
+          {showTooltip && <HelpTooltip title={formatMessage('uns.expressionTooltip')} />}
+        </Flex>
         {!readonly && (
           <Flex
             onClick={() => {
@@ -252,6 +263,7 @@ const ComFormula: FC<ComFormulaProps> = ({
           >
             <Calculator size={16} />
             {formatMessage('common.calculator')}
+            {showTooltip && <HelpTooltip title={formatMessage('uns.functionCalculatorTooltip')} />}
           </Flex>
         )}
       </Flex>
