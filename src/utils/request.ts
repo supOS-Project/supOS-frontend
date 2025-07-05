@@ -3,6 +3,7 @@ import { getToken } from './auth';
 import { message, notification } from 'antd';
 import qs from 'qs';
 import { getIntl } from '@/stores/i18n-store.ts';
+import { isInIframe } from '@/utils/url-util.ts';
 
 /**
  * 接口请求通用业务错误码
@@ -105,6 +106,13 @@ service.interceptors.response.use(
     // 获取业务数据的响应码。接下来的情况，根据业务状态码判断并处理
     const code = res?.code;
     if (response?.request?.responseURL?.includes('/403') && response?.request?.responseText?.includes('html>')) {
+      if (isInIframe([], 'webview')) {
+        // omc特殊处理
+        if (location.pathname !== '/403' && location.pathname !== '/freeLogin') {
+          location.href = '/403';
+        }
+        return Promise.reject({ code: 403 });
+      }
       // 特殊处理403弹框（后端接口直接重定向了）
       notification.error({
         message: getIntl(
@@ -247,7 +255,11 @@ export class ApiWrapper {
   ) => {
     const fd = new FormData();
     fileItemList.forEach((fileItem) => {
-      fd.append(fileItem.name, fileItem.value, fileItem.fileName);
+      if (fileItem.value instanceof Blob) {
+        fd.append(fileItem.name, fileItem.value, fileItem.fileName);
+      } else {
+        fd.append(fileItem.name, fileItem.value);
+      }
     });
     const configCopy = {
       ...config,

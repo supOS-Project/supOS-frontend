@@ -14,7 +14,7 @@ interface IProps {
   currentNode: UnsTreeNode;
 }
 
-const RealTimeData: FC<IProps> = ({ currentNode: { id, type, name } }) => {
+const RealTimeData: FC<IProps> = ({ currentNode: { id, type, pathName } }) => {
   const formatMessage = useTranslate();
   const [dataSource, setDataSource] = useState<any[]>([]);
   const [socketUrl, setSocketUrl] = useState<string>('');
@@ -64,7 +64,7 @@ const RealTimeData: FC<IProps> = ({ currentNode: { id, type, name } }) => {
     setDataSource([]);
     if (type === 2) {
       setSocketUrl(
-        `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?topic=${encodeURIComponent(id as string)}`
+        `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?topic=${id}`
       );
     } else {
       setSocketUrl('');
@@ -76,7 +76,7 @@ const RealTimeData: FC<IProps> = ({ currentNode: { id, type, name } }) => {
 
   return (
     <div className="unsRealTimeWrap">
-      {name ? (
+      {pathName ? (
         <>
           <h3
             style={{
@@ -87,7 +87,7 @@ const RealTimeData: FC<IProps> = ({ currentNode: { id, type, name } }) => {
               gap: '20px',
             }}
           >
-            {name}
+            {pathName}
             <Tooltip title={formatMessage('uns.clearMsg')}>
               <Button
                 icon={<ClearOutlined />}

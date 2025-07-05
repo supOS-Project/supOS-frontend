@@ -6,6 +6,10 @@ const api = new ApiWrapper(baseUrl);
 
 // 新建流程
 export const addFlow = async (data: any) => api.post('/flow', data);
+
+// 拓扑图新建
+export const createFlow = async (data: any) => api.post('/flow/create', data);
+
 // 复制流程
 export const copyFlow = async (data: any) => api.post('/flow/copy', data);
 

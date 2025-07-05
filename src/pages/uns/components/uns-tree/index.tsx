@@ -28,6 +28,7 @@ import ComClickTrigger from '@/components/com-click-trigger';
 import ProSearch from '@/components/pro-search';
 import ProTree, { ProTreeProps } from '@/components/pro-tree';
 import TagAdd from '@/components/svg-components/TagAdd';
+import { usePageIsShow } from '@/contexts/tabs-lifecycle-context.ts';
 
 const renderOperationDom = (type: string) => {
   switch (type) {
@@ -50,7 +51,6 @@ const renderOperationDom = (type: string) => {
 
 // 操作
 const Operation = () => {
-  console.log('操作刷新了');
   const formatMessage = useTranslate();
   const { treeType, operationFns, setSelectedNode, selectedNode, loadData } = useTreeStore((state) => ({
     treeType: state.treeType,
@@ -166,7 +166,6 @@ const Operation = () => {
 
 // 树类型
 const TreeTab = () => {
-  console.log('树类型刷新了');
   const formatMessage = useTranslate();
 
   const { treeType } = useTreeStore((state) => ({
@@ -353,7 +352,6 @@ const UnsTypeSearch = () => {
 };
 
 const TreeHeader = () => {
-  console.log('头部刷新了');
   return (
     <div>
       <TreeTab />
@@ -397,7 +395,6 @@ const TopTreeCom = ({
   header: ProTreeProps['header'];
   treeNodeExtra?: ProTreeProps['treeNodeExtra'];
 }) => {
-  console.log('树刷新了');
   const formatMessage = useTranslate();
   const { message } = App.useApp();
   // 创建一个 ref 来引用 tree 元素
@@ -508,10 +505,12 @@ const TopTreeCom = ({
     }, 300);
   }, [nodePaginationState, loadingKeys]);
   const isUns = treeType === 'uns';
+  const isShow = usePageIsShow();
   return (
     <>
       {ViewLabelModal}
       <ProTree
+        isShow={isShow}
         ref={treeRef}
         rightClickMenuItems={
           isUns

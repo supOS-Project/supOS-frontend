@@ -5,6 +5,7 @@ import { useMount, useUpdateEffect } from 'ahooks';
 const TabWrapper = ({ children, isActive }: { children: ReactNode; isActive: boolean }) => {
   const [activated, setActivated] = useState(isActive);
   const isFirstRender = useRef(true);
+  const isShowRef = useRef(true);
 
   useMount(() => {
     isFirstRender.current = false;
@@ -13,8 +14,10 @@ const TabWrapper = ({ children, isActive }: { children: ReactNode; isActive: boo
   useUpdateEffect(() => {
     if (isActive && !activated) {
       setActivated(true);
+      isShowRef.current = true;
     } else if (!isActive && activated) {
       setActivated(false);
+      isShowRef.current = false;
     }
   }, [isActive, activated]); // 监听 isActive 和 activated 的变化
 
@@ -30,7 +33,11 @@ const TabWrapper = ({ children, isActive }: { children: ReactNode; isActive: boo
     }
   };
 
-  return <TabsLifecycleContext.Provider value={{ activate, unActivate }}>{children}</TabsLifecycleContext.Provider>;
+  return (
+    <TabsLifecycleContext.Provider value={{ activate, unActivate, isShowRef }}>
+      {children}
+    </TabsLifecycleContext.Provider>
+  );
 };
 
 export { TabWrapper };

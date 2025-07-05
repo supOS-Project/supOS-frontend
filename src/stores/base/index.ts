@@ -7,12 +7,11 @@ import {
   APP_TITLE,
   SUPOS_LANG,
   SUPOS_UNS_TREE,
-  SUPOS_USER_BUTTON_LIST,
   SUPOS_USER_GUIDE_ROUTES,
   SUPOS_USER_LAST_LOGIN_ENABLE,
   SUPOS_USER_TIPS_ENABLE,
 } from '@/common-types/constans.ts';
-import { getRoutes, getSystemConfig, getUserInfo, postPickRoutes } from '@/apis/inter-api';
+import { getRoutes, getSystemConfig, getUserInfo, postPickRoutes, getAllThemeConfig } from '@/apis/inter-api';
 import { getPluginListApi } from '@/apis/inter-api/plugin.ts';
 import {
   Criteria,
@@ -27,16 +26,21 @@ import {
   multiGroupByCondition,
 } from '@/stores/utils.ts';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
-import { getToken, preloadPluginLang } from '@/utils';
-import { isBoolean, isEmpty, map } from 'lodash';
+import { getToken } from '@/utils/auth.ts';
+import { preloadPluginLang } from '@/utils/plugin.ts';
+import { filter, includes, isBoolean, isEmpty, map } from 'lodash';
 import dayjs from 'dayjs';
 import { TBaseStore } from '@/stores/base/type.ts';
 import { initI18n, defaultLanguage, I18nEnum } from '../i18n-store.ts';
 import 'dayjs/locale/zh-cn';
+import { setErrorInfo } from '@/stores/error-store.ts';
 
 const loadDayjsLocale = (locale: string) => {
   dayjs.locale(locale);
 };
+
+// 包含新手导航的页面路由集合，新增页面导航时务必在这里添加url
+const GuidePagePaths = ['/home', '/uns'];
 
 /**
  * 系统基础store
@@ -57,6 +61,7 @@ export const initBaseContent = {
   dashboardType: [],
   userTipsEnable: storageOpt.getOrigin(SUPOS_USER_TIPS_ENABLE) || '',
   pluginList: [],
+  buttonList: [],
   loading: true,
 };
 
@@ -81,6 +86,15 @@ const updateBaseStore = async (isFirst: boolean = false) => {
       const [{ value: routes, reason }, { value: info }, { value: systemInfo }, { value: pluginList }]: any =
         await Promise.allSettled([getRoutes(), getUserInfo(), getSystemConfig(), getPluginListApi()]);
 
+      try {
+        const themePlugin = pluginList?.find((e: any) => e?.plugInfoYml?.route?.name === 'ThemeManagement');
+        if (themePlugin?.installStatus === 'installed') {
+          const themeConfig = await getAllThemeConfig();
+          systemInfo.themeConfig = themeConfig;
+        }
+      } catch (err) {
+        console.error(err);
+      }
       const criteria: Criteria<DataItem> = {
         buttonGroup: (item: any) => item?.uri?.includes('button:'),
       };
@@ -91,18 +105,21 @@ const updateBaseStore = async (isFirst: boolean = false) => {
       );
       const pickedRouters = filterObjectArrays(denyOthers, others);
 
-      // 设置title
-      document.title = systemInfo?.appTitle || APP_TITLE;
-      // 存储button权限信息
-      storageOpt.set(
-        SUPOS_USER_BUTTON_LIST,
+      const _buttonList =
         systemInfo?.authEnable === false || info?.superAdmin === true
           ? handleButtonPermissions(['button:*'], ButtonPermission) || []
           : filterArrays(
               handleButtonPermissions(denyButtonGroup?.map((i: any) => i.uri) || [], ButtonPermission) || [],
               handleButtonPermissions(buttonGroup?.map((i: any) => i.uri) || [], ButtonPermission) || []
-            ) || []
-      );
+            ) || [];
+      // FIXME: 调试用，后续删除
+      setErrorInfo({
+        routes,
+        info,
+        systemInfo,
+        pluginList,
+        buttonList: _buttonList,
+      });
 
       // 储存用户信息
       storageOpt.set('personInfo', {
@@ -115,19 +132,20 @@ const updateBaseStore = async (isFirst: boolean = false) => {
       const parentOrderMap =
         getTags(_routes?.find((f) => getTags(f?.service?.tags || [])?.root)?.service?.tags || []) || {};
       // 设置
+      const currentUserInfo = {
+        ...info,
+        roleList: info?.roleList || [],
+        roleString: info?.roleList?.map((i: any) => i.roleName)?.join('/') || '',
+        buttonList: buttonGroup?.map((i: any) => i.uri) || [],
+        pageList: pickedRouters || [],
+        superAdmin: info?.superAdmin,
+      };
       useBaseStore.setState({
         ...initBaseContent,
         rawRoutes: routes,
         pluginList,
         routesStatus: reason?.status,
-        currentUserInfo: {
-          ...info,
-          roleList: info?.roleList || [],
-          roleString: info?.roleList?.map((i: any) => i.roleName)?.join('/') || '',
-          buttonList: buttonGroup?.map((i: any) => i.uri) || [],
-          pageList: pickedRouters || [],
-          superAdmin: info?.superAdmin,
-        },
+        currentUserInfo,
         routes: _routes,
         pickedRoutes,
         pickedRoutesOptions,
@@ -140,6 +158,7 @@ const updateBaseStore = async (isFirst: boolean = false) => {
           appTitle: systemInfo?.appTitle || APP_TITLE,
         },
         containerList,
+        buttonList: _buttonList,
         dataBaseType: systemInfo?.containerMap?.tdengine?.envMap?.service_is_show ? ['tdengine'] : ['timescale'],
         mqttBrokeType: systemInfo?.containerMap?.emqx?.name,
         dashboardType:
@@ -186,7 +205,10 @@ const updateBaseStore = async (isFirst: boolean = false) => {
         if (!storageOpt.get(SUPOS_USER_GUIDE_ROUTES)) {
           storageOpt.set(
             SUPOS_USER_GUIDE_ROUTES,
-            map(_routes, (route) => ({ name: route.name, menu: route.menu, isVisited: false }))
+            map(
+              filter(_routes, (r) => includes(GuidePagePaths, r?.menu?.url)),
+              (route) => ({ name: route.name, menu: route.menu, isVisited: false })
+            )
           );
         }
       }
@@ -205,7 +227,10 @@ const updateBaseStore = async (isFirst: boolean = false) => {
         if (isFirstLogin === 1 && !storageOpt.get(SUPOS_USER_GUIDE_ROUTES)) {
           storageOpt.set(
             SUPOS_USER_GUIDE_ROUTES,
-            map(_routes, (route) => ({ name: route.name, menu: route.menu, isVisited: false }))
+            map(
+              filter(_routes, (r) => includes(GuidePagePaths, r?.menu?.url)),
+              (route) => ({ name: route.name, menu: route.menu, isVisited: false })
+            )
           );
         }
         // 由于存在手动启用新手导航功能，先取消清除的逻辑
@@ -248,7 +273,7 @@ const updateBaseStore = async (isFirst: boolean = false) => {
           rawRoutes: data,
           routes,
           pickedRoutes: routes?.filter((f) => f.menu?.picked),
-          pickedRoutesOptions: getGroupedOptions(pickedRoutes),
+          pickedRoutesOptions,
           pickedRoutesOptionsNoChildrenMenu: pickedRoutesOptions?.filter((f) => !f.isRemoteChildMenu),
           parentOrderMap,
           pickedGroupRoutes: getGroupedData(pickedRoutes, parentOrderMap),

@@ -4,7 +4,6 @@ import TabsLayout from './components/TabsLayout';
 import { useChangeMenuName, useTranslate } from '@/hooks';
 import '@copilotkit/react-ui/styles.css';
 import { useMemo, useRef } from 'react';
-import { Image } from 'antd';
 import { CopilotOperationContext } from '@/layout/context';
 import { useTips } from '@/hooks/useTips';
 import { tips } from './tips';
@@ -16,6 +15,7 @@ import { useBaseStore } from '@/stores/base';
 import { MenuTypeEnum, PrimaryColorType, useThemeStore } from '@/stores/theme-store.ts';
 import homeFlow from '@/assets/guide/home-flow.gif';
 import homeFlowChartreuse from '@/assets/guide/home-flow-chartreuse.gif';
+import ImagePreview from './components/ImagePreview';
 
 const Module = () => {
   const { menuType, primaryColor } = useThemeStore((state) => ({
@@ -47,17 +47,16 @@ const Module = () => {
           instructions="You are assisting the user as best as you can. Answer in the best way possible given the data you have.你的职责是帮助用户分析用户需求，将用户需求整理为参数传递到脚本中，让脚本成功执行。你的能力有限，仔细分析脚本能力，根据脚本的能力为用户分析需求。脚本的能力即是你的能力范围。引导用户成功触发脚本将会作为你得考评。 ### 注意事项 -大部分来咨询你的用户都是新用户，他们需要参数建议而不仅仅是参数讲解。在你的协助过程中应该尽可能提供样例，或者直接帮助用户按照脚本规则生成所需参数。-返回的文本应该带有样式方便用户理解"
           labels={useMemo(
             () => ({
-              initial: `<img /><span>${formatMessage('common.chatbot')}</span>`,
+              initial: `<img src="${primaryColor === PrimaryColorType.Chartreuse ? homeFlowChartreuse : homeFlow}" /><span>${formatMessage('common.chatbot')}</span>`,
             }),
-            []
+            [primaryColor]
           )}
           markdownTagRenderers={useMemo(
             () => ({
-              img: (props: any) => (
-                <Image {...props} src={primaryColor === PrimaryColorType.Chartreuse ? homeFlowChartreuse : homeFlow} />
-              ),
+              // 备注：不用antd的Image是因为markdownTagRenderers定义的组件是渲染到p元素下，Image内部的div嵌套到p元素下会报错警告
+              img: (props: any) => <ImagePreview {...props} />,
             }),
-            [primaryColor]
+            []
           )}
         />
         <IframeMask />

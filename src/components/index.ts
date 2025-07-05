@@ -37,12 +37,15 @@ export * from './com-text';
 export * from './com-btn-tabs';
 export * from './com-card';
 export * from './com-click-trigger';
+export * from './pro-tree-select';
+export * from './operation-buttons';
 
 export { default as withAuth } from './auth';
 export { default as ComCardList } from './com-card-list';
 export { default as ViewList } from './com-card-list/ViewList';
 export { default as FooterOperation } from './com-card-list/FooterOperation';
 export { default as ComCardListVertical } from './com-card-list-vertical';
+export { default as ComTableList } from './com-table-list';
 export { default as ComCodeSnippet } from './com-code-snippet';
 export { default as ComCopy } from './com-copy';
 export { default as ComCopyContent } from './com-copy/ComCopyContent';

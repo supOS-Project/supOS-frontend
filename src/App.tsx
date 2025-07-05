@@ -1,8 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { App as AntApp } from 'antd';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import routes from '@/routers';
-import DynamicIframe from '@/pages/dynamic-iframe';
+import { BrowserRouter } from 'react-router-dom';
+import { getRoutesDom, RoutesElement } from '@/routers';
 import CookieContext from '@/CookieContext';
 import themeToken from './theme/theme-token.ts';
 import 'shepherd.js/dist/css/shepherd.css';
@@ -12,155 +11,40 @@ import { UnsTreeMapProvider } from '@/UnsTreeMapContext';
 import { MENU_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans.ts';
 import LanguageProvider from './LanguageProvider.tsx';
 import { queryChat2dbCurUser } from '@/utils/chat2db.ts';
-import { checkImageExists, getBaseUrl } from '@/utils/url-util.ts';
-import DynamicMFComponent from '@/components/dynamic-mf-component';
+import { checkImageExists, getBaseUrl, isInIframe } from '@/utils/url-util.ts';
 import { fetchBaseStore, useBaseStore } from '@/stores/base';
 import { setThemeBySystem, ThemeType, useThemeStore } from '@/stores/theme-store.ts';
-import { cleanupI18nSubscriptions, getIntl } from './stores/i18n-store.ts';
+import { cleanupI18nSubscriptions } from './stores/i18n-store.ts';
+import Cookies from 'js-cookie';
+import { useTranslate } from '@/hooks';
 
 function App() {
-  const { currentUserInfo, systemInfo, pickedRoutesOptions, loading, routesStatus } = useBaseStore((state) => ({
-    currentUserInfo: state.currentUserInfo,
+  const { systemInfo, loading, routesStatus, currentUserInfo, pickedRoutesOptions } = useBaseStore((state) => ({
     systemInfo: state.systemInfo,
-    pickedRoutesOptions: state.pickedRoutesOptions,
     loading: state.loading,
     routesStatus: state.routesStatus,
+    pickedRoutesOptions: state.pickedRoutesOptions,
+    currentUserInfo: state.currentUserInfo,
   }));
   const _theme = useThemeStore((state) => state._theme);
 
+  const formatMessage = useTranslate();
+
   useEffect(() => {
+    const isOmc = isInIframe([], 'webview');
+    if (isOmc) {
+      Cookies.set('omc_model', '1', {
+        expires: 365,
+      });
+    } else {
+      Cookies.remove('omc_model', { path: '/' });
+    }
     // 初始化
     fetchBaseStore(true);
     return () => {
       cleanupI18nSubscriptions();
     };
   }, []);
-
-  const router: any = useMemo(() => {
-    return routes.map((route, index) => {
-      if (index === 1 && route.children) {
-        return {
-          ...route,
-          children: [
-            // 前端路由
-            ...((route.children ?? [])
-              ?.map((child) => {
-                const info = pickedRoutesOptions?.find((f) => child.path === f?.menu?.url);
-                if (info) {
-                  return {
-                    ...child,
-                    handle: {
-                      ...child.handle,
-                      path: child.path,
-                      name: info?.name,
-                      icon: info?.iconUrl,
-                    },
-                  };
-                } else if (child.handle?.parentPath === '/_common') {
-                  // 开发环境打开方便调试
-                  if (import.meta.env.DEV) return child;
-                  if (child.handle?.type === 'all') {
-                    return child;
-                  }
-                  // 没有正真父级菜单情况
-                  if (
-                    systemInfo?.authEnable &&
-                    !currentUserInfo?.pageList?.some((s: any) => s.uri?.toLowerCase?.() === child.path?.toLowerCase?.())
-                  ) {
-                    return null;
-                  }
-                  return {
-                    ...child,
-                    handle: {
-                      ...child.handle,
-                      path: child.path,
-                      name: child.handle?.name ?? child.path,
-                    },
-                  };
-                } else if (child.handle?.parentPath) {
-                  // 没有暴露出去的路由
-                  return {
-                    ...child,
-                    handle: {
-                      ...child.handle,
-                      path: child.path,
-                      name: child.handle?.name ?? child.path,
-                    },
-                  };
-                } else {
-                  // 开发环境打开方便调试
-                  if (import.meta.env.DEV) return child;
-                  return null;
-                }
-              })
-              ?.filter((f) => f) || []),
-            // 后端路由（及前端模块联邦路由）
-            ...(pickedRoutesOptions
-              ?.filter((item) => !item.isFrontend)
-              ?.map((d) => {
-                // 模块联邦 子路由
-                if (d.isRemoteChildMenu) {
-                  return {
-                    path: '/' + d?.key,
-                    Component: DynamicMFComponent,
-                    handle: {
-                      parentPath: '/' + d?.parentKey,
-                      name: getIntl(`${d?.parentKey}.${d?.childrenMenuKey}PageName`),
-                      menuNameKey: `${d?.parentKey}.${d?.childrenMenuKey}PageName`,
-                      key: d?.key,
-                      path: '/' + d?.key,
-                      moduleName: d?.childrenMenuKey,
-                    },
-                  };
-                }
-                // 模块联邦
-                if (d.isRemote === '1') {
-                  return {
-                    path: '/' + d?.key,
-                    Component: DynamicMFComponent,
-                    handle: {
-                      key: d?.key,
-                      name: d?.name,
-                      icon: d?.iconUrl,
-                      path: '/' + d?.key,
-                    },
-                  };
-                }
-                if (!d) return null;
-                let iframeRealUrl;
-                if (d.openType !== undefined) {
-                  if (d.openType === '0') {
-                    const { port, protocol, host, name } = d.service as any;
-                    const path = d.menu?.url?.split(name)?.[1] || '';
-                    iframeRealUrl = port ? `${protocol}://${host}:${port}${path}` : `${protocol}://${host}${path}`;
-                  } else {
-                    iframeRealUrl =
-                      d?.menuProtocol && d?.menuHost && d?.menuPort
-                        ? `${d?.menuProtocol}://${d?.menuHost}:${d?.menuPort}${d?.menu?.url}`
-                        : undefined;
-                  }
-                }
-                return {
-                  path: '/' + d?.key,
-                  element: <DynamicIframe url={d?.menu?.url} name={d?.name} iframeRealUrl={iframeRealUrl} />,
-                  handle: {
-                    openType: d?.openType,
-                    key: d?.key,
-                    name: d?.name,
-                    icon: d?.iconUrl,
-                    path: '/' + d?.key,
-                  },
-                };
-              })
-              ?.filter((f) => f) || []),
-          ],
-        };
-      } else {
-        return route;
-      }
-    });
-  }, [pickedRoutesOptions]);
-  const browserRouter = createBrowserRouter(router);
 
   useEffect(() => {
     if (systemInfo?.containerMap?.chat2db) {
@@ -180,8 +64,14 @@ function App() {
   }, [systemInfo?.containerMap]);
 
   useEffect(() => {
+    if (!systemInfo.appTitle) return;
     const loadFavicon = async () => {
-      const baseUrl = `${getBaseUrl()}${STORAGE_PATH}${MENU_TARGET_PATH}/logo-ico.svg`;
+      if (systemInfo?.themeConfig?.browseTitle) {
+        document.title = systemInfo.themeConfig.browseTitle;
+      } else {
+        document.title = `${systemInfo.appTitle} ${formatMessage('common.excellence')}`;
+      }
+      const baseUrl = `${getBaseUrl()}${systemInfo?.themeConfig?.browseIcon || `${STORAGE_PATH}${MENU_TARGET_PATH}/logo-ico.svg`}`;
       const themeExists = await checkImageExists(baseUrl);
 
       // 统一处理文件类型和路径
@@ -203,7 +93,7 @@ function App() {
     };
 
     loadFavicon();
-  }, []);
+  }, [systemInfo]);
 
   useEffect(() => {
     if (_theme === ThemeType.System) {
@@ -217,6 +107,10 @@ function App() {
       };
     }
   }, [_theme]);
+
+  const routeDom = useMemo(() => {
+    return getRoutesDom({ pickedRoutesOptions, systemInfo, currentUserInfo });
+  }, [pickedRoutesOptions, systemInfo, currentUserInfo]);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -233,7 +127,9 @@ function App() {
         {/*antd组件库的主题*/}
         <UnsTreeMapProvider>
           <AntApp>
-            <RouterProvider router={browserRouter} />
+            <BrowserRouter>
+              <RoutesElement routeDom={routeDom} />
+            </BrowserRouter>
           </AntApp>
         </UnsTreeMapProvider>
       </LanguageProvider>

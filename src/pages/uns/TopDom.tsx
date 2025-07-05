@@ -40,13 +40,14 @@ const TopDom: FC<TopDomProps> = ({ setCurrentUnusedTopicNode, unusedTopicBreadcr
         style={{ fontWeight: 700 }}
         // separator=">"
         items={pArr?.map((e: any, idx: number) => {
+          const name = currentTreeMapType === 'all' ? e.name : e.pathName || e.name;
           if (idx + 1 === pArr?.length) {
             return {
-              title: e.name,
+              title: name,
             };
           }
           return {
-            title: <ComText>{e.name}</ComText>,
+            title: <ComText>{name}</ComText>,
             onClick: () => {
               if (currentTreeMapType === 'all') {
                 setSelectedNode(e);
@@ -67,7 +68,7 @@ const TopDom: FC<TopDomProps> = ({ setCurrentUnusedTopicNode, unusedTopicBreadcr
         }
       />
     ),
-    [setCurrentUnusedTopicNode, setSelectedNode]
+    [setCurrentUnusedTopicNode, setSelectedNode, currentTreeMapType]
   );
 
   const stateRef = useTreeStoreRef();
@@ -117,12 +118,7 @@ const TopDom: FC<TopDomProps> = ({ setCurrentUnusedTopicNode, unusedTopicBreadcr
         <span />
       )}
       <div className="chartTopR">
-        <AuthButton
-          auth={ButtonPermission['uns.importNamespace']}
-          type="primary"
-          onClick={() => setImportModal(true)}
-          size="small"
-        >
+        <AuthButton auth={ButtonPermission['uns.importNamespace']} type="primary" onClick={() => setImportModal(true)}>
           {formatMessage('common.import')}
         </AuthButton>
         <AuthButton
@@ -133,7 +129,6 @@ const TopDom: FC<TopDomProps> = ({ setCurrentUnusedTopicNode, unusedTopicBreadcr
           onClick={() => {
             exportRef.current?.setOpen(true);
           }}
-          size="small"
         >
           {formatMessage('uns.export')}
         </AuthButton>

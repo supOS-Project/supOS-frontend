@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import { pinyin } from 'pinyin-pro';
-
 import type { UnsTreeNode } from '@/pages/uns/types';
 
 export const noDuplicates = (arr: any) => {
@@ -212,4 +211,36 @@ export const getTargetNode = (treeData: UnsTreeNode[], targetId: string): UnsTre
     }
   }
   return null; // 如果遍历完整个树都没有找到，则返回null
+};
+
+export const SelectAllId = '_SELECT_ALL';
+export const getParamsForArray = (list: { value: string; label: string }[] = [], keyOrFn?: any, options?: any) => {
+  if (list.length === 0) return {};
+  if (list.some((s) => s.value === SelectAllId)) {
+    return { exportType: 'ALL' };
+  }
+  if (!keyOrFn) {
+    return { ids: list?.map((i) => i.value) || [] };
+  } else {
+    const { groups, extract } = options;
+
+    return list.reduce((acc: any, item: any) => {
+      let key;
+      if (typeof keyOrFn === 'function') {
+        key = keyOrFn(item);
+      } else {
+        key = item[keyOrFn];
+      }
+      if (groups && groups[key] !== undefined) {
+        key = groups[key];
+      }
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      const valueToPush = extract ? item[extract] : item;
+      acc[key].push(valueToPush);
+
+      return acc;
+    }, {});
+  }
 };

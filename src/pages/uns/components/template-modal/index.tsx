@@ -6,15 +6,10 @@ import { addTemplate, getTemplateDetail, getTreeData, getTypes } from '@/apis/in
 import styles from './index.module.scss';
 const { SHOW_ALL } = TreeSelect;
 
-import { UnsTreeNode, InitTreeDataFnType, FieldItem } from '@/pages/uns/types';
+import { UnsTreeNode, InitTreeDataFnType, FieldItem, SelectTreeNode } from '@/pages/uns/types';
 import { TreeStoreActions } from '../../store/types';
 
 type SelectNodeType = { value: string };
-interface SelectTreeNode extends Omit<UnsTreeNode, 'children'> {
-  fields: FieldItem[];
-  children: SelectTreeNode[];
-}
-
 export interface TemplateModalProps {
   successCallBack: InitTreeDataFnType;
   changeCurrentPath: (node?: UnsTreeNode) => void;

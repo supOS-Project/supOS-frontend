@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef, useImperativeHandle, useCallback } from 'react';
-import { Renew, Folder, FolderOpen, Document } from '@carbon/icons-react';
+import { Renew, Folder, FolderOpen, Document, DocumentImport } from '@carbon/icons-react';
 import debounce from 'lodash/debounce';
 import { useTranslate } from '@/hooks';
 import { App, Flex, Divider } from 'antd';
@@ -10,13 +10,15 @@ import type { UnsTreeNode } from '@/pages/uns/types';
 import ComTree from '@/components/com-tree';
 import ProSearch from '@/components/pro-search';
 import { collectChildrenIds, findParentIds } from '@/utils/uns';
+import { useTreeStore } from '../../store/treeStore';
+import { useBaseStore } from '@/stores/base';
 
 export interface UnusedTopicTreeProps {
   treeData: any[];
   currentNode: UnsTreeNode;
   initTreeData: (data: any, cb?: () => void) => void;
   setTreeMap?: (params: any) => void;
-  changeCurrentPath: (node: any) => void;
+  changeCurrentPath: (node?: any) => void;
   treeHeight?: number;
   unsTreeRef?: any;
   treeType: string;
@@ -42,7 +44,6 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
   unusedTopicBreadcrumbList,
 }) => {
   const [expandedArr, setExpandedArr] = useState<any>([]); //展开的树节点
-  const [searchType, setSearchType] = useState(1); //搜索类型
   const [searchQuery, setSearchQuery] = useState(''); //搜索参数
   const { message } = App.useApp();
   const formatMessage = useTranslate();
@@ -52,11 +53,18 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
   const selectRef = useRef<any>(null);
   const isComposingRef = useRef(false); // 拼音输入中..
 
+  const { operationFns, setOperationFns } = useTreeStore((state) => ({
+    operationFns: state.operationFns,
+    setOperationFns: state.setOperationFns,
+  }));
+  const { systemInfo } = useBaseStore((state) => ({
+    systemInfo: state.systemInfo,
+  }));
+
   useImperativeHandle(unsTreeRef, () => ({
     expandedArr: expandedArr,
     setExpandedArr: setExpandedArr,
     scrollTo: scrollTreeNode,
-    searchType: searchType,
     searchQuery: searchQuery,
   }));
 
@@ -87,7 +95,6 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
 
   useEffect(() => {
     setSearchQuery('');
-    setSearchType(1);
   }, [treeType]);
 
   useEffect(() => {
@@ -119,15 +126,28 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
 
   const debouncedInitTreeData = useCallback(
     debounce((value) => {
-      initTreeData({ reset: true, query: value, type: searchType });
+      initTreeData({ reset: true, query: value });
     }, 500),
-    [initTreeData, searchType] // 仅当 initTreeData 或 searchType 发生变化时更新 debounce 函数
+    [initTreeData] // 仅当 initTreeData 发生变化时更新 debounce 函数
   );
 
   //查询树节点
   const onSearchChange = (val: string) => {
     return debouncedInitTreeData(val);
   };
+  const refreshUnusedTopicTree = (path: string) => {
+    if (path === currentNode?.id) changeCurrentPath();
+    initTreeData({ reset: false, query: searchQueryRef.current });
+  };
+
+  useEffect(() => {
+    setOperationFns({ refreshUnusedTopicTree });
+  }, []);
+
+  const searchQueryRef = useRef(searchQuery);
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
 
   return (
     <div className="treeWrap">
@@ -150,7 +170,7 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
           style={{ borderRadius: '3px', flex: 1 }}
           onKeyDown={(e) => {
             if (e.keyCode === 13) {
-              initTreeData({ reset: true, query: searchQuery, type: searchType });
+              initTreeData({ reset: true, query: searchQuery });
             }
           }}
         />
@@ -158,7 +178,7 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
           <span title={formatMessage('common.refresh')}>
             <Renew
               onClick={() => {
-                initTreeData({ reset: false, type: searchType, query: searchQuery }, () => {
+                initTreeData({ reset: false, query: searchQuery }, () => {
                   message.success(formatMessage('common.refreshSuccessful'));
                 });
               }}
@@ -172,7 +192,7 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
         height={treeHeight}
         selectedKeys={[currentNode.id as string]}
         treeData={treeData}
-        fieldNames={{ title: 'name', key: 'id' }}
+        fieldNames={{ title: 'pathName', key: 'id' }}
         blockNode
         expandedKeys={expandedArr}
         onExpand={onExpand}
@@ -207,14 +227,31 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
                   <Folder style={{ flexShrink: 0, marginRight: '5px' }} />
                 ))}
               {item.type === 2 && <Document style={{ flexShrink: 0, marginRight: '5px' }} />}
-              <div className="customTreeNodeTitle">
-                <HighlightText needle={searchQuery} haystack={item.name} />
-                {item.type === 0 && (
-                  <span style={{ color: 'var(--supos-text-color)', fontSize: '12px', opacity: 0.5 }}>
-                    ({item.countChildren})
-                  </span>
+              <Flex align="center" gap={8} style={{ flex: 1, overflow: 'hidden' }}>
+                <div style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <HighlightText needle={searchQuery} haystack={item.pathName || item.name} />
+                  {item.type === 0 && (
+                    <span style={{ color: 'var(--supos-text-color)', fontSize: '12px', opacity: 0.5 }}>
+                      ({item.countChildren})
+                    </span>
+                  )}
+                </div>
+                {!systemInfo?.useAliasPathAsTopic && item.type === 2 && (
+                  <Flex
+                    className="treeNodeIconWrap"
+                    align="center"
+                    style={{ flexShrink: 0, padding: '0 4px' }}
+                    title={formatMessage('uns.topicToFile')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      operationFns?.setOptionOpen?.('topicToFile', item);
+                      console.log(item);
+                    }}
+                  >
+                    <DocumentImport />
+                  </Flex>
                 )}
-              </div>
+              </Flex>
             </div>
           );
         }}

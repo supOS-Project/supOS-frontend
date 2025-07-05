@@ -186,7 +186,7 @@ const useInformationModal = ({ onCallBack }: any) => {
                     <div>
                       <div
                         style={{ opacity: item.readStatus ? 0.8 : 1 }}
-                      >{`【${item.path}】.【${item.field}】${formatMessage('rule.in')} ${formatTimestamp(item.createAt)} ${item.isAlarm ? formulaObj?.[item?.condition || '>'] + '【' + item.limitValue + '】' : formatMessage('rule.alertCancel')}，${formatMessage('rule.currentValue')}【${item.currentValue}】${item.isAlarm ? '，' + formatMessage('rule.deal') : ''}`}</div>
+                      >{`【${item.unsPath}】.【${item.field}】${formatMessage('rule.in')} ${formatTimestamp(item.createAt)} ${item.isAlarm ? formulaObj?.[item?.condition || '>'] + '【' + item.limitValue + '】' : formatMessage('rule.alertCancel')}，${formatMessage('rule.currentValue')}【${item.currentValue}】${item.isAlarm ? '，' + formatMessage('rule.deal') : ''}`}</div>
                       <Flex justify="flex-end" style={{ marginTop: 4 }}>
                         {!item.readStatus || (item.canHandler && !item.readStatus) ? (
                           <AuthButton

@@ -7,6 +7,7 @@ import legacy from '@vitejs/plugin-legacy';
 import { federation } from '@module-federation/vite';
 
 import { getDevInfo, getProxy, logDevInfo } from './supos.dev';
+// import { HttpsProxyAgent } from 'https-proxy-agent';
 // import { AuthButton } from './src/components';
 
 const devInfo = getDevInfo();
@@ -142,6 +143,7 @@ export default defineConfig({
             '/plugin/': {
               target: devInfo.API_PROXY_URL,
               changeOrigin: true,
+              // agent: new HttpsProxyAgent('http://127.0.0.1:7897'),
             },
           }
         : {

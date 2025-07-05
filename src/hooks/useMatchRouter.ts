@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { useLocation, useMatches, useOutlet, Location } from 'react-router-dom';
+import { useLocation, useOutlet, Location, matchRoutes } from 'react-router-dom';
 import { useDeepCompareEffect } from 'ahooks';
 import { useTranslate } from '@/hooks';
+import { useBaseStore } from '@/stores/base';
+import { getRoutesDom } from '@/routers';
 
 interface MatchRouteType {
   // 菜单名称
@@ -26,10 +28,14 @@ interface MatchRouteType {
 
 // 匹配路由，拿到信息
 export function useMatchRoute(): MatchRouteType | undefined {
+  const { pickedRoutesOptions, systemInfo, currentUserInfo } = useBaseStore((state) => ({
+    pickedRoutesOptions: state.pickedRoutesOptions,
+    systemInfo: state.systemInfo,
+    currentUserInfo: state.currentUserInfo,
+  }));
   // 获取路由组件实例
   const children = useOutlet();
   // 获取嵌套路由信息
-  const matches = useMatches();
   const formatMessage = useTranslate();
   // 获取当前url
   const location = useLocation();
@@ -39,7 +45,9 @@ export function useMatchRoute(): MatchRouteType | undefined {
   // 监听pathname变了，说明路由有变化，重新匹配，返回新路由信息
   useDeepCompareEffect(() => {
     // 获取当前匹配的路由
-    const lastRoute = matches.at(-1);
+    const matches =
+      matchRoutes(getRoutesDom({ pickedRoutesOptions, systemInfo, currentUserInfo }), location.pathname) || [];
+    const lastRoute = matches.at(-1)?.route;
 
     if (!lastRoute?.handle) return;
 
@@ -51,12 +59,12 @@ export function useMatchRoute(): MatchRouteType | undefined {
       path: (lastRoute?.handle as any)?.path,
       pathname: location.pathname,
       children,
-      routePath: lastRoute?.pathname || '',
+      routePath: lastRoute?.path || '',
       moduleName: (lastRoute?.handle as any)?.moduleName,
       parentPath: (lastRoute?.handle as any)?.parentPath,
       location,
     });
-  }, [location]);
+  }, [location, pickedRoutesOptions, systemInfo, currentUserInfo]);
 
   return matchRoute;
 }

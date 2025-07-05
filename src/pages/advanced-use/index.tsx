@@ -39,7 +39,7 @@ const Index = () => {
               if (item.envMap.service_password) {
                 const _item = {
                   ...item,
-                  account: item.envMap.service_password,
+                  account: item.envMap.service_account,
                   password: item.envMap.service_password,
                 };
                 form.setFieldsValue(_item);

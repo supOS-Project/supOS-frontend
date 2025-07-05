@@ -1,4 +1,4 @@
-import { FC, useRef, useState, useCallback, useEffect } from 'react';
+import { FC, useRef, useState, useCallback, useEffect, ReactNode } from 'react';
 import Draggable from 'react-draggable';
 import { Modal, Tooltip, ModalProps, Button } from 'antd';
 import { ExpandOutlined, CompressOutlined, CloseOutlined } from '@ant-design/icons';
@@ -9,7 +9,7 @@ import './index.scss';
 const { confirm } = Modal;
 
 export type ProModalSizeType = 'xxs' | 'xs' | 'sm' | 'md' | 'lg';
-export interface ProModalProps extends ModalProps {
+export interface ProModalProps extends Omit<ModalProps, 'children'> {
   /*内置大小*/
   size?: ProModalSizeType;
   closeButtonTitle?: string;
@@ -19,6 +19,7 @@ export interface ProModalProps extends ModalProps {
   fullScreenable?: boolean;
   defaultFull?: boolean;
   onFullScreenCallBack?: (fullScreen: boolean) => void;
+  children?: ((isFullscreen?: boolean) => ReactNode) | ReactNode;
 }
 
 const sizeMap: Record<ProModalSizeType, number> = {
@@ -212,7 +213,7 @@ const ProModal: FC<ProModalProps> & { confirm: typeof confirm } = ({
         afterClose?.();
       }}
     >
-      {children}
+      {typeof children === 'function' ? children?.(isFullscreen) : children}
     </Modal>
   );
 };

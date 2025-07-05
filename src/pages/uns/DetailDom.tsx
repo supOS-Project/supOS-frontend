@@ -1,5 +1,12 @@
-import { Dashboard, LabelDetail, ModelDetail, RealTimeData, TemplateDetail, TopicDetail } from '@/pages/uns/components';
-import EmptyDetail from '@/pages/uns/components/EmptyDetail.tsx';
+import {
+  Dashboard,
+  LabelDetail,
+  ModelDetail,
+  RealTimeData,
+  TemplateDetail,
+  TopicDetail,
+  EmptyDetail,
+} from '@/pages/uns/components';
 import { getTreeStoreSnapshot, useTreeStore, useTreeStoreRef } from './store/treeStore';
 import { FC } from 'react';
 import { UnsTreeNode } from '@/pages/uns/types';

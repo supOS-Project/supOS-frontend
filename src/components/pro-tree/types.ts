@@ -1,4 +1,4 @@
-import { CSSProperties, Key, ReactNode, MouseEvent } from 'react';
+import { CSSProperties, Key, ReactNode, MouseEvent, MutableRefObject } from 'react';
 import { TreeProps } from 'antd';
 import { ItemType } from 'antd/es/menu/interface';
 import { DataNode } from 'antd/es/tree';
@@ -43,6 +43,8 @@ export interface ProTreeProps extends TreeProps {
   showSwitcherIcon?: boolean;
   // 匹配高亮
   matchHighlightValue?: string;
+  // 性能优化
+  isShow?: MutableRefObject<boolean>;
 }
 
 // 组件引用类型

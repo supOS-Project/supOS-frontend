@@ -117,3 +117,19 @@ export const checkImageExists = (url: string) => {
     img.src = url;
   });
 };
+
+// 判断是否在iframe中 以及 是否 匹配了iframe name
+export function isInIframe(iframeNames: string[], type: string = 'iframe') {
+  try {
+    const isWebView = type === 'webview' && navigator.userAgent.includes('WebView/');
+    if (isWebView) return true;
+    if (!iframeNames?.length) {
+      return window.self !== window.top;
+    } else {
+      return iframeNames.includes(window.name) && window.self !== window.top;
+    }
+  } catch (err) {
+    console.log(err);
+    return true;
+  }
+}

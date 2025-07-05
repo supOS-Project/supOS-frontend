@@ -26,17 +26,17 @@ const TagSelect: FC<TagSelectProps> = ({ value, onChange, tagMaxLen, ...rest }) 
   };
 
   const handleChange = (newValues: any) => {
-    if (tagMaxLen && newValues.some((item: any) => item.value?.length > tagMaxLen)) {
-      message.error(formatMessage('uns.labelMaxLength', { label: formatMessage('common.label'), length: 63 }));
+    let filteredValues = newValues.slice();
+
+    if (tagMaxLen && newValues.some((item: any) => (item.label || item.value)?.length > tagMaxLen)) {
+      filteredValues = filteredValues.filter((item: any) => (item.label || item.value)?.length <= tagMaxLen);
+      message.error(formatMessage('uns.labelMaxLength', { label: formatMessage('common.label'), length: tagMaxLen }));
     }
 
-    if (newValues.some((item: any) => item.value?.trim() === '')) {
+    if (newValues.some((item: any) => (item.label || item.value)?.trim() === '')) {
+      filteredValues = filteredValues.filter((item: any) => (item.label || item.value)?.trim() !== '');
       message.error(formatMessage('common.prohibitSpacesTip'));
     }
-
-    const filteredValues = tagMaxLen
-      ? newValues.filter((item: any) => (item.label || item.value)?.length <= tagMaxLen)
-      : newValues.filter((item: any) => (item.label || item.value)?.trim() !== '');
 
     setVal(filteredValues);
     onChange?.(filteredValues);

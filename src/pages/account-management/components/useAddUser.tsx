@@ -6,6 +6,7 @@ import styles from './RoleSetting.module.scss';
 import ComSelect from '@/components/com-select';
 import ProModal from '@/components/pro-modal';
 import { validNameRegex, phoneRegex, passwordRegex } from '@/utils/pattern';
+import { useBaseStore } from '@/stores/base';
 
 const useAddUser = ({ onSaveBack }: any) => {
   const { message } = App.useApp();
@@ -15,6 +16,8 @@ const useAddUser = ({ onSaveBack }: any) => {
   const [form] = Form.useForm();
   const formatMessage = useTranslate();
   const [loading, setLoading] = useState(false);
+  const [isSupos, setSupos] = useState(false);
+  const ldapEnable = useBaseStore((state) => state?.systemInfo?.ldapEnable);
 
   useEffect(() => {
     if (open) {
@@ -32,6 +35,7 @@ const useAddUser = ({ onSaveBack }: any) => {
   const onAddOpen = (data?: any) => {
     if (data) {
       setEdit(true);
+      setSupos(data?.preferredUsername === 'supos');
       form.setFieldsValue({
         ...data,
         username: data.preferredUsername,
@@ -62,6 +66,7 @@ const useAddUser = ({ onSaveBack }: any) => {
       ...info,
       roleList: info?.roleList ? [{ roleId: info?.roleList?.value, roleName: info?.roleList?.label }] : [],
       enabled: true,
+      operateRole: isEdit ? true : undefined,
     })
       .then(() => {
         message.success(formatMessage('common.optsuccess'));
@@ -90,24 +95,37 @@ const useAddUser = ({ onSaveBack }: any) => {
             <Form.Item
               label={formatMessage('account.account')}
               name="username"
-              rules={[
-                {
-                  required: true,
-                  message: formatMessage('rule.required'),
-                },
-                {
-                  type: 'string',
-                  min: 1,
-                  max: 200,
-                  message: formatMessage('rule.characterLimit'),
-                },
-                {
-                  pattern: validNameRegex,
-                  message: formatMessage('rule.illegality'),
-                },
-              ]}
+              rules={
+                ldapEnable && !isSupos
+                  ? [
+                      {
+                        required: true,
+                        message: formatMessage('rule.required'),
+                      },
+                    ]
+                  : [
+                      {
+                        required: true,
+                        message: formatMessage('rule.required'),
+                      },
+                      {
+                        type: 'string',
+                        min: 1,
+                        max: 200,
+                        message: formatMessage('rule.characterLimit'),
+                      },
+                      {
+                        pattern: validNameRegex,
+                        message: formatMessage('rule.invalidChars'),
+                      },
+                    ]
+              }
             >
-              <Input className="username" disabled={isEdit} placeholder={formatMessage('account.account')} />
+              <Input
+                className="username"
+                disabled={isEdit || (ldapEnable && !isSupos)}
+                placeholder={formatMessage('account.account')}
+              />
             </Form.Item>
           </Col>
           {!isEdit && (
@@ -138,20 +156,24 @@ const useAddUser = ({ onSaveBack }: any) => {
             <Form.Item
               label={formatMessage('common.name')}
               name="firstName"
-              rules={[
-                {
-                  type: 'string',
-                  min: 1,
-                  max: 200,
-                  message: formatMessage('rule.characterLimit'),
-                },
-                {
-                  pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_\-.@&+]*$/,
-                  message: formatMessage('rule.invalidChars'),
-                },
-              ]}
+              rules={
+                ldapEnable && !isSupos
+                  ? []
+                  : [
+                      {
+                        type: 'string',
+                        min: 1,
+                        max: 200,
+                        message: formatMessage('rule.characterLimit'),
+                      },
+                      {
+                        pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_\-.@&+]*$/,
+                        message: formatMessage('rule.invalidChars'),
+                      },
+                    ]
+              }
             >
-              <Input placeholder={formatMessage('common.name')} />
+              <Input disabled={ldapEnable && !isSupos} placeholder={formatMessage('common.name')} />
             </Form.Item>
           </Col>
 
@@ -159,10 +181,11 @@ const useAddUser = ({ onSaveBack }: any) => {
             <Form.Item
               label={formatMessage('account.phone')}
               name="phone"
-              rules={[{ pattern: phoneRegex, message: formatMessage('rule.phone') }]}
+              rules={ldapEnable && !isSupos ? [] : [{ pattern: phoneRegex, message: formatMessage('rule.phone') }]}
               validateTrigger={['onBlur']}
             >
               <Input
+                disabled={ldapEnable && !isSupos}
                 placeholder={formatMessage('account.phone')}
                 onFocus={() => {
                   form.setFields([
@@ -176,8 +199,12 @@ const useAddUser = ({ onSaveBack }: any) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label={formatMessage('account.email')} name="email" rules={[{ type: 'email' }]}>
-              <Input placeholder={formatMessage('account.email')} />
+            <Form.Item
+              label={formatMessage('account.email')}
+              name="email"
+              rules={ldapEnable && !isSupos ? [] : [{ type: 'email' }]}
+            >
+              <Input disabled={ldapEnable && !isSupos} placeholder={formatMessage('account.email')} />
             </Form.Item>
           </Col>
           <Col span={12}>

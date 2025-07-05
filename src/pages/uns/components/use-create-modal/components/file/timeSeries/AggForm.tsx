@@ -53,7 +53,9 @@ const AggForm: FC<AggregateWindowFormProps> = () => {
             rules={[{ required: true }]}
           >
             <Select
-              options={whereFieldList.filter((field: any) => ['int', 'long', 'boolean', 'string'].includes(field.type))}
+              options={whereFieldList.filter((field: any) =>
+                ['integer', 'long', 'boolean', 'string'].includes(field.type)
+              )}
             />
           </Form.Item>
         );

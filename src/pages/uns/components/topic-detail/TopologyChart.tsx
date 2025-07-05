@@ -1,15 +1,15 @@
 import { useRef, useEffect, useState, FC } from 'react';
 import { Graph, Markup } from '@antv/x6';
 import { register } from '@antv/x6-react-shape';
-import { ApplicationWeb, Launch, InformationFilled, CautionInverted } from '@carbon/icons-react';
+import { Add, ApplicationWeb, Launch, InformationFilled, CautionInverted } from '@carbon/icons-react';
 import tdengine from '@/assets/home-icons/tdengine.png';
 import postgresql from '@/assets/home-icons/postgresql.svg';
 import nodeRed from '@/assets/home-icons/node-red.svg';
 import { useNavigate } from 'react-router-dom';
 import { useTranslate } from '@/hooks';
 import styles from './TopologyChart.module.scss';
-import { goFlow } from '@/apis/inter-api/flow';
-import { Button, Tooltip } from 'antd';
+import { goFlow, createFlow } from '@/apis/inter-api/flow';
+import { Tooltip } from 'antd';
 import { getTopologyStatus } from '@/apis/inter-api/uns';
 import c2 from '@/assets/uns/cw.svg';
 import error from '@/assets/uns/error.svg';
@@ -27,11 +27,15 @@ import { getSearchParamsString } from '@/utils/url-util';
 import { useBaseStore } from '@/stores/base';
 
 const NodeRed: FC<any> = (data) => {
-  //TODO: 临时处理，后续需要修改
-  console.log('data', data);
-  const connected = false;
-  const statusColor = connected ? '#4CAF50' : '#B1973B';
-  console.log('NodeRed status:', data.node.data.flowStatus, connected);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      setMounted(false);
+    };
+  }, []);
+  const configured = data.node.data.id || data.node.data.flowId || data.node.data.flowName;
+  const statusColor = configured ? '#4CAF50' : '#B1973B';
   const formatMessage = useTranslate();
   const tooltipContent = () => {
     return (
@@ -51,43 +55,51 @@ const NodeRed: FC<any> = (data) => {
     );
   };
   return (
-    <div id="node-red-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Tooltip
-        title={tooltipContent()}
-        open={data.node && !connected}
-        placement="topRight"
-        color="var(--supos-bg-color)"
-        styles={{
-          body: {
-            position: 'relative',
-            right: -100,
-            backgroundColor: '#fff',
-            borderRadius: 2,
-            padding: 8,
-          },
-        }}
-        getPopupContainer={() => document.getElementById('node-red-container') as HTMLElement}
-      >
-        <div
-          className={classNames(styles['common-node'], styles['common-node-hover'], {
-            [styles['activeBg']]: data.node.data.active,
-          })}
-          style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+    <div id={`node-red-container-${data.node.id}`} style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {mounted && (
+        <Tooltip
+          title={tooltipContent()}
+          open={data.node && !configured}
+          placement="topRight"
+          color="var(--supos-bg-color)"
+          styles={{
+            body: {
+              position: 'relative',
+              right: -100,
+              backgroundColor: '#fff',
+              borderRadius: 2,
+              padding: 8,
+            },
+          }}
+          getPopupContainer={() => document.getElementById(`node-red-container-${data.node.id}`) as HTMLElement}
         >
-          <img src={nodeRed} alt="" width="28px" />
-          <div className={styles['common-node-content']}>
-            <span className={styles['common-node-subtitle']}>{formatMessage('common.nodeRed', 'Node-Red')}</span>
-            <span className={styles['common-node-title']}>{formatMessage('uns.autoFlow', 'Source Flow')}</span>
+          <div
+            className={classNames(styles['common-node'], styles['common-node-hover'], {
+              [styles['activeBg']]: data.node.data.active,
+            })}
+            style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+          >
+            <img src={nodeRed} alt="" width="28px" />
+            <div className={styles['common-node-content']}>
+              <span className={styles['common-node-subtitle']}>{formatMessage('common.nodeRed', 'Node-Red')}</span>
+              <span className={styles['common-node-title']}>{formatMessage('uns.autoFlow', 'Source Flow')}</span>
+            </div>
+            {configured ? (
+              <div className={styles['common-node-btn']} data-action="navigate">
+                <Launch size={20} />
+              </div>
+            ) : (
+              <div className={styles['common-node-btn']} data-action="navigate">
+                <Add size={20} />
+              </div>
+            )}
+            <div className={styles['status-indicator']}>
+              <span className={styles['status-dot']} style={{ background: statusColor }} />
+              {formatMessage(configured ? 'common.configured' : 'common.unconfigured')}
+            </div>
           </div>
-          <div className={styles['common-node-btn']} data-action="navigate">
-            <Launch size={20} />
-          </div>
-          <div className={styles['status-indicator']}>
-            <span className={styles['status-dot']} style={{ background: statusColor }} />
-            {formatMessage(connected ? 'common.connected' : 'common.unconnected')}
-          </div>
-        </div>
-      </Tooltip>
+        </Tooltip>
+      )}
     </div>
   );
 };
@@ -108,8 +120,11 @@ const Mqtt = (data: any) => {
   );
 };
 const TDEngine = (data: any) => {
-  const dataBaseType = useBaseStore((state) => state.dataBaseType);
-  console.log(data);
+  const { dataBaseType, systemInfo } = useBaseStore((state) => ({
+    dataBaseType: state.dataBaseType,
+    systemInfo: state.systemInfo,
+  }));
+  console.log(systemInfo?.containerMap?.chat2db);
   return (
     <div
       className={classNames(styles['common-node'], styles['common-node-hover'], {
@@ -123,9 +138,11 @@ const TDEngine = (data: any) => {
             <span className={styles['common-node-subtitle']}>PostgreSQL</span>
             <span className={styles['common-node-title']}>Relational DB</span>
           </div>
-          <div className={styles['common-node-btn']} data-action="navigate">
-            <Launch size={20} />
-          </div>
+          {systemInfo?.containerMap?.chat2db && (
+            <div className={styles['common-node-btn']} data-action="navigate">
+              <Launch size={20} />
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -167,69 +184,65 @@ const Apps = (data: any) => {
 
 const NodeRedTable: FC<any> = ({ flowList }) => {
   const formatMessage = useTranslate();
-
   return (
     <div style={{ width: '100%', display: 'contents' }}>
-      {flowList &&
-        flowList?.map((item: any, index: number) => {
-          return (
-            <div key={index} style={{ width: '100%' }}>
-              <div style={{ width: '100%', marginBottom: 12 }} className={styles['name']}>
-                <CautionInverted style={{ marginRight: 8, width: 10, height: 10 }} />
-                {formatMessage('uns.autoFlow', 'Source Flow')}
-              </div>
-              <ProTable
-                bordered
-                rowHoverable={false}
-                className={styles.customTable}
-                columns={[
-                  {
-                    title: formatMessage('uns.collectionFlowDetail'),
-                    dataIndex: 'label',
-                    key: 'label',
-                    width: '30%',
-                    render: (text: any) => <span className={styles.detailLabel}>{text}</span>,
-                  },
-                  {
-                    title: formatMessage('uns.content'),
-                    dataIndex: 'value',
-                    key: 'value',
-                    width: '70%',
-                    render: (value: any) => value || <span className={styles.empty}>-</span>,
-                  },
-                ]}
-                dataSource={[
-                  {
-                    key: 'flowName',
-                    label: formatMessage('uns.CollectionFlowName'),
-                    value: item?.flowName,
-                  },
-                  {
-                    key: 'template',
-                    label: formatMessage('uns.flowTemplate'),
-                    value: item?.template,
-                  },
-                  {
-                    key: 'description',
-                    label: formatMessage('uns.description'),
-                    value: item?.Description, // 注意大小写一致性
-                  },
-                ]}
-                pagination={false}
-                showHeader={true}
-                rowKey="key"
-              />
-            </div>
-          );
-        })}
+      {flowList && (
+        <div style={{ width: '100%' }}>
+          <div style={{ width: '100%', marginBottom: 12 }} className={styles['name']}>
+            <CautionInverted style={{ marginRight: 8, width: 10, height: 10 }} />
+            {formatMessage('uns.autoFlow', 'Source Flow')}
+          </div>
+          <ProTable
+            bordered
+            rowHoverable={false}
+            className={styles.customTable}
+            columns={[
+              {
+                title: formatMessage('uns.collectionFlowDetail'),
+                dataIndex: 'label',
+                key: 'label',
+                width: '30%',
+                render: (text: any) => <span className={styles.detailLabel}>{text}</span>,
+              },
+              {
+                title: formatMessage('uns.content'),
+                dataIndex: 'value',
+                key: 'value',
+                width: '70%',
+                render: (value: any) => value || <span className={styles.empty}>-</span>,
+              },
+            ]}
+            dataSource={[
+              {
+                key: 'flowName',
+                label: formatMessage('uns.CollectionFlowName'),
+                value: flowList?.flowName,
+              },
+              {
+                key: 'template',
+                label: formatMessage('uns.flowTemplate'),
+                value: flowList?.template,
+              },
+              {
+                key: 'description',
+                label: formatMessage('uns.description'),
+                value: flowList?.description, // 注意大小写一致性
+              },
+            ]}
+            pagination={false}
+            showHeader={true}
+            rowKey="key"
+          />
+        </div>
+      )}
     </div>
   );
 };
 const TdEngine1: FC<any> = ({ payload, dt = {}, instanceInfo }) => {
-  const systemInfo = useBaseStore((state) => state.systemInfo);
+  // const systemInfo = useBaseStore((state) => state.systemInfo);
   console.log(instanceInfo);
   const formatMessage = useTranslate();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const columns: any = [
     {
       title: formatMessage('uns.key'),
@@ -270,39 +283,39 @@ const TdEngine1: FC<any> = ({ payload, dt = {}, instanceInfo }) => {
         bordered
         rowHoverable={false}
       />
-      {systemInfo?.containerMap?.chat2db && instanceInfo?.dataType === 2 && instanceInfo?.alias && (
-        <div className={styles['btn']}>
-          <Button
-            color="default"
-            variant="filled"
-            style={{ marginTop: '10px', width: '100px' }}
-            icon={<Launch />}
-            iconPosition="end"
-            onClick={() => {
-              getSourceList().then((data: any) => {
-                const sourceData = data?.data?.data?.find((i: any) => i.alias === '@postgresql');
-                const loadData = (params: any) => {
-                  getRefreshList(params).then((res: any) => {
-                    if (res.hasNextPage) {
-                      loadData({
-                        dataSourceId: sourceData?.id,
-                        pageNo: res.data?.pageNo + 1,
-                      });
-                    } else {
-                      navigate(
-                        `/SQLEditor?dataSourceName=@postgresql&databaseName=postgres&databaseType=POSTGRESQL&schemaName=public&tableName=${instanceInfo?.alias}`
-                      );
-                    }
-                  });
-                };
-                loadData({ dataSourceId: sourceData?.id });
-              });
-            }}
-          >
-            {formatMessage('uns.sqlEditor')}
-          </Button>
-        </div>
-      )}
+      {/*{systemInfo?.containerMap?.chat2db && instanceInfo?.dataType === 2 && instanceInfo?.alias && (*/}
+      {/*  <div className={styles['btn']}>*/}
+      {/*    <Button*/}
+      {/*      color="default"*/}
+      {/*      variant="filled"*/}
+      {/*      style={{ marginTop: '10px', width: '100px' }}*/}
+      {/*      icon={<Launch />}*/}
+      {/*      iconPosition="end"*/}
+      {/*      onClick={() => {*/}
+      {/*        getSourceList().then((data: any) => {*/}
+      {/*          const sourceData = data?.data?.data?.find((i: any) => i.alias === '@postgresql');*/}
+      {/*          const loadData = (params: any) => {*/}
+      {/*            getRefreshList(params).then((res: any) => {*/}
+      {/*              if (res.hasNextPage) {*/}
+      {/*                loadData({*/}
+      {/*                  dataSourceId: sourceData?.id,*/}
+      {/*                  pageNo: res.data?.pageNo + 1,*/}
+      {/*                });*/}
+      {/*              } else {*/}
+      {/*                navigate(*/}
+      {/*                  `/SQLEditor?dataSourceName=@postgresql&databaseName=postgres&databaseType=POSTGRESQL&schemaName=public&tableName=${instanceInfo?.alias}`*/}
+      {/*                );*/}
+      {/*              }*/}
+      {/*            });*/}
+      {/*          };*/}
+      {/*          loadData({ dataSourceId: sourceData?.id });*/}
+      {/*        });*/}
+      {/*      }}*/}
+      {/*    >*/}
+      {/*      {formatMessage('uns.sqlEditor')}*/}
+      {/*    </Button>*/}
+      {/*  </div>*/}
+      {/*)}*/}
     </>
   );
 };
@@ -573,13 +586,16 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   const dashboardType = useBaseStore((state) => state.dashboardType);
   const [active, setActive] = useState<any>('');
   const containerRef = useRef<HTMLDivElement>(null);
-  const [datas, setDatas] = useState<any>([]);
+  const [datas, setDatas] = useState<any>({});
   const modeState = useRef<any>([]);
   const interls = useRef<any>(null);
   const orderList = ['pushOriginalData', 'pushMqtt', 'pullMqttOrDataPersistence']; //自定义循序
   const [activeInfo, setActiveInfo] = useState<any>();
   const [errorState, setErrorState] = useState<any>(false);
   const navigate = useNavigate();
+
+  const pendingNavigationRef = useRef<any>(null);
+
   function findDate({ dataType, withSave2db, withDashboard }: any) {
     const _data = data;
     // _data.nodes[3].data.dataType = dataType;
@@ -701,21 +717,53 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
     const launchButton = target.closest('[data-action="navigate"]');
 
     if (cell?.id === 'nodeRed1' && launchButton) {
-      navigate(
-        `/collection-flow/flow-editor?${getSearchParamsString({
-          id: cell.data.id,
-          name: cell.data.flowName,
-          status: cell.data.flowStatus,
-          flowId: cell.data.flowId,
-        })}`
-      );
+      if (cell.data.id || cell.data.flowId || cell.data.flowName) {
+        navigate(
+          `/collection-flow/flow-editor?${getSearchParamsString({
+            id: cell.data.id,
+            name: cell.data.flowName,
+            status: cell.data.flowStatus,
+            flowId: cell.data.flowId,
+            from: location.pathname,
+          })}`
+        );
+      } else {
+        if (instanceInfo?.alias && instanceInfo?.path) {
+          createFlow({ unsAlias: instanceInfo?.alias, path: instanceInfo?.path }).then((res: any) => {
+            if (res) {
+              setDatas(res || {});
+              // 保存待跳转的数据
+              pendingNavigationRef.current = { res };
+            }
+            return res;
+          });
+        }
+      }
       return;
     }
 
     if (cell?.id === 'tdEngine1' && cell.data.dataType === 2 && launchButton) {
-      navigate(
-        `/SQLEditor?dataSourceName=@postgresql&databaseName=postgres&databaseType=POSTGRESQL&schemaName=public&tableName=${cell.data.alias}`
-      );
+      getSourceList().then((data: any) => {
+        const sourceData = data?.data?.data?.find((i: any) => i.alias === '@postgresql');
+        const loadData = (params: any) => {
+          getRefreshList(params).then((res: any) => {
+            if (res.hasNextPage) {
+              loadData({
+                dataSourceId: sourceData?.id,
+                pageNo: res.data?.pageNo + 1,
+              });
+            } else {
+              navigate(
+                `/SQLEditor?dataSourceName=@postgresql&databaseName=postgres&databaseType=POSTGRESQL&schemaName=public&tableName=${instanceInfo?.alias}`
+              );
+            }
+          });
+        };
+        loadData({ dataSourceId: sourceData?.id });
+      });
+      // navigate(
+      //   `/SQLEditor?dataSourceName=@postgresql&databaseName=postgres&databaseType=POSTGRESQL&schemaName=public&tableName=${cell.data.alias}`
+      // );
       return;
     }
     if (cell?.id === 'apps1' && dashboardType?.includes('grafana') && launchButton) {
@@ -762,12 +810,11 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   const fetchTopologyData = async (alias: string) => {
     try {
       const result = await goFlow(alias);
-      setDatas(result);
+      setDatas(result || {});
     } catch (error) {
       console.error('Error fetching topology data:', error);
     }
   };
-
   const getAppsLink = (data: any) => {
     const { alias } = data || {};
     const aliasHash = md5(instanceInfo?.alias).slice(8, 24);
@@ -775,34 +822,70 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   };
 
   // 获取并更新图表数据
-  const updateGraphData = (instanceInfo: any, flowList?: any[]) => {
+  const updateGraphData = (instanceInfo: any, flowList?: any) => {
     const { nodes, edges } = findDate(instanceInfo) || { nodes: [], edges: [] };
     modeState.current = [];
-    console.log('flowList', flowList);
-    console.log('instanceInfo', instanceInfo);
-    if (graphRef.current) {
-      // 清理现有的节点和边
-      graphRef.current.clearCells();
-      nodes.forEach((node) => {
-        console.log('node', node);
-        //更新nodeRed1节点数据
-        if (node.id === 'nodeRed1') {
-          node.data.id = flowList?.[0]?.id || '';
-          node.data.flowStatus = flowList?.[0]?.flowStatus || '';
-          node.data.flowId = flowList?.[0]?.flowId || '';
-          node.data.flowName = flowList?.[0]?.flowName || '';
-          node.data.active = true;
-          setActive('nodeRed1');
-        } else if (node.id === 'tdEngine1') {
-          node.data.dataType = instanceInfo?.dataType;
-          node.data.alias = instanceInfo?.alias;
-        }
-        graphRef.current.addNode(node);
-      });
-      edges.forEach((edge) => {
-        graphRef.current.addEdge(edge);
-      });
-    }
+    setTimeout(() => {
+      if (graphRef.current) {
+        graphRef.current.clearCells();
+
+        // 统计需要添加的节点和边数量
+        let addCount = 0;
+        const totalToAdd = nodes.length + edges.length;
+
+        // 定义一个回调，每次添加节点或边后调用
+        const handleAdded = () => {
+          addCount += 1;
+          if (addCount === totalToAdd) {
+            // 解绑事件
+            graphRef.current.off('node:added', handleAdded);
+            graphRef.current.off('edge:added', handleAdded);
+
+            if (pendingNavigationRef.current) {
+              // 关键：用 requestAnimationFrame 等待一帧
+              requestAnimationFrame(() => {
+                // 再加一个 setTimeout 0，确保渲染
+                setTimeout(() => {
+                  const { res } = pendingNavigationRef.current;
+                  navigate(
+                    `/collection-flow/flow-editor?${getSearchParamsString({
+                      id: res.id,
+                      name: res.flowName,
+                      flowId: res.flowId,
+                      from: location.pathname,
+                    })}`
+                  );
+                  pendingNavigationRef.current = null;
+                }, 100);
+              });
+            }
+          }
+        };
+
+        // 绑定事件
+        graphRef.current.on('node:added', handleAdded);
+        graphRef.current.on('edge:added', handleAdded);
+
+        // 添加节点和边
+        nodes.forEach((node) => {
+          if (node.id === 'nodeRed1') {
+            node.data.id = flowList?.id || '';
+            node.data.flowStatus = flowList?.flowStatus || '';
+            node.data.flowId = flowList?.flowId || '';
+            node.data.flowName = flowList?.flowName || '';
+            node.data.active = true;
+            setActive('nodeRed1');
+          } else if (node.id === 'tdEngine1') {
+            node.data.dataType = instanceInfo?.dataType;
+            node.data.alias = instanceInfo?.alias;
+          }
+          graphRef.current.addNode(node);
+        });
+        edges.forEach((edge) => {
+          graphRef.current.addEdge(edge);
+        });
+      }
+    }, 100);
   };
 
   // 初始化图表
@@ -859,14 +942,15 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
     setActive('');
     fetchTopologyData(instanceInfo?.alias);
     if (!graphRef.current || !instanceInfo) return;
-
     // 设置轮询
     interls.current = setInterval(() => {
       getTopologyStateData();
     }, 2000);
 
     // 只在这里调用一次
-    updateGraphData(instanceInfo, datas);
+    if (datas) {
+      updateGraphData(instanceInfo, datas);
+    }
 
     // 设置事件监听器
     graphRef.current.on('node:click', nodeClickFn);
@@ -881,10 +965,11 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
       interls.current = null;
     };
   }, [instanceInfo, datas]);
+
   return (
     <div className={styles['detailTopologyWrap']}>
       <div className={styles['detailTopologyContent']} ref={containerRef} />
-      {(['tdEngine1', 'mqtt1'].includes(active) || (active === 'nodeRed1' && datas?.length > 0)) && (
+      {(['tdEngine1', 'mqtt1'].includes(active) || active === 'nodeRed1') && (
         <div className={styles['detailTable']}>
           {active === 'mqtt1' && instanceInfo.dataType == 3 && <Tables instanceInfo={instanceInfo} />}
           {active == 'nodeRed1' ? <NodeRedTable flowList={datas} /> : ''}

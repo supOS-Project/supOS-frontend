@@ -38,3 +38,8 @@ interface InitTreeDataParamsType {
 }
 
 export type InitTreeDataFnType = (params: InitTreeDataParamsType, cb?: () => void) => void;
+
+export interface SelectTreeNode extends Omit<UnsTreeNode, 'children'> {
+  fields: FieldItem[];
+  children: SelectTreeNode[];
+}

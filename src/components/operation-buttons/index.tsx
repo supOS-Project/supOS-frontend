@@ -1,4 +1,5 @@
-import { FC } from 'react';
+import { CSSProperties, FC } from 'react';
+import classNames from 'classnames';
 import { AuthWrapper } from '../auth';
 import { Button, ButtonProps } from 'antd';
 import './index.scss';
@@ -22,25 +23,31 @@ const colorType: any = {
       background: 'var(--supos-description-card-color)',
     },
   },
+  link: {
+    color: 'default',
+    variant: 'link',
+  },
 };
 
-export interface OperationProps {
+export interface OperationButtonsProps {
   options?: {
     label: string;
     onClick: (item: any) => void;
-    type: 'outlined' | 'primary' | 'dark';
+    type: 'outlined' | 'primary' | 'dark' | 'link';
     btnProps?: ButtonProps;
     auth?: string | string[];
     disabled?: (item: any) => boolean;
   }[];
   record?: any;
+  className?: string;
+  style?: CSSProperties;
 }
 
-const Operation: FC<OperationProps> = ({ options, record }) => {
+const OperationButtons: FC<OperationButtonsProps> = ({ options, record, className, style }) => {
   return (
-    <div className="right-operation">
-      {options?.map((item: any) => (
-        <AuthWrapper auth={item.auth} key={item.label}>
+    <div className={classNames('operation-buittons', className)} style={style}>
+      {options?.map((item: any, i) => (
+        <AuthWrapper auth={item.auth} key={item.label || `button_${i}`}>
           <Button
             {...(colorType[item.type] || colorType.outlined)}
             {...item.btnProps}
@@ -56,4 +63,4 @@ const Operation: FC<OperationProps> = ({ options, record }) => {
   );
 };
 
-export default Operation;
+export default OperationButtons;

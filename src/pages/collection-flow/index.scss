@@ -1,5 +1,41 @@
-.flow-dropdown {
-  background-color: var(--supos-theme-color);
-  color: #fff;
-  border-color: var(--supos-theme-color);
+.flow-dropdown-more {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  line-height: 32px;
+  text-align: center;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--supos-primary-bg);
+  }
+}
+
+.flow-table-list {
+  .ant-table-row {
+    .list-operation {
+      gap: 0;
+      display: none;
+    }
+
+    &:hover {
+      .list-operation {
+        display: inline-flex;
+      }
+    }
+
+    .ant-btn-link {
+      padding: 0;
+      margin-right: 10px;
+      max-width: 80%;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      display: inline-block;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
 }

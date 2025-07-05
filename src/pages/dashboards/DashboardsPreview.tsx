@@ -12,16 +12,13 @@ import { getSearchParamsObj } from '@/utils/url-util';
 import { AuthButton } from '@/components/auth';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
+import { ChevronLeft } from '@carbon/icons-react';
 
 const FlowPreview: FC<PageProps> = ({ location }) => {
   const formatMessage = useTranslate();
   const [iframeUrl, setIframeUrl] = useState('');
   const state = getSearchParamsObj(location?.search) || {};
   const breadcrumbList = [
-    {
-      name: 'Dashboards',
-      path: '/dashboards',
-    },
     {
       name: state.name,
     },
@@ -132,27 +129,40 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
   return (
     <ComLayout>
       <ComContent
-        backPath="/dashboards"
+        mustHasBack={false}
         hasPadding
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Breadcrumb
-              separator=">"
-              items={breadcrumbList?.map((item: any, idx: number) => {
-                if (idx + 1 === breadcrumbList?.length) {
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Button
+                variant="outlined"
+                color="default"
+                icon={<ChevronLeft size={16} />}
+                style={{ paddingLeft: '5.5px', gap: '3px' }}
+                onClick={() => {
+                  navigate('/dashboards');
+                }}
+              >
+                {formatMessage('common.back')}
+              </Button>
+              <Breadcrumb
+                separator=">"
+                items={breadcrumbList?.map((item: any, idx: number) => {
+                  if (idx + 1 === breadcrumbList?.length) {
+                    return {
+                      title: item.name,
+                    };
+                  }
                   return {
-                    title: item.name,
+                    title: <ComText>{item.name}</ComText>,
+                    onClick: () => {
+                      if (!item.path) return;
+                      navigate(item.path);
+                    },
                   };
-                }
-                return {
-                  title: <ComText>{item.name}</ComText>,
-                  onClick: () => {
-                    if (!item.path) return;
-                    navigate(item.path);
-                  },
-                };
-              })}
-            />
+                })}
+              />
+            </div>
             {[2, '2'].includes(type) && (
               <div>
                 <Space>

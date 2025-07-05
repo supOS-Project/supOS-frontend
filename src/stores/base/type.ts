@@ -41,4 +41,6 @@ export type TBaseStore = {
   loading: boolean;
   // 插件列表
   pluginList: any[];
+  // 按钮权限列表
+  buttonList: string[];
 };

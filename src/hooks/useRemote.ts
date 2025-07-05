@@ -61,7 +61,7 @@ const useRemote = ({
           },
         },
       ]);
-      registerRemotes([getRemotesInfo({ name })]);
+      registerRemotes([getRemotesInfo({ name })], { force: true });
       initStateRef.current = true;
       return true;
     } catch (e) {

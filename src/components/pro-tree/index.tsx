@@ -30,6 +30,7 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
     loadData,
     showSwitcherIcon = true,
     matchHighlightValue,
+    isShow,
     ...restProps
   } = props;
   const treeContentRef = useRef<HTMLDivElement | null>(null);
@@ -45,7 +46,7 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
   const treeContentSize = useSize(treeContentRef);
 
   useEffect(() => {
-    if (height !== undefined && treeContentSize?.height !== undefined) {
+    if (height !== undefined && treeContentSize?.height !== undefined && [true, undefined].includes(isShow?.current)) {
       // 虚拟滚动设置自适应高度
       setTreeHeight(treeContentSize?.height);
     }

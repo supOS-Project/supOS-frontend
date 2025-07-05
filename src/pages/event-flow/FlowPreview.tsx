@@ -2,7 +2,7 @@ import { FC, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { App, Button, Dropdown, Form, message, Space, Breadcrumb } from 'antd';
 import { copyFlow, deployFlow, saveFlow } from '@/apis/inter-api/event-flow';
-import { Pending } from '@carbon/icons-react';
+import { ChevronLeft, OverflowMenuVertical } from '@carbon/icons-react';
 import { useLocalStorage, useTranslate } from '@/hooks';
 import { useUpdateEffect } from 'ahooks';
 import { PageProps } from '@/common-types';
@@ -26,10 +26,6 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
   const navigate = useNavigate();
   const iframeUrl = `/eventflow/home/?sup_event_flow_id=${state.id}&sup_origin_event_flow_id=${state.flowId}`;
   const breadcrumbList = [
-    {
-      name: 'event-flow',
-      path: '/EventFlow',
-    },
     {
       name: state.name,
     },
@@ -159,7 +155,7 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
 
   const formItemOptions = [
     {
-      label: formatMessage('common.copy') + ' Flow',
+      label: formatMessage('eventFlow.copyFlow'),
     },
     {
       label: formatMessage('common.name'),
@@ -282,7 +278,7 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
   return (
     <ComLayout loading={loading}>
       <ComContent
-        backPath={'/EventFlow'}
+        mustHasBack={false}
         style={{ overflow: 'hidden' }}
         hasPadding
         border={false}
@@ -294,28 +290,42 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
               justifyContent: 'space-between',
             }}
           >
-            <Breadcrumb
-              separator=">"
-              items={breadcrumbList?.map((item: any, idx: number) => {
-                if (idx + 1 === breadcrumbList?.length) {
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Button
+                variant="outlined"
+                color="default"
+                icon={<ChevronLeft size={16} />}
+                style={{ paddingLeft: '5.5px', gap: '3px' }}
+                onClick={() => {
+                  navigate(-1);
+                }}
+              >
+                {formatMessage('common.back')}
+              </Button>
+              <Breadcrumb
+                separator=">"
+                items={breadcrumbList?.map((item: any, idx: number) => {
+                  if (idx + 1 === breadcrumbList?.length) {
+                    return {
+                      title: item.name,
+                    };
+                  }
                   return {
-                    title: item.name,
+                    title: <ComText>{item.name}</ComText>,
+                    onClick: () => {
+                      if (!item.path) return;
+                      navigate(item.path);
+                    },
                   };
-                }
-                return {
-                  title: <ComText>{item.name}</ComText>,
-                  onClick: () => {
-                    if (!item.path) return;
-                    navigate(item.path);
-                  },
-                };
-              })}
-            />
+                })}
+              />
+            </div>
             <Space>
               <AuthButton
                 auth={ButtonPermission['eventFlow.copy']}
                 loading={loading}
-                type="primary"
+                color="primary"
+                variant="outlined"
                 onClick={onCopyFlows}
               >
                 {formatMessage('common.copy')}
@@ -338,7 +348,6 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
                 {formatMessage('appGui.deploy')}
               </AuthButton>
               <Dropdown
-                className="flow-dropdown"
                 menu={{
                   onClick: (e) => {
                     onOpenMenuHandle(e.key);
@@ -347,9 +356,9 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
                 }}
                 placement="bottomRight"
               >
-                <Button>
-                  <Pending />
-                </Button>
+                <div className="flow-dropdown-more">
+                  <OverflowMenuVertical />
+                </div>
               </Dropdown>
             </Space>
           </div>

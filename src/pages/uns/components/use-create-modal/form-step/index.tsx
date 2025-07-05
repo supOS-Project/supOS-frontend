@@ -2,6 +2,7 @@ import { FC, useState, Dispatch, SetStateAction } from 'react';
 import { ChevronRight, ChevronLeft } from '@carbon/icons-react';
 import { Form, App, Button, Flex } from 'antd';
 import { addModel, makeLabel } from '@/apis/inter-api/uns';
+import { topic2Uns } from '@/apis/inter-api/external';
 import { useTranslate, useFormValue } from '@/hooks';
 import dayjs from 'dayjs';
 import { cloneDeep } from 'lodash';
@@ -10,6 +11,7 @@ import { ROOT_NODE_ID } from '../../../store/treeStore';
 import { TreeStoreActions } from '../../../store/types';
 import { getTargetNode } from '@/utils/uns';
 import ComPopupGuide from '@/components/com-popup-guide';
+import { useTreeStore } from '@/pages/uns/store/treeStore';
 
 export interface FormStepProps {
   step: number;
@@ -22,6 +24,7 @@ export interface FormStepProps {
   changeCurrentPath: (node: UnsTreeNode) => void;
   setTreeMap: TreeStoreActions['setTreeMap'];
   sourceId: string;
+  addModalType: string;
 }
 
 const FormStep: FC<FormStepProps> = ({
@@ -35,17 +38,27 @@ const FormStep: FC<FormStepProps> = ({
   changeCurrentPath,
   setTreeMap,
   sourceId,
+  addModalType,
 }) => {
   const { message } = App.useApp();
   const formatMessage = useTranslate();
   const form = Form.useFormInstance();
   const [loading, setLoading] = useState(false);
 
+  const { operationFns, setCurrentTreeMapType } = useTreeStore((state) => ({
+    operationFns: state.operationFns,
+    setCurrentTreeMapType: state.setCurrentTreeMapType,
+  }));
+  console.log(operationFns);
+
   //以下变量用于控制步骤按钮的显示
   const advancedOptions = useFormValue('advancedOptions', form) || false;
   const calculationType = useFormValue('calculationType', form);
   const dataType = useFormValue('dataType', form);
   const attributeType = useFormValue('attributeType', form);
+  const jsonList = useFormValue('jsonList', form);
+
+  const isFormTopic = addModalType.includes('topic');
 
   const extendToObj = (extend: { key: string; value: string }[]) => {
     if (!extend) return undefined;
@@ -92,6 +105,8 @@ const FormStep: FC<FormStepProps> = ({
 
           _advancedOptions,
           table,
+
+          path,
         } = cloneDeep(form.getFieldsValue(true));
 
         // 表单验证通过后的操作
@@ -230,20 +245,34 @@ const FormStep: FC<FormStepProps> = ({
             }
           );
         };
-        addModel({ ...data })
+        const labelList =
+          tags?.map(({ label, value }: { label: string; value: string | number }) => ({
+            ...(label ? { id: value } : { labelName: value }),
+          })) || [];
+
+        const addRequest = isFormTopic ? topic2Uns : addModel;
+        if (isFormTopic) {
+          delete data.alias;
+          delete data.parentId;
+          data.path = path;
+          data.labelList = labelList;
+        }
+
+        addRequest({ ...data })
           .then((res: any) => {
             message.success(formatMessage('uns.newSuccessfullyAdded'));
-            if (isCreateFolder) {
-              handleCallback(res, 'addFolder');
+            if (isFormTopic) {
+              setCurrentTreeMapType('all');
+              handleCallback(res, 'addFile');
+              operationFns?.refreshUnusedTopicTree?.(path);
             } else {
-              makeLabel(
-                res,
-                tags?.map(({ label, value }: { label: string; value: string | number }) => ({
-                  ...(label ? { id: value } : { labelName: value }),
-                })) || []
-              ).then(() => {
-                handleCallback(res, 'addFile');
-              });
+              if (isCreateFolder) {
+                handleCallback(res, 'addFolder');
+              } else {
+                makeLabel(res, labelList).then(() => {
+                  handleCallback(res, 'addFile');
+                });
+              }
             }
             handleClose(() => setLoading(false));
           })
@@ -274,7 +303,7 @@ const FormStep: FC<FormStepProps> = ({
   const handleStep = async () => {
     return form.validateFields().then(() => {
       const next = form.getFieldValue('next');
-      if (attributeType === 3 && !next) {
+      if ((attributeType === 3 || (isFormTopic && jsonList?.length > 1)) && !next) {
         message.error(formatMessage('uns.noFieldsTip'));
         return;
       }

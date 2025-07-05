@@ -21,7 +21,7 @@ export const useTips = (originTips: any[] = []) => {
 
   const userTipsEnable = useBaseStore((state) => state.userTipsEnable);
   const tour = useRef(shepherd()).current;
-  const [checked, setChecked] = useState<boolean>(false);
+  const [checked, setChecked] = useState<boolean>(true);
   const loginEnable = storageOpt.getOrigin(SUPOS_USER_LAST_LOGIN_ENABLE); // 是否为免登录
 
   useEffect(() => {

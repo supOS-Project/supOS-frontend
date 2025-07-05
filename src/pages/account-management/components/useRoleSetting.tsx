@@ -16,7 +16,9 @@ import Loading from '@/components/loading';
 import ProModal from '@/components/pro-modal';
 import { useI18nStore } from '@/stores/i18n-store.ts';
 
-const AdminRoleId = '7ca9f922-0d35-44cf-8747-8dcfd5e66f8e';
+export const AdminRoleId = '7ca9f922-0d35-44cf-8747-8dcfd5e66f8e';
+const generalRoleId = '71dd6dc2-6b12-4273-9ec0-b44b86e5b500';
+const disabledRoleList = [AdminRoleId, generalRoleId];
 const parentOrderMap = (routes: any) => {
   const info = routes?.find((f: any) => getTags(f?.service?.tags || [])?.root);
   return getTags(info?.service?.tags || []) || {};
@@ -82,7 +84,12 @@ const AddRoleContent = ({ successBack, disabled }: { successBack: (data: any) =>
                   },
                 ]}
               >
-                <Input style={{ width: 140 }} size="small" placeholder={formatMessage('account.addRoleName')} />
+                <Input
+                  allowClear
+                  style={{ width: 140 }}
+                  size="small"
+                  placeholder={formatMessage('account.addRoleName')}
+                />
               </Form.Item>
             </Form>
           </Flex>
@@ -93,16 +100,16 @@ const AddRoleContent = ({ successBack, disabled }: { successBack: (data: any) =>
               margin: '14px auto',
             }}
           />
-          <Flex justify="space-between" align="center" style={{ padding: '0 12px' }}>
-            <Button
-              type="text"
-              size="small"
-              color="default"
-              style={{ width: 50, color: 'var(--supos-t-text-disabled-color)' }}
-              onClick={() => form.resetFields()}
-            >
-              {formatMessage('common.reset')}
-            </Button>
+          <Flex justify="flex-end" align="center" style={{ padding: '0 12px' }}>
+            {/*<Button*/}
+            {/*  type="text"*/}
+            {/*  size="small"*/}
+            {/*  color="default"*/}
+            {/*  style={{ width: 50, color: 'var(--supos-t-text-disabled-color)' }}*/}
+            {/*  onClick={() => form.resetFields()}*/}
+            {/*>*/}
+            {/*  {formatMessage('common.reset')}*/}
+            {/*</Button>*/}
             <Button loading={loading} type="primary" size="small" style={{ width: 60 }} onClick={onSave}>
               {formatMessage('common.save')}
             </Button>
@@ -337,7 +344,7 @@ const useRoleSetting = ({ onSaveBack }: any) => {
                 label: (
                   <Flex justify="space-between" align="center" gap={8}>
                     {item.roleName}
-                    {item.roleId !== AdminRoleId && (
+                    {!disabledRoleList.includes(item.roleId) && (
                       <Close
                         style={{ cursor: 'pointer' }}
                         onClick={(e) => {
@@ -371,7 +378,7 @@ const useRoleSetting = ({ onSaveBack }: any) => {
                 key: item.roleId,
                 children: (
                   <Permission
-                    disabled={item.roleId === AdminRoleId}
+                    disabled={disabledRoleList.includes(item.roleId)}
                     ref={(el) => permissionRefs.current.set(item.roleId, el)}
                     initValue={item.resourceList}
                     onChange={(pre) => {
@@ -387,7 +394,7 @@ const useRoleSetting = ({ onSaveBack }: any) => {
             })}
           />
           <Button
-            disabled={activeKey === AdminRoleId}
+            disabled={disabledRoleList.includes(activeKey)}
             onClick={onSave}
             style={{ height: 32, marginTop: 20 }}
             block

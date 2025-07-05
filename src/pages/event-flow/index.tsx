@@ -1,28 +1,22 @@
 import { FC, useState } from 'react';
-import { App, Form, Pagination } from 'antd';
-// import flowGrey from '@/assets/collection-flow/flow-grey.svg';
-// import flowBlue from '@/assets/collection-flow/flow-blue.svg';
-// import flowGreen from '@/assets/collection-flow/flow-green.svg';
-// import flowDark from '@/assets/collection-flow/flow-dark.svg';
+import { App, Button, Form, Tag } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { addFlow, copyFlow, deleteFlow, editFlow, flowPage } from '@/apis/inter-api/event-flow';
 import { usePagination, useTranslate } from '@/hooks';
 import { PageProps } from '@/common-types.ts';
 import { useActivate } from '@/contexts/tabs-lifecycle-context';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
-import { Search } from '@carbon/icons-react';
-import ComCardListVertical from '@/components/com-card-list-vertical';
+import { CopyFile, Edit, Search, TrashCan } from '@carbon/icons-react';
 import ComDrawer from '@/components/com-drawer';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
 import ComSearch from '@/components/com-search';
 import OperationForm from '@/components/operation-form';
 import { validInputPattern } from '@/utils/pattern';
-import { TransformFieldNameOutData } from '@/utils/transform';
 import { getSearchParamsString } from '@/utils/url-util';
-import { AuthButton } from '@/components/auth';
-import { DeleteOutlined } from '@ant-design/icons';
-// import { useThemeStore } from '@/stores/theme-store.ts';
+import { AuthButton, AuthWrapper } from '@/components/auth';
+import { ComTableList } from '@/components';
+import OperationButtons from '@/components/operation-buttons';
 
 const CollectionFlow: FC<PageProps> = ({ title }) => {
   const { modal } = App.useApp();
@@ -33,13 +27,40 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
   const [form] = Form.useForm();
   const [searchForm] = Form.useForm();
   const [show, setShow] = useState(false);
-  // const theme = useThemeStore((state) => state.theme);
   const { loading, pagination, data, reload, refreshRequest, setSearchParams } = usePagination({
     fetchApi: flowPage,
   });
+
+  const runStatusOptions = [
+    {
+      value: 'RUNNING',
+      text: formatMessage('common.running'),
+      bgType: 'green',
+    },
+    {
+      value: 'PENDING',
+      text: formatMessage('common.pending'),
+      bgType: 'purple',
+    },
+    {
+      value: 'STOPPED',
+      text: formatMessage('common.stopped'),
+      bgType: 'red',
+    },
+    {
+      value: 'DRAFT',
+      text: formatMessage('common.draft'),
+      bgType: 'blue',
+    },
+  ];
+
+  const titleStatehandle = (item: any) => {
+    return runStatusOptions?.find((f: any) => f.value === item.flowStatus)?.text || item.flowStatus;
+  };
+
   const formItemOptions = (isEdit: string) => [
     {
-      label: `${formatMessage(`common.${isEdit}`)} Flow`,
+      label: `${formatMessage(`eventFlow.${isEdit}Flow`)}`,
     },
     {
       label: formatMessage('common.name'),
@@ -124,7 +145,6 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
     setShow(true);
     form.setFieldsValue({
       ...item,
-      flowName: item.name,
     });
   };
   return (
@@ -133,10 +153,8 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
         title={title}
         mustHasBack={false}
         style={{
+          padding: '30px',
           overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
         }}
         extra={
           <>
@@ -168,90 +186,114 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           </>
         }
       >
-        <ComCardListVertical
-          style={{ flex: 1 }}
-          // addAuth={ButtonPermission['eventFlow.add']}
-          // onAddHandle={onAddHandle}
-          editAuth={ButtonPermission['eventFlow.edit']}
-          onEditHandle={onEditHandle}
-          list={TransformFieldNameOutData(data, {
-            status: 'flowStatus',
-            name: 'flowName',
-            type: 'template',
-          })}
-          // imgSrc={theme.includes('dark') ? flowDark : flowGrey}
-          // hoverImgSrc={theme.includes('dark') ? flowDark : theme.includes('chartreuse') ? flowGreen : flowBlue}
-          runStatusOptions={[
+        <ComTableList
+          className="flow-table-list"
+          columns={[
             {
-              value: 'RUNNING',
-              text: formatMessage('common.running'),
-              bgType: 'green',
+              title: formatMessage('common.name'),
+              dataIndex: 'flowName',
+              key: 'flowName',
+              width: '30%',
+              render: (text, item) => (
+                <>
+                  <AuthWrapper auth={ButtonPermission['eventFlow.design']}>
+                    <Button
+                      type="link"
+                      onClick={() => {
+                        navigate(
+                          `/EvenFlow/Editor?${getSearchParamsString({ id: item.id, name: item.flowName, status: item.flowStatus, flowId: item.flowId })}`
+                        );
+                      }}
+                      title={text}
+                    >
+                      {text}
+                    </Button>
+                  </AuthWrapper>
+                  {item.flowStatus && (
+                    <Tag
+                      style={{ borderRadius: 15, lineHeight: '16px', margin: 0 }}
+                      bordered={false}
+                      color={(runStatusOptions?.find((f: any) => f.value === item.flowStatus)?.bgType || 'red') as any}
+                    >
+                      {titleStatehandle(item)}
+                    </Tag>
+                  )}
+                </>
+              ),
             },
             {
-              value: 'PENDING',
-              text: formatMessage('common.pending'),
-              bgType: 'purple',
+              title: formatMessage('collectionFlow.flowTemplate'),
+              dataIndex: 'template',
+              key: 'template',
+              width: '25%',
             },
             {
-              value: 'STOPPED',
-              text: formatMessage('common.stopped'),
-              bgType: 'red',
+              title: formatMessage('common.description'),
+              dataIndex: 'description',
+              key: 'description',
+              width: '30%',
+              ellipsis: true,
             },
             {
-              value: 'DRAFT',
-              text: formatMessage('common.draft'),
-              bgType: 'blue',
+              title: '',
+              dataIndex: 'operation',
+              key: 'operation',
+              width: '10%',
+              align: 'right',
+              fixed: 'right',
+              render: (_, record) => (
+                <OperationButtons
+                  className="list-operation"
+                  options={[
+                    {
+                      label: '',
+                      onClick: (item: any) => {
+                        setIsEdit('copy');
+                        setShow(true);
+                        form.setFieldsValue({
+                          id: item.id,
+                        });
+                      },
+                      type: 'link',
+                      btnProps: {
+                        title: formatMessage('common.copy'),
+                        icon: <CopyFile />,
+                      },
+                      auth: ButtonPermission['eventFlow.copy'],
+                    },
+                    {
+                      label: '',
+                      onClick: onEditHandle,
+                      type: 'link',
+                      btnProps: {
+                        title: formatMessage('common.edit'),
+                        icon: <Edit />,
+                      },
+                      auth: ButtonPermission['eventFlow.edit'],
+                    },
+                    {
+                      label: '',
+                      onClick: (item) =>
+                        modal.confirm({
+                          title: formatMessage('common.deleteConfirm'),
+                          onOk: () => onDeleteHandle(item),
+                          okText: formatMessage('common.confirm'),
+                        }),
+                      type: 'link',
+                      btnProps: {
+                        title: formatMessage('common.delete'),
+                        icon: <TrashCan />,
+                      },
+                      auth: ButtonPermission['eventFlow.delete'],
+                    },
+                  ]}
+                  record={record}
+                />
+              ),
             },
           ]}
-          operationOptions={[
-            {
-              label: formatMessage('common.copy'),
-              onClick: (item: any) => {
-                setIsEdit('copy');
-                setShow(true);
-                form.setFieldsValue({
-                  id: item.id,
-                });
-              },
-              type: 'outlined',
-              auth: ButtonPermission['eventFlow.copy'],
-            },
-            {
-              label: formatMessage('common.design'),
-              onClick: (item: any) => {
-                navigate(
-                  `/EvenFlow/Editor?${getSearchParamsString({ id: item.id, name: item.name, status: item.status, flowId: item.flowId })}`
-                );
-              },
-              type: 'primary',
-              auth: ButtonPermission['eventFlow.design'],
-            },
-            {
-              label: formatMessage('common.delete'),
-              onClick: (item) =>
-                modal.confirm({
-                  title: formatMessage('common.deleteConfirm'),
-                  onOk: () => onDeleteHandle(item),
-                  okText: formatMessage('common.confirm'),
-                }),
-              type: 'dark',
-              btnProps: {
-                icon: <DeleteOutlined />,
-              },
-              auth: ButtonPermission['eventFlow.delete'],
-            },
-          ]}
-        />
-        <Pagination
-          size="small"
-          className="custom-pagination"
-          align="center"
-          style={{ margin: '20px 0' }}
-          pageSize={pagination?.pageSize || 20}
-          showSizeChanger={false}
-          current={pagination?.page}
-          total={pagination?.total}
-          onChange={pagination.onChange}
+          dataSource={data as any}
+          pagination={pagination}
         />
       </ComContent>
       <ComDrawer title=" " open={show} onClose={onClose}>

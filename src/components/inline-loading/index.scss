@@ -38,9 +38,12 @@
   }
 
   &-text {
-    font-size: 0.875rem;
     color: var(--supos-t-menu-active-color);
     font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
   }
 }
 

@@ -1,10 +1,14 @@
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, MutableRefObject, useContext, useEffect } from 'react';
 
-export const TabsLifecycleContext = createContext({
+export const TabsLifecycleContext = createContext<{
+  isShowRef?: MutableRefObject<boolean>;
+  activate: (_: () => void) => void;
+  unActivate: (_: () => void) => void;
+}>({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  activate: (_: () => void) => {},
+  activate: (_) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  unActivate: (_: () => void) => {},
+  unActivate: (_) => {},
 });
 export const useTabLifecycle = () => useContext(TabsLifecycleContext);
 
@@ -22,4 +26,10 @@ export const useUnActivate = (cb: () => void) => {
   useEffect(() => {
     unActivate(cb);
   }, [unActivate, cb]);
+};
+
+// 判断页面是否显示
+export const usePageIsShow = () => {
+  const { isShowRef } = useTabLifecycle();
+  return isShowRef;
 };

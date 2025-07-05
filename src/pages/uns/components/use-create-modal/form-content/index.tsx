@@ -11,24 +11,24 @@ import { useBaseStore } from '@/stores/base';
 
 export interface FormContentProps {
   step: number;
-  isCreateFolder: boolean;
   addNamespaceForAi: { [key: string]: any };
   setAddNamespaceForAi: (e: any) => void;
   open: boolean;
+  addModalType: string;
 }
 
 type TemplateItemType = { label: string; value: string };
 
 type GetFormDataParamsType = {
-  isCreateFolder: boolean;
   currentStep: number;
   dataType: number;
   modelId: string;
   fields: FieldItem[];
   attributeType: number;
   windowType: string;
+  addModalType: string;
 };
-const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceForAi, setAddNamespaceForAi, open }) => {
+const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddNamespaceForAi, open, addModalType }) => {
   const form = Form.useFormInstance();
   const formatMessage = useTranslate();
   const {
@@ -43,6 +43,7 @@ const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceF
   const [templateList, setTemplateList] = useState<TemplateItemType[]>([]); //模版列表
 
   const topic = useFormValue('topic', form);
+  const path = useFormValue('path', form);
   const calculationType = useFormValue('calculationType', form);
   const dataType = useFormValue('dataType', form);
   const modelId = useFormValue('modelId', form);
@@ -81,36 +82,60 @@ const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceF
   };
 
   const getFormData = (data: GetFormDataParamsType) => {
-    const { isCreateFolder, currentStep, dataType, modelId, fields, attributeType, windowType } = data;
+    const { currentStep, dataType, modelId, fields, attributeType, windowType } = data;
+    const isCreateFolder = addModalType.includes('Folder');
+    const isFormTopic = addModalType.includes('topic');
     const formItemList = [];
 
     if (currentStep === 1) {
       //第一步
-      formItemList.push(
-        {
+      if (isFormTopic) {
+        formItemList.push({
           formType: 'input',
           formProps: {
-            name: 'topic',
-            label: formatMessage('uns.namespace'),
-            tooltip: {
-              title: formatMessage('uns.namespaceTooltip'),
-            },
+            name: 'path',
+            label: formatMessage('uns.path'),
           },
           childProps: { disabled: true },
-        },
-        {
+        });
+      } else {
+        formItemList.push(
+          {
+            formType: 'input',
+            formProps: {
+              name: 'topic',
+              label: formatMessage('uns.namespace'),
+              tooltip: {
+                title: formatMessage('uns.namespaceTooltip'),
+              },
+            },
+            childProps: { disabled: true },
+          },
+          {
+            formType: 'input',
+            formProps: {
+              name: 'alias',
+              label: formatMessage('uns.alias'),
+              tooltip: {
+                title: formatMessage('uns.aliasTooltip'),
+              },
+            },
+            childProps: { disabled: true },
+          }
+        );
+      }
+      formItemList.push({ formType: 'divider', formProps: { name: 'aliasDivider' } });
+      if (isFormTopic) {
+        formItemList.push({
           formType: 'input',
           formProps: {
-            name: 'alias',
-            label: formatMessage('uns.alias'),
-            tooltip: {
-              title: formatMessage('uns.aliasTooltip'),
-            },
+            name: 'topicName',
+            label: formatMessage('common.name'),
           },
           childProps: { disabled: true },
-        },
-        { formType: 'divider', formProps: { name: 'aliasDivider' } },
-        {
+        });
+      } else {
+        formItemList.push({
           formType: 'input',
           formProps: {
             name: 'name',
@@ -139,7 +164,10 @@ const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceF
               },
             ],
           },
-        },
+        });
+      }
+
+      formItemList.push(
         {
           formType: 'input',
           formProps: {
@@ -260,14 +288,18 @@ const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceF
                   <br />
                   <span>• {formatMessage('uns.relational')}</span> — {formatMessage('uns.dataTypeTooltip-Relational')}
                   <br />
-                  <span>• {formatMessage('uns.calculation')}</span> —&nbsp;
-                  {formatMessage('uns.dataTypeTooltip-Calculation')}
-                  <br />
-                  <span>• {formatMessage('uns.aggregation')}</span> —&nbsp;
-                  {formatMessage('uns.dataTypeTooltip-Aggregation')}
-                  <br />
-                  <span>• {formatMessage('uns.reference')}</span> —&nbsp;
-                  {formatMessage('uns.dataTypeTooltip-Reference')}
+                  {!isFormTopic && (
+                    <>
+                      <span>• {formatMessage('uns.calculation')}</span> —&nbsp;
+                      {formatMessage('uns.dataTypeTooltip-Calculation')}
+                      <br />
+                      <span>• {formatMessage('uns.aggregation')}</span> —&nbsp;
+                      {formatMessage('uns.dataTypeTooltip-Aggregation')}
+                      <br />
+                      <span>• {formatMessage('uns.reference')}</span> —&nbsp;
+                      {formatMessage('uns.dataTypeTooltip-Reference')}
+                    </>
+                  )}
                 </div>
               ),
             },
@@ -277,9 +309,13 @@ const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceF
             options: [
               { label: formatMessage('uns.timeSeries'), value: 1 },
               { label: formatMessage('uns.relational'), value: 2 },
-              { label: formatMessage('uns.calculation'), value: 3 },
-              { label: formatMessage('uns.aggregation'), value: 6 },
-              { label: formatMessage('uns.reference'), value: 7 },
+              ...(isFormTopic
+                ? []
+                : [
+                    { label: formatMessage('uns.calculation'), value: 3 },
+                    { label: formatMessage('uns.aggregation'), value: 6 },
+                    { label: formatMessage('uns.reference'), value: 7 },
+                  ]),
             ],
             onChange: (e: any) => {
               const resetObj = {
@@ -310,85 +346,92 @@ const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceF
         });
         if ([1, 2].includes(dataType)) {
           //选择时序或关系型
-          formItemList.push(
-            { formType: 'divider', formProps: { name: 'timeSeriesDivider' } },
-            {
-              formType: 'radioGroup',
-              formProps: {
-                name: 'attributeType',
-                label: formatMessage('uns.attributeGenerationMethod'),
-                initialValue: 1,
-                tooltip: {
-                  title: (
-                    <div>
-                      <span>• {formatMessage('common.custom')}</span> —&nbsp;
-                      {formatMessage('uns.attributeGenerationMethodTooltip-Custom')}
-                      <br />
-                      <span>• {formatMessage('common.template')}</span> —&nbsp;
-                      {formatMessage('uns.attributeGenerationMethodTooltip-Template')}
-                      <br />
-                      <span>• {formatMessage('uns.reverseGeneration')}</span> —&nbsp;
-                      {formatMessage('uns.attributeGenerationMethodTooltip-ReverseGeneration')}
-                    </div>
-                  ),
-                },
-                className: lang === 'zh-CN' ? '' : 'customLabelStyle',
-              },
-              childProps: {
-                options: [
-                  { label: formatMessage('common.custom'), value: 1 },
-                  { label: formatMessage('common.template'), value: 2 },
-                  { label: formatMessage('uns.reverseGeneration'), value: 3 },
-                ],
-                onChange: () => {
-                  form.setFieldsValue({
-                    fields: [{}],
-
-                    modelId: undefined,
-                    jsonData: undefined,
-                    jsonList: [],
-                    jsonDataPath: undefined,
-                    source: undefined,
-                    dataSource: undefined,
-                    table: undefined,
-                    next: false,
-                    mainKey: undefined,
-                  });
-                },
-              },
-            }
-          );
-
-          if (attributeType === 1) {
-            //选择自定义属性
+          if (isFormTopic) {
             formItemList.push({
-              formType: 'fieldsFormList',
-              formProps: { name: 'fields' },
-              childProps: {
-                types,
-                addNamespaceForAi,
-                setAddNamespaceForAi,
-              },
-            });
-          }
-          if (attributeType === 2) {
-            //选择模板属性
-            formItemList.push({
-              formType: 'modelFieldsForm',
-              formProps: { name: 'modelFieldsForm' },
-              childProps: {
-                options: templateList.slice(1),
-                types,
-              },
-            });
-          }
-          if (attributeType === 3) {
-            //选择逆向生成属性
-            formItemList.push({
-              formType: 'reverseGeneration',
-              formProps: { name: 'reverseGeneration' },
+              formType: 'topicToUnsFieldsList',
+              formProps: { name: 'topicToUnsFieldsList' },
               childProps: { types },
             });
+          } else {
+            formItemList.push(
+              { formType: 'divider', formProps: { name: 'timeSeriesDivider' } },
+              {
+                formType: 'radioGroup',
+                formProps: {
+                  name: 'attributeType',
+                  label: formatMessage('uns.attributeGenerationMethod'),
+                  initialValue: 1,
+                  tooltip: {
+                    title: (
+                      <div>
+                        <span>• {formatMessage('common.custom')}</span> —&nbsp;
+                        {formatMessage('uns.attributeGenerationMethodTooltip-Custom')}
+                        <br />
+                        <span>• {formatMessage('common.template')}</span> —&nbsp;
+                        {formatMessage('uns.attributeGenerationMethodTooltip-Template')}
+                        <br />
+                        <span>• {formatMessage('uns.reverseGeneration')}</span> —&nbsp;
+                        {formatMessage('uns.attributeGenerationMethodTooltip-ReverseGeneration')}
+                      </div>
+                    ),
+                  },
+                  className: lang === 'zh-CN' ? '' : 'customLabelStyle',
+                },
+                childProps: {
+                  options: [
+                    { label: formatMessage('common.custom'), value: 1 },
+                    { label: formatMessage('common.template'), value: 2 },
+                    { label: formatMessage('uns.reverseGeneration'), value: 3 },
+                  ],
+                  onChange: () => {
+                    form.setFieldsValue({
+                      fields: [{}],
+
+                      modelId: undefined,
+                      jsonData: undefined,
+                      jsonList: [],
+                      jsonDataPath: undefined,
+                      source: undefined,
+                      dataSource: undefined,
+                      table: undefined,
+                      next: false,
+                      mainKey: undefined,
+                    });
+                  },
+                },
+              }
+            );
+            if (attributeType === 1) {
+              //选择自定义属性
+              formItemList.push({
+                formType: 'fieldsFormList',
+                formProps: { name: 'fields' },
+                childProps: {
+                  types,
+                  addNamespaceForAi,
+                  setAddNamespaceForAi,
+                },
+              });
+            }
+            if (attributeType === 2) {
+              //选择模板属性
+              formItemList.push({
+                formType: 'modelFieldsForm',
+                formProps: { name: 'modelFieldsForm' },
+                childProps: {
+                  options: templateList.slice(1),
+                  types,
+                },
+              });
+            }
+            if (attributeType === 3) {
+              //选择逆向生成属性
+              formItemList.push({
+                formType: 'reverseGeneration',
+                formProps: { name: 'reverseGeneration' },
+                childProps: { types },
+              });
+            }
           }
         }
         if (dataType === 3) {
@@ -505,11 +548,13 @@ const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceF
           formType: 'showTopic',
           formProps: {
             name: 'showTopic',
-            label: formatMessage('uns.namespace'),
-            initialValue: topic,
-            tooltip: {
-              title: formatMessage('uns.namespaceTooltip'),
-            },
+            label: formatMessage(isFormTopic ? 'uns.path' : 'uns.namespace'),
+            initialValue: isFormTopic ? path : topic,
+            tooltip: isFormTopic
+              ? undefined
+              : {
+                  title: formatMessage('uns.namespaceTooltip'),
+                },
             style: { marginBottom: 0 },
           },
         },
@@ -646,13 +691,13 @@ const FormContent: FC<FormContentProps> = ({ step, isCreateFolder, addNamespaceF
   return (
     <FormItems
       formData={getFormData({
-        isCreateFolder,
         currentStep: step,
         dataType,
         modelId,
         fields,
         attributeType,
         windowType,
+        addModalType,
       })}
     />
   );

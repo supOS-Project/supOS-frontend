@@ -103,7 +103,7 @@ export const modifyModel = async (data: any) => api.put('/name', data); // 修�
 export const modifyDetail = async (data: any) => api.put('/detail', data); // 修改文件夹或文件详情
 
 export const getUnsLazyTree = async (
-  data: { parentId?: string; keyword?: string; pageNo: number; pageSize: number },
+  data: { parentId?: string; keyword?: string; pageNo: number; pageSize: number; searchType?: number },
   config?: any
 ) => api.post('/condition/tree', data, config);
 

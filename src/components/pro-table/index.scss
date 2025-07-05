@@ -26,6 +26,10 @@
     }
   }
 
+  .ant-table-row.ant-table-row-selected > .ant-table-cell {
+    background-color: var(--supos-table-select-bg-color) !important;
+  }
+
   .ant-table-tbody {
     > tr > td {
       height: 40px;

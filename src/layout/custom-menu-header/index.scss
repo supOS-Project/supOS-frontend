@@ -39,7 +39,6 @@
     }
 
     .menu-toggle {
-      display: flex;
       align-items: center;
       justify-content: center;
       width: 48px;
@@ -81,18 +80,6 @@
       justify-content: flex-start;
       align-items: center;
       padding-left: 16px;
-    }
-  }
-
-  @media (width >= 640px) {
-    .content {
-      display: flex;
-    }
-
-    .header {
-      .menu-toggle {
-        display: none;
-      }
     }
   }
 

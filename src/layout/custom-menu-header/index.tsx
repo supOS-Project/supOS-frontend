@@ -22,6 +22,7 @@ import SearchSelect from '@/components/search-select';
 import { storageOpt } from '@/utils/storage';
 import { useBaseStore } from '@/stores/base';
 import { ThemeType, useThemeStore } from '@/stores/theme-store.ts';
+import { isInIframe } from '@/utils/url-util.ts';
 
 const CustomMenuHeader = () => {
   const navigate = useNavigate();
@@ -137,7 +138,7 @@ const CustomMenuHeader = () => {
       {/* 新手导航使用id */}
       <div className="custom-menu-header-left" id="custom_menu_left">
         <div className="header" style={{ color: 'var(--supos-text-color)' }}>
-          <div className="menu-toggle">
+          <div className="menu-toggle" style={{ display: isH5 ? 'flex' : 'none' }}>
             {drawerVisible ? (
               <Close size={20} style={{ color: 'var(--supos-text-color)' }} onClick={() => setDrawerVisible(false)} />
             ) : (
@@ -157,7 +158,7 @@ const CustomMenuHeader = () => {
           </span>
           <Divider style={{ height: 24 }} type="vertical" />
         </div>
-        <div className="content">
+        <div className="content" style={{ display: !isH5 ? 'flex' : 'none' }}>
           <Splitter
             style={{
               height: '100%',
@@ -291,7 +292,7 @@ const CustomMenuHeader = () => {
               //   title: formatMessage('common.change', 'change'),
               //   onClick: () => themeStore.setMenuType(MenuTypeEnum.Fixed),
               // },
-            ]}
+            ]?.filter((i) => i.key !== 'user' || (i.key === 'user' && !isInIframe([], 'webview')))}
           />
         )}
       </div>

@@ -9,6 +9,7 @@ import { MenuTypeEnum, setMenuType, useThemeStore } from '@/stores/theme-store.t
 
 /**
  * 使用 新人引导 步骤
+ * 注意：对某个页面添加steps时，请务必在 stores -> base -> index.tsx -> GuidePagePaths 中添加该页面路由
  * @param steps 初始化步骤数据
  * @param startStepId 指定起始的步骤id
  */

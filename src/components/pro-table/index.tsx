@@ -4,6 +4,7 @@ import type { TableColumnsType } from 'antd';
 import classNames from 'classnames';
 import './index.scss';
 import { useTranslate } from '@/hooks';
+import { useThemeStore } from '@/stores/theme-store.ts';
 
 interface TitlePropsType {
   width?: number;
@@ -168,6 +169,16 @@ const ResizableTitle: React.FC<Readonly<React.HTMLAttributes<any> & TitlePropsTy
   );
 };
 
+const colorObj: any = {
+  blue: {
+    light: '#E8F1FF',
+    dark: '#061833',
+  },
+  chartreuse: {
+    light: '#F0FBD2',
+    dark: '#242F06',
+  },
+};
 const ProTable: React.FC<ATableProps> = ({
   resizeable,
   columns,
@@ -180,6 +191,11 @@ const ProTable: React.FC<ATableProps> = ({
   ...restProps
 }) => {
   const formatMessage = useTranslate();
+  const { theme, primaryColor } = useThemeStore((state) => ({
+    theme: state.theme,
+    primaryColor: state.primaryColor,
+  }));
+  const selectBgColor = colorObj?.[primaryColor]?.[theme];
 
   const [resizeColumns, setResizeColumns] = useState<TableColumnsType>(columns);
   const tableWrapRef = useRef<HTMLDivElement>(null);
@@ -223,7 +239,7 @@ const ProTable: React.FC<ATableProps> = ({
     // 新增：预留滚动条宽度
     const SCROLLBAR_WIDTH = 17;
     const totalWidth = calculateEffectiveWidth(cols);
-    const delta = containerWidth - totalWidth - SCROLLBAR_WIDTH;
+    const delta = containerWidth - totalWidth - SCROLLBAR_WIDTH - (restProps?.rowSelection ? 35 : 0);
 
     // 当列宽总和不足时自动扩展
     if (delta > 0) {
@@ -248,7 +264,6 @@ const ProTable: React.FC<ATableProps> = ({
       }
       return newColumns;
     }
-
     return cols;
   };
 
@@ -322,7 +337,12 @@ const ProTable: React.FC<ATableProps> = ({
     'fixed-pagination-bottom': fixedPosition,
   });
   return resizeable ? (
-    <div ref={tableWrapRef}>
+    <div
+      ref={tableWrapRef}
+      style={{
+        '--supos-table-select-bg-color': selectBgColor,
+      }}
+    >
       <Table
         rowKey="id"
         size={'small'}

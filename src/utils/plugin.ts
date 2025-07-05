@@ -4,7 +4,7 @@ import { loadRemote, registerRemotes } from '@module-federation/enhanced/runtime
 export const getRemotesInfo = ({ name }: { name: string }) => {
   return {
     name: `supos-ce${name}`,
-    entry: `${import.meta.env.VITE_ENABLE_LOCAL_REMOTE === '1' && import.meta.env.DEV ? import.meta.env.VITE_REMOTE_PREFIX : window.origin + '/plugin' + name}/mf-manifest.json`,
+    entry: `${import.meta.env.VITE_ENABLE_LOCAL_REMOTE === '1' && import.meta.env.DEV ? import.meta.env.VITE_REMOTE_PREFIX : window.origin + '/plugin' + name}/mf-manifest.json?t=${Date.now()}`,
   };
 };
 

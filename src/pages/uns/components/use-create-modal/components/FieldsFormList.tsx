@@ -48,6 +48,7 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
   const calculationType = Form.useWatch('calculationType');
   const fieldList = Form.useWatch(fieldsName, form) || [];
   const mainKey = Form.useWatch(mainKeyName, form);
+  const attributeType = Form.useWatch('attributeType', form);
 
   const { qualityName = 'quality', timestampName = 'timeStamp' } = useBaseStore((state) => state.systemInfo);
   const defaultFields = getDefaultFields(qualityName, timestampName);
@@ -114,7 +115,7 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
   };
 
   const handleChangeType = (type: string, index: number) => {
-    if (index === mainKey && !['int', 'long', 'string'].includes(type.toLowerCase())) {
+    if (index === mainKey && !['integer', 'long', 'string'].includes(type.toLowerCase())) {
       setMainKey(undefined);
     }
     if (type.toLowerCase() !== 'string' && !isCreateFolder) {
@@ -166,7 +167,7 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
                     disabled={
                       !(
                         fieldList[index]?.type &&
-                        ['int', 'long', 'string'].includes(fieldList[index]?.type?.toLowerCase())
+                        ['integer', 'long', 'string'].includes(fieldList[index]?.type?.toLowerCase())
                       )
                     }
                   />
@@ -283,6 +284,24 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
               </Flex>
             ))}
 
+            {/* 基于template创建自定义字段 */}
+            {attributeType === 2 && (
+              <Button
+                color="default"
+                variant="filled"
+                onClick={() => {
+                  if (dataType && dataType !== 3) {
+                    form.setFieldValue('attributeType', 1);
+                  } else {
+                    form.setFieldsValue({
+                      modelId: 'custom',
+                    });
+                  }
+                }}
+                block
+                icon={<AddAlt size={20} />}
+              />
+            )}
             {/* 新增按钮 */}
             {!disabled && (dataType !== 3 || (dataType === 3 && calculationType === 4)) && (
               <Button

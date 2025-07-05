@@ -308,11 +308,17 @@ const messages = {
   //数据连接模块
   'collectionFlow.flowTemplate': '连接模板',
   'collectionFlow.newFlow': '新建数据连接',
+  'collectionFlow.createFlow': '新建数据连接',
+  'collectionFlow.editFlow': '编辑数据连接',
+  'collectionFlow.copyFlow': '复制数据连接',
   'flowEditor.process': '查找流程',
   'flowEditor.nodeManagement': '节点管理',
 
   //事件流程模块
   'eventFlow.newFlow': '新建事件流程',
+  'eventFlow.createFlow': '新建事件流程',
+  'eventFlow.editFlow': '编辑事件流程',
+  'eventFlow.copyFlow': '复制事件流程',
 
   //数据看板模块
   'dashboards.dashboardsTemplate': '展示模板',
@@ -362,6 +368,15 @@ const messages = {
   'home.guide5Text1': '继续前往数据建模指南，以获取更多关于有效组织和结构化数据的见解。',
   'home.guide1Next': '为我进行引导',
   'home.guide1Exit': '我不需要帮助，我自己来',
+  'home.exportName': '名称',
+  'home.uns': 'UNS',
+  'home.sourceFlow': '数据连接',
+  'home.eventFlow': '事件流程',
+  'home.dashboard': '仪表盘',
+  'home.noExport': '无已导出文件',
+  'home.fiveRecord': '最近5条导出记录',
+  'home.exportSuccess': '执行成功,请稍后在已导出中查看',
+  'home.mustOne': '必须选择一项导出内容',
 
   //消息通知模块
   'notice.notification': '消息通知',
@@ -383,6 +398,8 @@ const messages = {
   'plugin.reInstall': '重新安装',
   'plugin.errorTitle': '加载失败',
   'plugin.retry': '重试',
+  'plugin.update': '升级',
+  'plugin.upload': '上传插件',
 
   //路由模块
   'route.flowEditor': '数据连接编辑',
@@ -491,6 +508,7 @@ const messages = {
   'uns.value': '值',
   'uns.newSuccessfullyAdded': '新增成功',
   'uns.theFileFormatOnlySupportsXlsx': '文件格式仅支持.xlsx和.json！',
+  'uns.theFileFormatOnlySupportsZip': '文件格式仅支持.zip！',
   'uns.pleaseUploadTheFile': '请上传文件！',
   'uns.PartialDataImportFailed': '部分数据导入失败！您确定要下载失败的数据吗？',
   'uns.totalModel': '文件夹总数',
@@ -642,6 +660,15 @@ const messages = {
   'uns.batchAutoDashboard': '批量数据看板',
   'uns.timeReferenceTooltip': '选择一个文件引用该文件的质量码和时间戳',
   'uns.fieldsRequiredTip': '至少1个属性（不包括默认属性）',
+  'uns.guideSwitchTabs': '切换标签页',
+  'uns.guideBuild': '构建',
+  'uns.guideClick': '点击',
+  'uns.guideBuildUnsWay': '以不同方式构建{namespace}',
+  'uns.guideRightClick': '右键单击',
+  'uns.guideBrowseUns': '浏览{namespace}层级结构',
+  'uns.guideManageUns': '快速{namespace}管理',
+  'uns.topicToFile': 'Topic转文件',
+  'uns.path': '路径',
 
   //公共通用模块
   'common.url': '地址',
@@ -735,6 +762,8 @@ const messages = {
   'common.excellence': '助力企业数字化转型！',
   'common.delete': '删除',
   'common.import': '导入',
+  'common.export': '导出',
+  'common.exported': '已导出',
   'common.deleteSuccessfully': '删除成功！',
   'common.copySuccess': '复制成功',
   'common.updateRouteSuccess': '更新路由成功',
@@ -784,7 +813,6 @@ const messages = {
   'common.actionPermission': '操作权限',
   'common.commonPlaceholder': '请输入',
   'common.searchPage': '搜索页面',
-  'common.selectTree': '请在右侧选择要查看的内容',
   'common.loadMore': '加载更多...',
   'common.errorInfo': '错误信息',
   'common.searchPlaceholder': '请输入名称或描述进行搜索',
@@ -801,15 +829,26 @@ const messages = {
   'common.partialFailure': '部分失败！',
   'common.prohibitSpacesTip': '禁止只输入空格',
   'common.password': '密码',
-  'common.connected': '连接',
-  'common.unconnected': '未连接',
+  'common.configured': '已配置',
+  'common.unconfigured': '未配置',
   'common.nextStep': '下一步',
   'common.clickSourceFlow': '点击此处设置SourceFlow的数据连接。',
   'common.dev': '开发者',
   'common.version': '版本',
+  'common.dependencies': '依赖',
+  'common.pluginName': '插件名称',
   'common.description': '描述 ',
   'common.states': '状态',
+  'common.installTime': '安装时间',
   'common.config': '配置',
+  'common.cardMode': '卡片模式',
+  'common.listMode': '列表模式',
+  'common.unRun': '未启动',
+  'common.partRun': '部分启动',
+  'common.run': '已启动',
+  'common.uploading': '上传中',
+  'common.unZiping': '解压中',
+  'common.selectAll': '选择全部',
 };
 
 export default messages;

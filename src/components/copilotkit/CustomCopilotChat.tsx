@@ -21,8 +21,6 @@ import ChatInput from '../copilotkit/sub-com/ChatInput.tsx';
 import styles from './CustomCopilotChat.module.scss';
 import classNames from 'classnames';
 import { useLocation } from 'react-router-dom';
-import ComClickTrigger from '@/components/com-click-trigger';
-import { useBaseStore } from '@/stores/base';
 
 interface CustomCopilotChatProps extends ComponentProps<typeof CopilotChat> {
   style?: CSSProperties;
@@ -95,13 +93,6 @@ const CustomCopilotChat = forwardRef<CopilotRefProps | undefined, CustomCopilotC
               <ChatBot size={16} color="var(--supos-theme-color)" />
             </div>
             <span>ChatBot</span>
-            <ComClickTrigger
-              triggerCount={5}
-              style={{ flex: 1, height: 24 }}
-              onTrigger={() => {
-                console.warn(useBaseStore.getState());
-              }}
-            />
             <Close size={18} color="var(--supos-theme-color)" className="icon-close" onClick={() => setOpen(false)} />
           </div>
           <div
@@ -113,9 +104,6 @@ const CustomCopilotChat = forwardRef<CopilotRefProps | undefined, CustomCopilotC
             <CopilotChat
               {...copilotChatProps}
               Input={ChatInput}
-              // labels={{
-              //   initial: `<img src="${theme.includes('chartreuse') ? homeFlowChartreuse : homeFlow}" style="width:100%" onclick/><span>Hi! 👋 How can I assist you today?</span>`,
-              // }}
               // RenderTextMessage={TextMessage}
               // icons={{
               //   activityIcon: <InlineLoading status="active" />,
@@ -160,6 +148,17 @@ const CustomCopilotChat = forwardRef<CopilotRefProps | undefined, CustomCopilotC
       }
     }, [pathname]);
 
+    // 修复threshold每次变化导致Draggable组件中handleResize监听失效
+    const threshold = useMemo(
+      () => ({
+        edgeThreshold: 10,
+        contentWidth: 80,
+        contentHeight: 80,
+        shrinkWidth: 60,
+      }),
+      []
+    );
+
     return (
       <Tooltip
         styles={{
@@ -196,12 +195,7 @@ const CustomCopilotChat = forwardRef<CopilotRefProps | undefined, CustomCopilotC
               setWeltDirection(opt?.weltDirection);
             }
           }}
-          threshold={{
-            edgeThreshold: 10,
-            contentWidth: 80,
-            contentHeight: 80,
-            shrinkWidth: 60,
-          }}
+          threshold={threshold}
         >
           <div
             style={{ '--ai-flex-direction': weltDirection === 'right' ? 'flex-start' : 'flex-end' }}

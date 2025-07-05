@@ -3,7 +3,7 @@ import { LOGIN_URL, SUPOS_COMMUNITY_TOKEN, SUPOS_USER_TIPS_ENABLE } from '@/comm
 import { useUpdateEffect } from 'ahooks';
 import { message } from 'antd';
 import { SUPOS_USER_GUIDE_ROUTES } from '@/common-types/constans';
-import { storageOpt } from './utils/storage';
+import { storageOpt } from '@/utils/storage';
 import { useBaseStore } from '@/stores/base';
 
 // 登录失效控制
@@ -17,6 +17,8 @@ const CookieContext = () => {
     storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
     // cookie发生改变重置tips展示状态
     storageOpt.remove(SUPOS_USER_TIPS_ENABLE);
+    // 清空
+    storageOpt.remove('personInfo');
 
     if (!cookies?.[SUPOS_COMMUNITY_TOKEN]) {
       if (import.meta.env.MODE === 'development') {

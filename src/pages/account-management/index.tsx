@@ -14,6 +14,7 @@ import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
 import ProTable from '@/components/pro-table';
 import { useThemeStore } from '@/stores/theme-store.ts';
+import { useBaseStore } from '@/stores/base';
 
 const apiObj: any = {
   updateUser,
@@ -21,6 +22,7 @@ const apiObj: any = {
 
 const AccountManagement: FC<PageProps> = ({ title }) => {
   const formatMessage = useTranslate();
+  const ldapEnable = useBaseStore((state) => state?.systemInfo?.ldapEnable);
   const theme = useThemeStore((state) => state.theme);
 
   const buttonBg = theme.includes('dark') ? '#393939' : '#c6c6c6';
@@ -120,6 +122,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
               <AuthButton
                 color="danger"
                 variant="text"
+                disabled={ldapEnable}
                 auth={ButtonPermission['accountManagement.disable']}
                 style={{ height: 18, fontSize: 12, textDecoration: 'underline', textUnderlineOffset: 4 }}
                 onClick={() => {
@@ -141,6 +144,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
                 style={{ height: 18, fontSize: 12 }}
                 color="primary"
                 variant="link"
+                disabled={ldapEnable}
                 onClick={() => {
                   handle(
                     {
@@ -196,6 +200,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
               onClick={() => {
                 onOpen?.(record);
               }}
+              disabled={ldapEnable && record?.preferredUsername !== 'supos'}
             >
               {formatMessage('account.resetpassword')}
               <Password size={14} />
@@ -207,6 +212,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
                   height: 18,
                   fontSize: 12,
                 }}
+                disabled={ldapEnable && record?.preferredUsername !== 'supos'}
                 color="default"
                 variant="filled"
                 onClick={() => {
@@ -251,6 +257,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
               style={{ height: 28 }}
               onClick={onAddHandle}
               type="primary"
+              disabled={ldapEnable}
             >
               <Flex align="center" gap={6}>
                 {formatMessage('account.newUsers')}

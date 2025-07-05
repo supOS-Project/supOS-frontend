@@ -1,12 +1,16 @@
 import { FC, useState, useImperativeHandle } from 'react';
-import { Button, Form, App, Select, Flex } from 'antd';
-import SearchSelect from '@/pages/uns/components/use-create-modal/components/SearchSelect';
-import { exportExcel } from '@/apis/inter-api/uns';
+import { Button, Form, App, Select, TreeSelect } from 'antd';
+import { exportExcel, getTreeData, getUnsLazyTree } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 
 import type { RefObject, Dispatch, SetStateAction } from 'react';
-import ComCheckbox from '@/components/com-checkbox';
 import ProModal from '@/components/pro-modal';
+import { ProTreeSelect } from '@/components';
+import { CustomAxiosConfigEnum } from '@/utils';
+import { Document, Folder, FolderOpen } from '@carbon/icons-react';
+import { useBaseStore } from '@/stores/base';
+import { getParamsForArray } from '@/utils/uns.ts';
+
 interface ExportModalRef {
   setOpen: Dispatch<SetStateAction<boolean>>;
 }
@@ -14,6 +18,7 @@ interface ExportModalRef {
 export interface ExportModalProps {
   exportRef?: RefObject<ExportModalRef>;
 }
+const { SHOW_PARENT } = TreeSelect;
 
 const Module: FC<ExportModalProps> = (props) => {
   const { exportRef } = props;
@@ -21,15 +26,23 @@ const Module: FC<ExportModalProps> = (props) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { message } = App.useApp();
-  const all = Form.useWatch('all', form);
+  const { lazyTree } = useBaseStore((state) => ({
+    lazyTree: state.systemInfo?.lazyTree,
+  }));
 
   const formatMessage = useTranslate();
 
   const save = async () => {
     const values = await form.validateFields();
-    console.log('values', values);
-    const { models, instances, all, fileType } = values;
-    if (models.length === 0 && instances.length === 0 && !all) {
+    const { uns, fileType } = values;
+    const params = getParamsForArray(uns, 'type', {
+      groups: {
+        0: 'models',
+        2: 'instances',
+      },
+      extract: 'value',
+    });
+    if (!params?.models?.length && !params?.instances?.length && !params?.exportType) {
       message.warning(formatMessage('uns.pleaseSelectTheInstanceToExport'));
       return;
     }
@@ -38,7 +51,7 @@ const Module: FC<ExportModalProps> = (props) => {
     try {
       const filePath = await exportExcel({
         fileType,
-        ...(all ? { exportType: 'ALL' } : { models, instances }),
+        ...params,
       });
       if (filePath) {
         window.open(`/inter-api/supos/uns/excel/download?path=${filePath}`, '_self');
@@ -81,62 +94,71 @@ const Module: FC<ExportModalProps> = (props) => {
         wrapperCol={{ span: 18 }}
         labelAlign="left"
         labelWrap
-        initialValues={{ models: [], instances: [], all: false }}
+        initialValues={{ uns: [], all: false }}
         disabled={loading}
       >
-        <Flex>
-          <Form.Item
-            name="all"
-            label={formatMessage('uns.downloadAll')}
-            valuePropName="checked"
-            labelCol={{ span: 12 }}
-            style={{ width: '50%' }}
-          >
-            <ComCheckbox
-              onChange={() => {
-                form.setFieldsValue({ models: [], instances: [] });
-              }}
-              disabled={loading}
-            />
-          </Form.Item>
-          <Form.Item
-            name="fileType"
-            label={formatMessage('uns.fileType')}
-            initialValue={'excel'}
-            labelCol={{ span: 12 }}
-            style={{ width: '50%' }}
-          >
-            <Select
-              options={[
-                { label: 'EXCEL', value: 'excel' },
-                { label: 'JSON', value: 'json' },
-              ]}
-            />
-          </Form.Item>
-        </Flex>
-        <Form.Item label={formatMessage('uns.model')} name="models">
-          <SearchSelect
-            placeholder={formatMessage('uns.exportFolderTip')}
-            mode="multiple"
-            disabled={all}
-            popupMatchSelectWidth={500}
-            apiParams={{ type: 0, normal: true }}
+        <Form.Item name="fileType" label={formatMessage('uns.fileType')} initialValue={'excel'}>
+          <Select
+            options={[
+              { label: 'EXCEL', value: 'excel' },
+              { label: 'JSON', value: 'json' },
+            ]}
           />
         </Form.Item>
-        <Form.Item
-          label={formatMessage('uns.instance')}
-          name="instances"
-          tooltip={{
-            title: formatMessage('uns.exportFileToolTip'),
-            zIndex: 10000,
-          }}
-        >
-          <SearchSelect
-            placeholder={formatMessage('uns.exportFileTip')}
-            mode="multiple"
-            disabled={all}
-            popupMatchSelectWidth={500}
-            apiParams={{ type: 2, normal: true }}
+        <Form.Item label={formatMessage('home.uns')} name="uns">
+          <ProTreeSelect
+            showSearch={false}
+            loadDataEnable
+            lazy={lazyTree}
+            listHeight={350}
+            maxTagCount="responsive"
+            showSwitcherIcon
+            treeCheckable
+            popupMatchSelectWidth={700}
+            fieldNames={{ label: 'pathName', value: 'id' }}
+            showCheckedStrategy={SHOW_PARENT}
+            api={(params, config) =>
+              lazyTree
+                ? getUnsLazyTree(
+                    {
+                      parentId: params?.key,
+                      keyword: params?.searchValue,
+                      pageSize: params!.pageSize!,
+                      pageNo: params!.pageNo!,
+                      searchType: 1,
+                    },
+                    {
+                      [CustomAxiosConfigEnum.BusinessResponse]: true,
+                      ...config,
+                    }
+                  ).then((info: any) => {
+                    return {
+                      ...info,
+                      data: info.data?.map((item: any) => ({
+                        ...item,
+                        isLeaf: !item.hasChildren,
+                        key: item.id,
+                      })),
+                    };
+                  })
+                : getTreeData({ key: params?.searchValue }).then((data: any) => {
+                    return {
+                      data,
+                    };
+                  })
+            }
+            treeNodeIcon={(dataNode: any, _treeExpandedKeys = []) => {
+              if (dataNode.type === 0) {
+                return _treeExpandedKeys.includes(dataNode.key!) ? (
+                  <FolderOpen style={{ flexShrink: 0, marginRight: '5px' }} />
+                ) : (
+                  <Folder style={{ flexShrink: 0, marginRight: '5px' }} />
+                );
+              } else if (dataNode.type === 2) {
+                return <Document style={{ flexShrink: 0, marginRight: '5px' }} />;
+              }
+              return null;
+            }}
           />
         </Form.Item>
       </Form>

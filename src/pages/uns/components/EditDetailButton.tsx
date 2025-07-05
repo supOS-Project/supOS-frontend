@@ -155,6 +155,9 @@ const EditDetailButton = ({ auth, type = 'file', modelInfo, getModel }: any) => 
         label: formatMessage('common.label'),
         name: 'labelList',
         noShowKey: modelInfo.dataType === 7 ? 'hidden' : 'folder',
+        properties: {
+          tagMaxLen: 63,
+        },
       },
       {
         type: 'divider',

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Key, useCallback, useEffect, useRef, useState } from 'react';
 interface UsePaginationParams {
   initPageSize?: number; // 每页大小，默认为10
   initPageSizes?: number[];
@@ -11,10 +11,11 @@ interface UsePaginationParams {
   onSuccessCallback?: (data: any) => void;
   autoRefresh?: boolean; // 是否自动刷新
   refreshInterval?: number; // 自动刷新间隔，单位毫秒
+  rowKey?: string;
 }
 
 const usePagination = <T>({
-  initPageSize = 10,
+  initPageSize = 20,
   initPage = 1,
   initPageSizes = [10, 20, 30, 50, 100],
   fetchApi,
@@ -23,7 +24,10 @@ const usePagination = <T>({
   onSuccessCallback,
   autoRefresh = false,
   refreshInterval = 5000, // 默认5秒
+  rowKey = 'id',
 }: UsePaginationParams) => {
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+  const [selectedRows, setSelectedRows] = useState<any[]>([]);
   const firstUpdate = useRef(firstNotGetData === true);
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,7 +54,7 @@ const usePagination = <T>({
     }
   }, []);
 
-  const getData = (needLoading = true) => {
+  const getData = (needLoading = true, { clearSelect }: { clearSelect?: boolean } = {}) => {
     clearTime();
     cancelRequest(); // 取消之前的请求
     abortControllerRef.current = new AbortController(); // 创建新的 AbortController
@@ -94,7 +98,13 @@ const usePagination = <T>({
         }
       })
       .finally(() => {
-        setLoading(false);
+        if (clearSelect) {
+          setSelectedRows([]);
+          setSelectedRowKeys([]);
+        }
+        if (needLoading) {
+          setLoading(false);
+        }
         if (autoRefresh) {
           refreshTimerRef.current = setTimeout(() => getData(false), refreshInterval);
         }
@@ -181,6 +191,14 @@ const usePagination = <T>({
     setData([]);
     totalRef.current = 0;
   };
+  const rowSelectionChange = (a: Key[], b?: any[]) => {
+    setSelectedRowKeys(a);
+    if (b) {
+      setSelectedRows(b);
+    } else {
+      setSelectedRows(a?.map((aa) => data?.find((f: any) => f[rowKey] === aa))?.filter((f) => f));
+    }
+  };
 
   return {
     setLoading,
@@ -202,6 +220,11 @@ const usePagination = <T>({
     setSearchParams,
     setPagination,
     clearData,
+    rowSelection: {
+      selectedRowKeys,
+      onChange: rowSelectionChange,
+    },
+    selectedRows,
   };
 };
 

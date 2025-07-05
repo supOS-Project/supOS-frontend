@@ -1,7 +1,7 @@
 {
   "name": "supos-community",
   "private": true,
-  "version": "1.0.8+public",
+  "version": "1.0.9+public",
   "type": "module",
   "scripts": {
     "intl": "node ./scripts/i18n.js",
@@ -87,6 +87,7 @@
     "react-sticky-box": "^2.0.5",
     "sass": "1.80.4",
     "shepherd.js": "^14.4.0",
+    "use-immer": "^0.11.0",
     "uuid": "^11.0.3",
     "vite-plugin-top-level-await": "^1.5.0",
     "zustand": "^5.0.5"

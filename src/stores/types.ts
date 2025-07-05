@@ -158,6 +158,7 @@ export interface SystemInfoProps {
   loginPath?: string;
   // title
   appTitle?: string;
+  lazyTree?: boolean;
   // 关于我们 高阶使用配置
   containerMap?: {
     [key: string]: ContainerItemProps;
@@ -169,4 +170,9 @@ export interface SystemInfoProps {
 
   qualityName?: string;
   timestampName?: string;
+  // 是否启用ladp用户体系
+  ldapEnable?: boolean;
+
+  // 主题插件配置信息
+  themeConfig?: any;
 }

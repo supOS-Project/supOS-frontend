@@ -11,9 +11,16 @@
       height: 100%;
     }
 
+    .ant-tabs-top > div > .ant-tabs-nav {
+      &::before {
+        border-bottom: none;
+      }
+
+      border-bottom: 1px solid var(--supos-home-border-color);
+    }
+
     .ant-tabs-nav-wrap {
       padding: 0 36px;
-      border-bottom: 1px solid var(--supos-home-border-color);
       background-color: var(--supos-home-bg-color);
     }
 

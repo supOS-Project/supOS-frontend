@@ -1,6 +1,5 @@
 import Cookies from 'js-cookie';
-import { storageOpt } from './storage.ts';
-import { SUPOS_USER_BUTTON_LIST } from '@/common-types/constans.ts';
+import { useBaseStore } from '@/stores/base';
 
 export const TokenKey = 'supos_community_token';
 
@@ -8,8 +7,8 @@ export function getToken() {
   return Cookies.get(TokenKey);
 }
 
-export function setToken(token: string) {
-  return Cookies.set(TokenKey, token, { expires: 1 });
+export function setToken(token: string, options?: any) {
+  return Cookies.set(TokenKey, token, options);
 }
 
 export function removeToken() {
@@ -29,7 +28,8 @@ export function removeCookie(key: any) {
 }
 
 export const hasPermission = (auth: string | string[]) => {
-  const perms = storageOpt.get(SUPOS_USER_BUTTON_LIST);
+  // const perms = storageOpt.get(SUPOS_USER_BUTTON_LIST);
+  const perms = useBaseStore.getState().buttonList;
   if (auth instanceof Array) {
     return auth?.some((item) => perms?.includes(item));
   } else {

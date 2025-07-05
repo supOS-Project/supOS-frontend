@@ -3,7 +3,7 @@ import { Breadcrumb } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { App, Button, Dropdown, Form, message, Space } from 'antd';
 import { copyFlow, deployFlow, saveFlow } from '@/apis/inter-api/flow';
-import { Pending } from '@carbon/icons-react';
+import { ChevronLeft, OverflowMenuVertical } from '@carbon/icons-react';
 import { useLocalStorage, useTranslate } from '@/hooks';
 import { useUpdateEffect } from 'ahooks';
 import { PageProps } from '@/common-types';
@@ -27,10 +27,6 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
   const navigate = useNavigate();
   const iframeUrl = `/nodered/home/?sup_flow_id=${state.id}&sup_origin_flow_id=${state.flowId}`;
   const breadcrumbList = [
-    {
-      name: 'source-flow',
-      path: '/collection-flow',
-    },
     {
       name: state.name,
     },
@@ -160,7 +156,7 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
 
   const formItemOptions = [
     {
-      label: formatMessage('common.copy') + ' Flow',
+      label: formatMessage('collectionFlow.copyFlow'),
     },
     {
       label: formatMessage('common.name'),
@@ -280,10 +276,18 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
     ?.filter((f) => {
       return !f.auth || hasPermission(f.auth);
     });
+  const handleBack = () => {
+    const fromPath = state.from;
+    if (fromPath) {
+      navigate(fromPath);
+    } else {
+      navigate(-1);
+    }
+  };
   return (
     <ComLayout loading={loading}>
       <ComContent
-        backPath={'/collection-flow'}
+        mustHasBack={false}
         style={{ overflow: 'hidden' }}
         hasPadding
         border={false}
@@ -295,28 +299,40 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
               justifyContent: 'space-between',
             }}
           >
-            <Breadcrumb
-              separator=">"
-              items={breadcrumbList?.map((item: any, idx: number) => {
-                if (idx + 1 === breadcrumbList?.length) {
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Button
+                variant="outlined"
+                color="default"
+                icon={<ChevronLeft size={16} />}
+                style={{ paddingLeft: '5.5px', gap: '3px' }}
+                onClick={handleBack}
+              >
+                {formatMessage('common.back')}
+              </Button>
+              <Breadcrumb
+                separator=">"
+                items={breadcrumbList?.map((item: any, idx: number) => {
+                  if (idx + 1 === breadcrumbList?.length) {
+                    return {
+                      title: item.name,
+                    };
+                  }
                   return {
-                    title: item.name,
+                    title: <ComText>{item.name}</ComText>,
+                    onClick: () => {
+                      if (!item.path) return;
+                      navigate(item.path);
+                    },
                   };
-                }
-                return {
-                  title: <ComText>{item.name}</ComText>,
-                  onClick: () => {
-                    if (!item.path) return;
-                    navigate(item.path);
-                  },
-                };
-              })}
-            />
+                })}
+              />
+            </div>
             <Space>
               <AuthButton
                 auth={ButtonPermission['collectionFlow.copy']}
                 loading={loading}
-                type="primary"
+                color="primary"
+                variant="outlined"
                 onClick={onCopyFlows}
               >
                 {formatMessage('common.copy')}
@@ -339,7 +355,6 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
                 {formatMessage('appGui.deploy')}
               </AuthButton>
               <Dropdown
-                className="flow-dropdown"
                 menu={{
                   onClick: (e) => {
                     onOpenMenuHandle(e.key);
@@ -348,9 +363,9 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
                 }}
                 placement="bottomRight"
               >
-                <Button>
-                  <Pending />
-                </Button>
+                <div className="flow-dropdown-more">
+                  <OverflowMenuVertical />
+                </div>
               </Dropdown>
             </Space>
           </div>

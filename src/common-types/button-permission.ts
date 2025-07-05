@@ -3,6 +3,8 @@
 */
 
 export const ButtonPermission = {
+  'home.import': 'button:home.import',
+  'home.export': 'button:home.export',
   'uns.templateDelete': 'button:uns.templateDelete',
   'uns.templateCopy': 'button:uns.templateCopy',
   'uns.templateAdd': 'button:uns.templateAdd',
@@ -119,6 +121,7 @@ export const ButtonPermission = {
   'notificationManagement.delete': 'button:notificationManagement.delete',
   'pluginManagement.install': 'button:pluginManagement.install',
   'pluginManagement.unInstall': 'button:pluginManagement.unInstall',
+  'pluginManagement.update': 'button:pluginManagement.update',
 };
 
 export const buttonLocal: { [key: string]: any } = {
@@ -147,6 +150,7 @@ export const buttonLocal: { [key: string]: any } = {
   pause: { 'zh-CN': '暂停', 'en-US': 'Pause' },
   start: { 'zh-CN': '启动', 'en-US': 'Start' },
   upload: { 'zh-CN': '上传', 'en-US': 'Upload' },
+  update: { 'zh-CN': '升级', 'en-US': 'Update' },
   notificationSetting: { 'zh-CN': '通知方式设置', 'en-US': 'Start' },
 
   // 文件操作
@@ -200,6 +204,7 @@ export const buttonLocal: { [key: string]: any } = {
 
 export const getLatestCode = (path: string) => {
   const pathMap = new Map([
+    ['/home', 'home'],
     ['/uns', 'uns'],
     ['/app-display', 'appDisplay'],
     ['/collection-flow', 'collectionFlow'],

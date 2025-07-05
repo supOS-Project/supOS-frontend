@@ -6,6 +6,7 @@ import SearchSelect from '@/pages/uns/components/use-create-modal/components/Sea
 import FieldsFormList from '@/pages/uns/components/use-create-modal/components/FieldsFormList';
 import ModelFieldsForm from '@/pages/uns/components/use-create-modal/components/file/ModelFieldsForm';
 import ReverseGeneration from '@/pages/uns/components/use-create-modal/components/file/ReverseGeneration';
+import TopicToUnsFieldsList from '@/pages/uns/components/use-create-modal/components/file/TopicToUnsFieldsList';
 import FrequencyForm from '@/pages/uns/components/use-create-modal/components/file/FrequencyForm';
 import CalculationForm from '@/pages/uns/components/use-create-modal/components/file/timeSeries/CalculationForm';
 import AggForm from '@/pages/uns/components/use-create-modal/components/file/timeSeries/AggForm';
@@ -96,6 +97,8 @@ const FormItems: FC<FormItemsProps> = ({ formData }) => {
             return <ModelFieldsForm {...childProps} key={key} />;
           case 'reverseGeneration':
             return <ReverseGeneration {...childProps} key={key} />;
+          case 'topicToUnsFieldsList':
+            return <TopicToUnsFieldsList {...childProps} key={key} />;
           case 'calculationForm':
             return <CalculationForm key={key} />;
           case 'aggForm':

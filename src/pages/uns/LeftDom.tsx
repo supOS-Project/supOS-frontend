@@ -94,13 +94,13 @@ const LeftDom: FC<{
       }
     };
     updatePanelSize();
-    const resizeObserver = new ResizeObserver(updatePanelSize);
-    if (splitterWrapRef.current) {
-      resizeObserver.observe(splitterWrapRef.current);
-    }
-    return () => {
-      resizeObserver.disconnect();
-    };
+    // const resizeObserver = new ResizeObserver(updatePanelSize);
+    // if (splitterWrapRef.current) {
+    //   resizeObserver.observe(splitterWrapRef.current);
+    // }
+    // return () => {
+    //   resizeObserver.disconnect();
+    // };
   }, []);
 
   useEffect(() => {

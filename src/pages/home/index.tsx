@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, message, Modal, Tabs, TabsProps, Typography } from 'antd';
+import { Button, message, Modal, Space, Tabs, TabsProps, Typography } from 'antd';
 import OverviewList from '@/pages/home/components/OverviewList.tsx';
 import { RoutesProps } from '@/stores/types';
 import styles from './index.module.scss';
@@ -8,12 +8,19 @@ import { useGuideSteps, useTranslate } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 import { guideSteps } from './guide-steps';
 import { queryExamples, installExample, unInstallExample } from '@/apis/inter-api/example';
-import { Code, Pin, TemperatureWater } from '@carbon/icons-react';
+import { Code, Download, Export, Pin, TemperatureWater } from '@carbon/icons-react';
 import { useActivate } from '@/contexts/tabs-lifecycle-context.ts';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
 import { fetchBaseStore, useBaseStore } from '@/stores/base';
 import { useThemeStore } from '@/stores/theme-store.ts';
+import { ButtonPermission } from '@/common-types/button-permission';
+import { AuthButton } from '@/components';
+import ImportModal from './components/import-modal';
+import ExportModal from './components/export-modal';
+import { getGlobalExportRecords } from '@/apis/inter-api/global.ts';
+import ComClickTrigger from '@/components/com-click-trigger';
+import { useErrorStore } from '@/stores/error-store.ts';
 
 const { Title, Paragraph } = Typography;
 
@@ -45,9 +52,13 @@ const Index = () => {
   const [pathname, setPathname] = useState('');
   const [exampleDataSource, setExampleDataSource] = useState<RoutesProps[]>([]);
   const [loadingViews, setLoadingViews] = useState<string[]>([]);
+  const [importModal, setImportModal] = useState(false);
+  const exportRef = useRef<any>(null);
+  const [exportRecords, setExportRecords] = useState([]);
 
   useEffect(() => {
     fetchBaseStore?.();
+    getRecords?.();
   }, []);
   const primaryColor = useThemeStore((state) => state.primaryColor);
 
@@ -60,11 +71,14 @@ const Index = () => {
       navigate(pathname);
     }
   }, [pathname]);
+
+  // 注意：对某个页面添加steps时，请务必在 stores -> base -> index.tsx -> GuidePagePaths 中添加该页面路由
   useGuideSteps(guideSteps(handleNavigate, { appTitle: systemInfo.appTitle }, primaryColor));
 
   useActivate(() => {
     // 每次进home页刷新下，保持页面完整
     fetchBaseStore?.();
+    getRecords?.();
   });
 
   // 获取example列表
@@ -192,6 +206,13 @@ const Index = () => {
       </Button>
     );
   };
+
+  const getRecords = () => {
+    return getGlobalExportRecords().then((data) => {
+      setExportRecords(data);
+    });
+  };
+
   return (
     <ComLayout>
       <ComContent title={<div></div>} hasBack={false} mustShowTitle={false}>
@@ -207,6 +228,51 @@ const Index = () => {
             renderTabBar={renderTabBar}
             defaultActiveKey="overview"
             onChange={handleChangeTab}
+            tabBarExtraContent={
+              <Space
+                style={{
+                  marginRight: 36,
+                  background: 'var(--supos-bg-color)',
+                }}
+              >
+                <ComClickTrigger
+                  triggerCount={2}
+                  style={{ width: 50, height: 40 }}
+                  onTrigger={() => {
+                    console.warn(useBaseStore.getState());
+                    console.warn(useErrorStore.getState());
+                  }}
+                />
+                <AuthButton auth={ButtonPermission['home.import']} type="primary" onClick={() => setImportModal(true)}>
+                  <Export />
+                  {formatMessage('common.import')}
+                </AuthButton>
+                <AuthButton
+                  auth={ButtonPermission['home.export']}
+                  color="default"
+                  variant="filled"
+                  style={{ background: '#c6c6c6', color: '#161616' }}
+                  onClick={() => {
+                    exportRef.current?.setOpen(true);
+                  }}
+                >
+                  <Space>
+                    {exportRecords?.some((s: any) => !s.confirm) && (
+                      <div
+                        style={{
+                          width: 3,
+                          height: 3,
+                          background: '#FF832B',
+                          borderRadius: '50%',
+                        }}
+                      ></div>
+                    )}
+                    <Download />
+                    {formatMessage('common.export')}
+                  </Space>
+                </AuthButton>
+              </Space>
+            }
             items={[
               {
                 label: formatMessage('common.overview'),
@@ -228,6 +294,8 @@ const Index = () => {
             ]}
           />
         </div>
+        <ImportModal importModal={importModal} setImportModal={setImportModal} />
+        <ExportModal setButtonExportRecords={setExportRecords} exportRef={exportRef} />
       </ComContent>
     </ComLayout>
   );

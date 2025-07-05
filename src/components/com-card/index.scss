@@ -5,6 +5,16 @@
   color: var(--supos-table-first-color);
 
   .card-title {
+    .ant-checkbox-label {
+      font-size: 20px;
+      font-style: normal;
+      font-weight: 500;
+      line-height: 20px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     font-size: 20px;
     font-style: normal;
     font-weight: 500;
@@ -12,7 +22,14 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 100%;
+  }
+
+  .card-time {
+    opacity: 0.6;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.16px;
   }
 
   .card-secondary-title {

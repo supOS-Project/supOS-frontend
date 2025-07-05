@@ -1,17 +1,12 @@
 import { FC, useState } from 'react';
-import { App, Form, Pagination } from 'antd';
-// import dashboardGrey from '@/assets/dashboard/dashboard-gray.svg';
-// import dashboardBlue from '@/assets/dashboard/dashboard-blue.svg';
-// import dashboardGreen from '@/assets/dashboard/dashboard-green.svg';
-// import dashboardDark from '@/assets/dashboard/dashboard-dark.svg';
+import { App, Button, Form } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardList, addDashboard, editDashboard, deleteDashboard } from '@/apis/inter-api/uns';
 import { usePagination, useTranslate } from '@/hooks';
 import { useActivate } from '@/contexts/tabs-lifecycle-context';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
 import { PageProps } from '@/common-types.ts';
-import { Dashboard, Search } from '@carbon/icons-react';
-import ComCardListVertical from '@/components/com-card-list-vertical';
+import { Edit, Search, TrashCan, View } from '@carbon/icons-react';
 import ComDrawer from '@/components/com-drawer';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
@@ -20,15 +15,15 @@ import OperationForm from '@/components/operation-form';
 import { validInputPattern } from '@/utils/pattern';
 import { getSearchParamsString } from '@/utils/url-util';
 import { useBaseStore } from '@/stores/base';
-import { AuthButton } from '@/components/auth';
-import { DeleteOutlined } from '@ant-design/icons';
-// import { useThemeStore } from '@/stores/theme-store.ts';
+import { AuthButton, AuthWrapper } from '@/components/auth';
+import { ComTableList } from '@/components';
+import OperationButtons from '@/components/operation-buttons';
+import './index.scss';
 
 const CollectionFlow: FC<PageProps> = ({ title }) => {
   const { modal } = App.useApp();
   const formatMessage = useTranslate();
   const dashboardType = useBaseStore((state) => state.dashboardType);
-  // const theme = useThemeStore((state) => state.theme);
 
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -142,10 +137,8 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
         mustHasBack={false}
         title={title}
         style={{
+          padding: '30px',
           overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
         }}
         extra={
           <>
@@ -175,13 +168,100 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           </>
         }
       >
-        <ComCardListVertical
-          style={{ flex: 1 }}
-          // addAuth={ButtonPermission['dashboards.add']}
-          // onAddHandle={onAddHandle}
-          editAuth={ButtonPermission['dashboards.edit']}
-          onEditHandle={onEditHandle}
-          list={(data || []).map((e: any) => {
+        <ComTableList
+          className="dashboard-table-list"
+          columns={[
+            {
+              title: formatMessage('common.name'),
+              dataIndex: 'name',
+              width: '30%',
+              render: (text, item) => (
+                <>
+                  <AuthWrapper auth={ButtonPermission['dashboards.design']}>
+                    <Button
+                      type="link"
+                      onClick={() => {
+                        setClickItem(item);
+                        navigate(
+                          `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'design', name: item.name })}`
+                        );
+                      }}
+                      title={text}
+                    >
+                      {text}
+                    </Button>
+                  </AuthWrapper>
+                </>
+              ),
+            },
+            {
+              title: formatMessage('dashboards.dashboardsTemplate'),
+              dataIndex: 'typeName',
+              width: '25%',
+            },
+            {
+              title: formatMessage('common.description'),
+              dataIndex: 'description',
+              width: '30%',
+              ellipsis: true,
+            },
+            {
+              title: '',
+              dataIndex: 'operation',
+              width: '10%',
+              align: 'right',
+              fixed: 'right',
+              render: (_, record) => (
+                <OperationButtons
+                  className="list-operation"
+                  options={[
+                    {
+                      label: '',
+                      onClick: (item: any) => {
+                        setClickItem(item);
+                        navigate(
+                          `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'preview', name: item.name })}`
+                        );
+                      },
+                      type: 'link',
+                      btnProps: {
+                        title: formatMessage('dashboards.preview'),
+                        icon: <View />,
+                      },
+                      auth: ButtonPermission['dashboards.preview'],
+                    },
+                    {
+                      label: '',
+                      onClick: onEditHandle,
+                      type: 'link',
+                      btnProps: {
+                        title: formatMessage('common.edit'),
+                        icon: <Edit />,
+                      },
+                      auth: ButtonPermission['dashboards.edit'],
+                    },
+                    {
+                      label: '',
+                      onClick: (item) =>
+                        modal.confirm({
+                          title: formatMessage('common.deleteConfirm'),
+                          onOk: () => onDeleteHandle(item),
+                          okText: formatMessage('common.confirm'),
+                        }),
+                      type: 'link',
+                      btnProps: {
+                        title: formatMessage('common.delete'),
+                        icon: <TrashCan />,
+                      },
+                      auth: ButtonPermission['dashboards.delete'],
+                    },
+                  ]}
+                  record={record}
+                />
+              ),
+            },
+          ]}
+          dataSource={(data || []).map((e: any) => {
             return {
               ...e,
               typeName: e.type
@@ -189,70 +269,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                 : typeOptions.find((o) => o.value === 1)?.label,
             };
           })}
-          cardIcon={<Dashboard size="40" />}
-          // imgSrc={theme.includes('dark') ? dashboardDark : dashboardGrey}
-          // hoverImgSrc={
-          //   theme.includes('dark') ? dashboardDark : theme.includes('chartreuse') ? dashboardGreen : dashboardBlue
-          // }
-          viewOptions={[
-            {
-              label: formatMessage('dashboards.dashboardsTemplate'),
-              valueKey: 'typeName',
-            },
-            {
-              label: formatMessage('uns.description'),
-              valueKey: 'description',
-            },
-          ]}
-          operationOptions={[
-            {
-              label: formatMessage('dashboards.preview'),
-              onClick: (item: any) => {
-                setClickItem(item);
-                navigate(
-                  `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'preview', name: item.name })}`
-                );
-              },
-              type: 'outlined',
-              auth: ButtonPermission['dashboards.preview'],
-            },
-            {
-              label: formatMessage('common.design'),
-              onClick: (item: any) => {
-                setClickItem(item);
-                navigate(
-                  `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'design', name: item.name })}`
-                );
-              },
-              type: 'primary',
-              auth: ButtonPermission['dashboards.design'],
-            },
-            {
-              label: formatMessage('common.delete'),
-              onClick: (item) =>
-                modal.confirm({
-                  title: formatMessage('common.deleteConfirm'),
-                  onOk: () => onDeleteHandle(item),
-                  okText: formatMessage('common.confirm'),
-                }),
-              type: 'dark',
-              btnProps: {
-                icon: <DeleteOutlined />,
-              },
-              auth: ButtonPermission['dashboards.delete'],
-            },
-          ]}
-        />
-        <Pagination
-          size="small"
-          className="custom-pagination"
-          align="center"
-          style={{ margin: '20px 0' }}
-          pageSize={pagination?.pageSize || 20}
-          current={pagination?.page}
-          showSizeChanger={false}
-          total={pagination?.total}
-          onChange={pagination.onChange}
+          pagination={pagination}
         />
         {/*  <SvgIcon name="up-dark" /> */}
       </ComContent>

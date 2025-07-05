@@ -13,22 +13,35 @@ import { storageOpt } from '@/utils/storage';
 import { passwordRegex, phoneRegex, validSpecialCharacter } from '@/utils/pattern';
 import { fetchBaseStore, updateForUserInfo, useBaseStore } from '@/stores/base';
 import { PrimaryColorType, setPrimaryColor, setTheme, ThemeType, useThemeStore } from '@/stores/theme-store.ts';
+import Cookies from 'js-cookie';
+import { logoutApi } from '@/apis/inter-api';
 // import { initI18n, useI18nStore } from '@/stores/i18n-store.ts';
 // import { getPluginListApi } from '@/apis/inter-api/plugin.ts';
 // import { preloadPluginLang } from '@/utils';
 
 const logout = (path?: string) => {
-  removeToken();
-  location.href = path || LOGIN_URL;
-  // 退出时删除guide routes信息
-  storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
-  // 退出时重置tips信息
-  storageOpt.remove(SUPOS_USER_TIPS_ENABLE);
-  storageOpt.remove('personInfo');
+  logoutApi().then(() => {
+    removeToken();
+    Cookies.remove('omc_model', { path: '/' });
+    // 退出时删除guide routes信息
+    storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
+    // 退出时重置tips信息
+    storageOpt.remove(SUPOS_USER_TIPS_ENABLE);
+    // 清空
+    storageOpt.remove('personInfo');
+    location.href = path || LOGIN_URL;
+  });
 };
 
 const ComList: FC<{
-  list: { icon?: ReactNode; label?: ReactNode; children?: ReactNode; key: string; onClick?: () => void }[];
+  list: {
+    icon?: ReactNode;
+    label?: ReactNode;
+    children?: ReactNode;
+    key: string;
+    onClick?: () => void;
+    disabled?: boolean;
+  }[];
 }> = ({ list }) => {
   return (
     <>
@@ -38,8 +51,13 @@ const ComList: FC<{
             key={item.key}
             justify="space-between"
             align="center"
-            style={{ width: '100%', padding: '6px 8px', cursor: 'pointer' }}
-            onClick={item?.onClick}
+            style={{
+              width: '100%',
+              padding: '6px 8px',
+              cursor: item?.disabled ? 'not-allowed' : 'pointer',
+              opacity: item?.disabled ? 0.5 : undefined,
+            }}
+            onClick={!item?.disabled ? item?.onClick : undefined}
           >
             <Flex justify="flex-start" align="center" gap={8} style={{ flex: 1 }}>
               {item.icon}
@@ -254,6 +272,7 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
               form1.setFieldValue('phone', currentUserInfo?.phone);
               form1.setFieldValue('email', currentUserInfo?.email);
             },
+            disabled: systemInfo?.ldapEnable,
           },
           {
             icon: <Logout color="var(--supos-text-color)" size={18} />,

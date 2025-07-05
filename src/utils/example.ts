@@ -2,7 +2,7 @@ export const getExampleForJavaType = (type: string, name: string) => {
   switch (type) {
     case 'string':
       return name;
-    case 'int':
+    case 'integer':
     case 'long':
     case 'float':
     case 'double':

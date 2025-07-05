@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Close } from '@carbon/icons-react';
 import { Form, Drawer, Tooltip, Button } from 'antd';
 import { getInstanceInfo, getModelInfo, searchTreeData, getTemplateDetail } from '@/apis/inter-api/uns';
+import { parserTopicPayload } from '@/apis/inter-api/external';
 import { useTranslate } from '@/hooks';
 import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
@@ -46,7 +47,7 @@ const useOptionModal = ({
   const [uuid, setUuid] = useState('');
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
-  const [addModalType, setAddModalType] = useState<string>(''); //addFolder,addFile
+  const [addModalType, setAddModalType] = useState<string>(''); //addFolder,addFile,topicToFile
   const [sourcePath, setSourcePath] = useState<string>(''); //父文件路径
   const [sourceId, setSourceId] = useState<string>(''); //父文件id
 
@@ -239,6 +240,22 @@ const useOptionModal = ({
       } else {
         setAddModalType(type || '');
         const _id = nodeType === 0 ? id : nodeType === 2 ? parentId : '';
+        if (type === 'topicToFile') {
+          const res = await parserTopicPayload({ topic: path });
+          res?.forEach?.((e: any) => {
+            e.dataPath = e.dataPath || 'default';
+          });
+          form.setFieldsValue({
+            path,
+            topicName: path.split('/').pop(),
+            topic: folderPath,
+            fields: res?.[0]?.fields || [{}],
+            modelId: undefined,
+            jsonList: res,
+            jsonDataPath: res?.[0]?.dataPath,
+          });
+          return;
+        }
         if (_id) {
           const detail: any = await getModelInfo({ id: _id });
           const { fields }: { fields: FieldItem[]; modelId?: string } = detail || {};
@@ -309,6 +326,7 @@ const useOptionModal = ({
     addFile: formatMessage('uns.newFile'),
     pasteFolder: formatMessage('uns.pasteFolder'),
     pasteFile: formatMessage('uns.pasteFile'),
+    topicToFile: formatMessage('uns.topicToFile'),
   };
 
   const Dom = (
@@ -344,10 +362,10 @@ const useOptionModal = ({
         >
           <FormContent
             step={step}
-            isCreateFolder={isCreateFolder}
             addNamespaceForAi={addNamespaceForAi}
             setAddNamespaceForAi={setAddNamespaceForAi}
             open={open}
+            addModalType={addModalType}
           />
           <FormStep
             step={step}
@@ -363,6 +381,7 @@ const useOptionModal = ({
             changeCurrentPath={changeCurrentPath}
             setTreeMap={setTreeMap}
             sourceId={sourceId}
+            addModalType={addModalType}
           />
         </Form>
       </div>
