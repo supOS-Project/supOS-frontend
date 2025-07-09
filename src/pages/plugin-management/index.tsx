@@ -302,6 +302,22 @@ const LoadingCard = ({ d, refreshRequest, openModal }: any) => {
   );
 };
 
+const IconImageWrapper = ({ record }: any) => {
+  const primaryColor = useThemeStore((state) => state.primaryColor);
+
+  return (
+    <>
+      <IconImage
+        theme={primaryColor}
+        width={20}
+        height={20}
+        wrapperStyle={{ marginRight: 8 }}
+        iconName={record?.plugInfoYml?.route?.homeIconUrl ?? record?.plugInfoYml?.route?.icon}
+      />
+      {record?.plugInfoYml?.showName}
+    </>
+  );
+};
 const Index: FC<PageProps> = ({ title }) => {
   const onSuccessCallback = (data: any[]) => {
     setPluginList(data);
@@ -323,7 +339,6 @@ const Index: FC<PageProps> = ({ title }) => {
   useActivate(() => {
     getPluginListApi();
   });
-  const primaryColor = useThemeStore((state) => state.primaryColor);
 
   const columns: any = [
     {
@@ -333,18 +348,7 @@ const Index: FC<PageProps> = ({ title }) => {
       title: commonFormatMessage('common.pluginName'),
       width: '20%',
       render: (_: string, record: any) => {
-        return (
-          <>
-            <IconImage
-              theme={primaryColor}
-              width={20}
-              height={20}
-              wrapperStyle={{ marginRight: 8 }}
-              iconName={record?.plugInfoYml?.route?.homeIconUrl ?? record?.plugInfoYml?.route?.icon}
-            />
-            {record?.plugInfoYml?.showName}
-          </>
-        );
+        return <IconImageWrapper record={record} />;
       },
     },
     {

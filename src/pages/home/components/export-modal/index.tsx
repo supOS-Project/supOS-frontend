@@ -1,5 +1,5 @@
 import { FC, useState, useImperativeHandle, useMemo, useEffect } from 'react';
-import { Button, Form, App, Dropdown, Input, TreeSelect, Divider, ConfigProvider, Space } from 'antd';
+import { Button, Form, App, Dropdown, Input, TreeSelect, Divider, ConfigProvider, Space, Badge } from 'antd';
 import { getDashboardList, getTreeData, getUnsLazyTree } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 
@@ -300,10 +300,12 @@ const Module: FC<ExportModalProps> = (props) => {
   }, [open]);
 
   useEffect(() => {
-    getRecords().then((data: any) => {
-      setExportRecords(data);
-    });
-  }, []);
+    if (open) {
+      getRecords().then((data: any) => {
+        setExportRecords(data);
+      });
+    }
+  }, [open]);
   return (
     <ProModal
       className="exportModalWrap"
@@ -388,22 +390,14 @@ const Module: FC<ExportModalProps> = (props) => {
                     ],
             }}
           >
-            <Button color="default" variant="filled" iconPosition="end" style={{ padding: '4px 10px' }}>
-              <Space>
-                {exportRecords?.some((s: any) => !s.confirm) && (
-                  <div
-                    style={{
-                      width: 3,
-                      height: 3,
-                      background: '#FF832B',
-                      borderRadius: '50%',
-                    }}
-                  ></div>
-                )}
-                {formatMessage('common.exported')}
-                <DownOutlined />
-              </Space>
-            </Button>
+            <Badge dot={exportRecords?.some((s: any) => !s.confirm)}>
+              <Button color="default" variant="filled" iconPosition="end" style={{ padding: '4px 10px' }}>
+                <Space>
+                  {formatMessage('common.exported')}
+                  <DownOutlined />
+                </Space>
+              </Button>
+            </Badge>
           </Dropdown>
         </div>
       }

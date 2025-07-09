@@ -272,7 +272,8 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
               form1.setFieldValue('phone', currentUserInfo?.phone);
               form1.setFieldValue('email', currentUserInfo?.email);
             },
-            disabled: systemInfo?.ldapEnable,
+            // 免登环境未登录的用户禁用设置
+            disabled: systemInfo?.ldapEnable || currentUserInfo?.sub === 'guest',
           },
           {
             icon: <Logout color="var(--supos-text-color)" size={18} />,

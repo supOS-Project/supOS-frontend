@@ -16,10 +16,16 @@ const { ChatAnthropic } = require('@langchain/anthropic');
 // const { ChatAlibabaTongyi } = require('@langchain/community/chat_models/alibaba_tongyi');
 // const agentProxy = new HttpsProxyAgent('http://127.0.0.1:7897');
 
+const axios = require('axios');
+
+
+
 const app = express();
 
 // coplilotkit端口号
 const COPILOTKIT_SERVER_PORT = process.env.COPILOTKIT_SERVER_PORT || 4000;
+const DOCKER_HOST = process.env.DOCKER_HOST || 'host.docker.internal'
+const DOCKER_PORT = process.env.DOCKER_PORT || 2375
 
 // 目前支持ollama、openai、anthropic、tongyi
 const LLM_TYPE = process.env.LLM_TYPE || 'openai';
@@ -115,6 +121,50 @@ const llmType = {
   tongyi: serviceAdapterByTongyi,
   anthropic: serviceAdapterByAnthropic,
 };
+
+app.get('/open-api/supos/health', (req, res) => {
+  const dockerAPI = axios.create({
+    baseURL: 'http://' + DOCKER_HOST + ':' + DOCKER_PORT + '/containers'
+  });
+
+  // 获取所有容器
+  dockerAPI.get('/json?all=true&filters=%7B%22network%22%3A%5B%22supos_default_network%22%5D%7D')
+    .then(r => {
+      let total = [];
+      let running = [];
+      let stopped = [];
+      let platformStatus = "running";
+      for (let k in r.data) {
+        let containerName = r.data[k].Names[0].substring(1);
+        total.push(containerName);
+        if ("running" === r.data[k].State) {
+          running.push(containerName);
+        } else {
+          stopped.push(containerName);
+          if (containerName === "backend") {
+            platformStatus = "stop";
+          }
+        }
+      }
+      let data = {
+        status: platformStatus,
+        overview: {
+          total: total.length,
+          running: running.length,
+          stop: stopped.length
+        },
+        container: {
+          running: running,
+          stop: stopped
+        }
+      }
+      res.status(200).json({data: data})
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({msg: "docker网络异常"})
+    });
+});
 
 app.use('/copilotkit', (req, res, next) => {
   const runtime = new CopilotRuntime({

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, message, Modal, Space, Tabs, TabsProps, Typography } from 'antd';
+import { Badge, Button, Flex, message, Modal, Space, Tabs, TabsProps, Typography } from 'antd';
 import OverviewList from '@/pages/home/components/OverviewList.tsx';
 import { RoutesProps } from '@/stores/types';
 import styles from './index.module.scss';
@@ -15,7 +15,7 @@ import ComContent from '@/components/com-layout/ComContent';
 import { fetchBaseStore, useBaseStore } from '@/stores/base';
 import { useThemeStore } from '@/stores/theme-store.ts';
 import { ButtonPermission } from '@/common-types/button-permission';
-import { AuthButton } from '@/components';
+import { AuthButton, AuthWrapper } from '@/components';
 import ImportModal from './components/import-modal';
 import ExportModal from './components/export-modal';
 import { getGlobalExportRecords } from '@/apis/inter-api/global.ts';
@@ -244,33 +244,28 @@ const Index = () => {
                   }}
                 />
                 <AuthButton auth={ButtonPermission['home.import']} type="primary" onClick={() => setImportModal(true)}>
-                  <Export />
-                  {formatMessage('common.import')}
-                </AuthButton>
-                <AuthButton
-                  auth={ButtonPermission['home.export']}
-                  color="default"
-                  variant="filled"
-                  style={{ background: '#c6c6c6', color: '#161616' }}
-                  onClick={() => {
-                    exportRef.current?.setOpen(true);
-                  }}
-                >
-                  <Space>
-                    {exportRecords?.some((s: any) => !s.confirm) && (
-                      <div
-                        style={{
-                          width: 3,
-                          height: 3,
-                          background: '#FF832B',
-                          borderRadius: '50%',
-                        }}
-                      ></div>
-                    )}
+                  <Flex gap={8}>
                     <Download />
-                    {formatMessage('common.export')}
-                  </Space>
+                    {formatMessage('common.import')}
+                  </Flex>
                 </AuthButton>
+                <AuthWrapper auth={ButtonPermission['home.export']}>
+                  <Badge dot={exportRecords?.some((s: any) => !s.confirm)}>
+                    <Button
+                      color="default"
+                      variant="filled"
+                      style={{ background: '#c6c6c6', color: '#161616' }}
+                      onClick={() => {
+                        exportRef.current?.setOpen(true);
+                      }}
+                    >
+                      <Flex gap={8}>
+                        <Export />
+                        {formatMessage('common.export')}
+                      </Flex>
+                    </Button>
+                  </Badge>
+                </AuthWrapper>
               </Space>
             }
             items={[

@@ -41,7 +41,6 @@ export type TThemeStore = {
 
 // 设置跟节点类名
 const setThemeRoot = (theme: string, primaryColor: string) => {
-  console.log(theme, primaryColor);
   const root = document.documentElement;
   switch (`${theme}-${primaryColor}`) {
     case 'dark-blue':
