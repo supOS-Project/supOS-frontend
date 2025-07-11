@@ -8,7 +8,7 @@ import 'shepherd.js/dist/css/shepherd.css';
 import './App.css';
 import { userLogin } from '@/apis/chat2db';
 import { UnsTreeMapProvider } from '@/UnsTreeMapContext';
-import { MENU_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans.ts';
+import { MENU_TARGET_PATH, OMC_MODEL, STORAGE_PATH } from '@/common-types/constans.ts';
 import LanguageProvider from './LanguageProvider.tsx';
 import { queryChat2dbCurUser } from '@/utils/chat2db.ts';
 import { checkImageExists, getBaseUrl, isInIframe } from '@/utils/url-util.ts';
@@ -33,11 +33,11 @@ function App() {
   useEffect(() => {
     const isOmc = isInIframe([], 'webview');
     if (isOmc) {
-      Cookies.set('omc_model', '1', {
+      Cookies.set(OMC_MODEL, '1', {
         expires: 365,
       });
     } else {
-      Cookies.remove('omc_model', { path: '/' });
+      Cookies.remove(OMC_MODEL, { path: '/' });
     }
     // 初始化
     fetchBaseStore(true);

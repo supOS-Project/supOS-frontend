@@ -1,18 +1,17 @@
 import Cookies from 'js-cookie';
 import { useBaseStore } from '@/stores/base';
-
-export const TokenKey = 'supos_community_token';
+import { SUPOS_COMMUNITY_TOKEN } from '@/common-types/constans.ts';
 
 export function getToken() {
-  return Cookies.get(TokenKey);
+  return Cookies.get(SUPOS_COMMUNITY_TOKEN);
 }
 
 export function setToken(token: string, options?: any) {
-  return Cookies.set(TokenKey, token, options);
+  return Cookies.set(SUPOS_COMMUNITY_TOKEN, token, options);
 }
 
 export function removeToken() {
-  return Cookies.remove(TokenKey, { path: '/' });
+  return Cookies.remove(SUPOS_COMMUNITY_TOKEN, { path: '/' });
 }
 
 export function getCookie(key: any) {

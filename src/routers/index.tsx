@@ -20,7 +20,7 @@ import AboutUs from '@/pages/aboutus';
 import AdvancedUse from '@/pages/advanced-use';
 import DevPage from '@/pages/dev-page';
 import NoPermission from '@/pages/not-found-Page/NoPermission';
-import { LOGIN_URL } from '@/common-types/constans';
+import { LOGIN_URL, OMC_MODEL } from '@/common-types/constans';
 import Share from '@/pages/share';
 import EventFlow from '@/pages/event-flow';
 import EventFlowPreview from '@/pages/event-flow/FlowPreview.tsx';
@@ -33,6 +33,7 @@ import { setToken } from '@/utils';
 import DynamicMFComponent from '../components/dynamic-mf-component';
 import DynamicIframe from '@/pages/dynamic-iframe';
 import { RoutesProps, SystemInfoProps, UserInfoProps } from '@/stores/types.ts';
+import Cookies from 'js-cookie';
 
 // 根路径重定向到外部login页
 
@@ -46,7 +47,13 @@ const RootRedirect = () => {
     if (params?.isLogin) {
       window.location.href = currentUserInfo?.homePage || '/home';
     } else {
-      window.location.href = systemInfo?.loginPath || LOGIN_URL;
+      if (Cookies.get(OMC_MODEL)) {
+        console.warn('omc——cookie失效');
+        window.location.href = '/403';
+      } else {
+        console.log('登录cookie不存在，要跳转到登录页');
+        window.location.href = systemInfo?.loginPath || LOGIN_URL;
+      }
     }
   }, [params?.isLogin]);
   return null;
@@ -57,7 +64,7 @@ const FreeLoginLoader = () => {
   useEffect(() => {
     if (params?.token) {
       setToken(params.token as string, {
-        expires: 0.25,
+        expires: 365,
       });
       window.location.href = '/?isLogin=true';
     } else {

@@ -5,7 +5,7 @@ import { useTranslate } from '@/hooks';
 import ComSelect from '../com-select';
 import ProModal from '../pro-modal';
 import { setHomePageApi, updateUser, userResetPwd } from '@/apis/inter-api/user-manage';
-import { LOGIN_URL } from '@/common-types/constans';
+import { LOGIN_URL, OMC_MODEL } from '@/common-types/constans';
 import { SUPOS_USER_GUIDE_ROUTES, SUPOS_USER_TIPS_ENABLE } from '@/common-types/constans';
 import { RoutesProps } from '@/stores/types.ts';
 import { removeToken } from '@/utils/auth';
@@ -22,7 +22,7 @@ import { logoutApi } from '@/apis/inter-api';
 const logout = (path?: string) => {
   logoutApi().then(() => {
     removeToken();
-    Cookies.remove('omc_model', { path: '/' });
+    Cookies.remove(OMC_MODEL, { path: '/' });
     // 退出时删除guide routes信息
     storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
     // 退出时重置tips信息

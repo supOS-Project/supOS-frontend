@@ -12,6 +12,7 @@ export const SUPOS_USER_LAST_LOGIN_ENABLE = 'SUPOS_USER_LAST_LOGIN_ENABLE'; // �
 export const SUPOS_USER_TIPS_ENABLE = 'SUPOS_USER_TIPS_ENABLE'; // tips是否需要展示
 // cookie里面的code
 export const SUPOS_COMMUNITY_TOKEN = 'supos_community_token';
+export const OMC_MODEL = 'omc_model';
 export const LOGIN_URL = '/supos-login';
 // 默认的title名称
 export const APP_TITLE = 'supOS';
