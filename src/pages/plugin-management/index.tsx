@@ -162,7 +162,7 @@ const CardOperation = ({
       });
   };
   const getDom = useCallback(
-    (status: string) => {
+    (status: string, info?: any) => {
       switch (status) {
         case 'notInstall':
           return (
@@ -210,6 +210,7 @@ const CardOperation = ({
           return (
             <Space>
               <AuthButton
+                disabled={info?.plugInfoYml?.removable === false}
                 auth={ButtonPermission['pluginManagement.unInstall']}
                 size="small"
                 style={{ color: 'var(--supos-text-color)' }}
@@ -245,7 +246,7 @@ const CardOperation = ({
     [status, appId, appProperties]
   );
 
-  return <>{getDom(status)}</>;
+  return <>{getDom(status, info)}</>;
 };
 const LoadingOperation = ({ d, refreshRequest, openModal }: any) => {
   const { plugInfoYml = {} } = d;
@@ -272,7 +273,7 @@ const LoadingCard = ({ d, refreshRequest, openModal }: any) => {
     <ComCard
       key={plugInfoYml.name}
       updateTime={formatTimestamp(d?.installTime)}
-      style={{ width: 350, height: 275 }}
+      style={{ width: 350, height: 285 }}
       title={plugInfoYml.showName}
       secondaryTitle={
         <CardSecondaryTitle name={name} version={plugInfoYml?.version} vendorName={plugInfoYml?.vendorName} />

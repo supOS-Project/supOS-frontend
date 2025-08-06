@@ -1,5 +1,7 @@
 // require('dotenv').config();
 const express = require('express');
+const Docker = require('dockerode');
+const fs = require('fs');
 const {
   CopilotRuntime,
   OpenAIAdapter,
@@ -25,7 +27,7 @@ const app = express();
 // coplilotkit端口号
 const COPILOTKIT_SERVER_PORT = process.env.COPILOTKIT_SERVER_PORT || 4000;
 const DOCKER_HOST = process.env.DOCKER_HOST || 'host.docker.internal'
-const DOCKER_PORT = process.env.DOCKER_PORT || 2375
+const DOCKER_PORT = process.env.DOCKER_PORT || 2376
 
 // 目前支持ollama、openai、anthropic、tongyi
 const LLM_TYPE = process.env.LLM_TYPE || 'openai';
@@ -123,21 +125,31 @@ const llmType = {
 };
 
 app.get('/open-api/supos/health', (req, res) => {
-  const dockerAPI = axios.create({
-    baseURL: 'http://' + DOCKER_HOST + ':' + DOCKER_PORT + '/containers'
+  // const dockerAPI = axios.create({
+  //   baseURL: 'https://' + DOCKER_HOST + ':' + DOCKER_PORT + '/containers'
+  // });
+  const docker = new Docker({
+    host: DOCKER_HOST,
+    port: DOCKER_PORT,
+    ca: fs.readFileSync('/certs/ca.pem'),
+    cert: fs.readFileSync('/certs/cert.pem'),
+    key: fs.readFileSync('/certs/key.pem'),
+    version: 'v1.47' // 根据 Docker 版本调整
   });
+  const filters = {
+    network: ['supos_default_network'] // 网络名称或 ID
+  };
+  docker.listContainers({ all: true, filters: filters}, (err, containers) => {
+    if (err) throw err;
+    let total = [];
+    let running = [];
+    let stopped = [];
+    let platformStatus = "running";
 
-  // 获取所有容器
-  dockerAPI.get('/json?all=true&filters=%7B%22network%22%3A%5B%22supos_default_network%22%5D%7D')
-    .then(r => {
-      let total = [];
-      let running = [];
-      let stopped = [];
-      let platformStatus = "running";
-      for (let k in r.data) {
-        let containerName = r.data[k].Names[0].substring(1);
+    for (let k in containers) {
+       let containerName = containers[k].Names[0].substring(1);
         total.push(containerName);
-        if ("running" === r.data[k].State) {
+        if ("running" === containers[k].State) {
           running.push(containerName);
         } else {
           stopped.push(containerName);
@@ -145,8 +157,8 @@ app.get('/open-api/supos/health', (req, res) => {
             platformStatus = "stop";
           }
         }
-      }
-      let data = {
+    }
+    let data = {
         status: platformStatus,
         overview: {
           total: total.length,
@@ -158,12 +170,45 @@ app.get('/open-api/supos/health', (req, res) => {
           stop: stopped
         }
       }
-      res.status(200).json({data: data})
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).json({msg: "docker网络异常"})
-    });
+    res.status(200).json({data: data})
+  });
+  // 获取所有容器
+  // dockerAPI.get('/json?all=true&filters=%7B%22network%22%3A%5B%22supos_default_network%22%5D%7D')
+  //   .then(r => {
+  //     let total = [];
+  //     let running = [];
+  //     let stopped = [];
+  //     let platformStatus = "running";
+  //     for (let k in r.data) {
+  //       let containerName = r.data[k].Names[0].substring(1);
+  //       total.push(containerName);
+  //       if ("running" === r.data[k].State) {
+  //         running.push(containerName);
+  //       } else {
+  //         stopped.push(containerName);
+  //         if (containerName === "backend") {
+  //           platformStatus = "stop";
+  //         }
+  //       }
+  //     }
+  //     let data = {
+  //       status: platformStatus,
+  //       overview: {
+  //         total: total.length,
+  //         running: running.length,
+  //         stop: stopped.length
+  //       },
+  //       container: {
+  //         running: running,
+  //         stop: stopped
+  //       }
+  //     }
+  //     res.status(200).json({data: data})
+  //   })
+  //   .catch(err => {
+  //     console.log(err);
+  //     res.status(500).json({msg: "docker网络异常"})
+  //   });
 });
 
 app.use('/copilotkit', (req, res, next) => {

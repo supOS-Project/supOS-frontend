@@ -501,7 +501,7 @@ const messages = {
   'uns.hour': '小时',
   'uns.deleteFile': '确认删除该文件？',
   'uns.deleteFolder': '确认删除该文件夹？',
-  'uns.deleteFolderTip': '该操作会删除此文件下所有子文件夹和子文件！',
+  'uns.deleteFolderTip': '该操作会删除此文件夹下所有子文件夹和子文件！',
   'uns.front': '前端配置',
   'uns.backend': '后端配置',
   'uns.key': '键',
@@ -772,7 +772,7 @@ const messages = {
   'common.UrlLose': '地址丢失',
   'common.running': '运行中',
   'common.stopped': '停止',
-  'common.pending': '加载中',
+  'common.pending': '部署中',
   'common.draft': '草稿',
   'common.items': '项',
   'common.calculator': '函数计算器',
@@ -849,6 +849,7 @@ const messages = {
   'common.uploading': '上传中',
   'common.unZiping': '解压中',
   'common.selectAll': '选择全部',
+  'common.expirationDate': '授权到期时间',
 };
 
 export default messages;

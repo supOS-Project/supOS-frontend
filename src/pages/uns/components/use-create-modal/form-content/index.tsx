@@ -534,7 +534,7 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
               },
               childProps: {
                 placeholder: formatMessage('uns.searchInstance'),
-                apiParams: { type: 2, normal: true },
+                apiParams: { type: 2, dataTypes: 1 },
               },
             }
           );

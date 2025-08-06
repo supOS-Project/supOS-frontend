@@ -1,6 +1,6 @@
 import { FC, ReactNode, useEffect, useState } from 'react';
 import { Popover, Divider, Flex, PopoverProps, Button, Form, Input, App, ConfigProvider, Tabs } from 'antd';
-import { Checkmark, ColorPalette, Contrast, Logout, SettingsEdit, UserAvatar } from '@carbon/icons-react';
+import { Calendar, Checkmark, ColorPalette, Contrast, Logout, SettingsEdit, UserAvatar } from '@carbon/icons-react';
 import { useTranslate } from '@/hooks';
 import ComSelect from '../com-select';
 import ProModal from '../pro-modal';
@@ -15,6 +15,7 @@ import { fetchBaseStore, updateForUserInfo, useBaseStore } from '@/stores/base';
 import { PrimaryColorType, setPrimaryColor, setTheme, ThemeType, useThemeStore } from '@/stores/theme-store.ts';
 import Cookies from 'js-cookie';
 import { logoutApi } from '@/apis/inter-api';
+import { queryDeadline } from '@/apis/inter-api/license';
 // import { initI18n, useI18nStore } from '@/stores/i18n-store.ts';
 // import { getPluginListApi } from '@/apis/inter-api/plugin.ts';
 // import { preloadPluginLang } from '@/utils';
@@ -84,10 +85,11 @@ const colorList = [
 ];
 const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
   const formatMessage = useTranslate();
-  const { currentUserInfo, systemInfo, pickedRoutesOptionsNoChildrenMenu } = useBaseStore((state) => ({
+  const { currentUserInfo, systemInfo, pickedRoutesOptionsNoChildrenMenu, pluginList } = useBaseStore((state) => ({
     currentUserInfo: state.currentUserInfo,
     systemInfo: state.systemInfo,
     pickedRoutesOptionsNoChildrenMenu: state.pickedRoutesOptionsNoChildrenMenu,
+    pluginList: state.pluginList,
   }));
   const { _theme, primaryColor } = useThemeStore((state) => ({
     _theme: state._theme,
@@ -96,6 +98,7 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
   // const { lang } = useI18nStore((state) => ({
   //   lang: state.lang,
   // }));
+  const [expirationDate, setExpirationDate] = useState();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form1] = Form.useForm();
@@ -283,6 +286,30 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
           },
         ]}
       />
+      {name === 'supos' && expirationDate && (
+        <>
+          <Divider
+            style={{
+              background: '#c6c6c6',
+              margin: '15px auto',
+            }}
+          />
+          <ComList
+            list={[
+              {
+                icon: <Calendar color="var(--supos-text-color)" size={18} />,
+                label: (
+                  <div style={{ color: 'var(--supos-text-color)' }}>
+                    {formatMessage('common.expirationDate')}：{expirationDate}
+                  </div>
+                ),
+                key: 'layout',
+                disabled: true,
+              },
+            ]}
+          />
+        </>
+      )}
       <span style={{ marginTop: 10 }} className="userEmail" title={version}>
         {version}
       </span>
@@ -347,6 +374,15 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
       });
     }
   };
+
+  useEffect(() => {
+    if (name !== 'supos') return;
+    if (pluginList?.filter((f: any) => f.installStatus === 'installed')?.find((f: any) => f?.name === 'license')) {
+      queryDeadline().then((data) => {
+        setExpirationDate(data);
+      });
+    }
+  }, [name, pluginList]);
 
   useEffect(() => {
     if (open) {

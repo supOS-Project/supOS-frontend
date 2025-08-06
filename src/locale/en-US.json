@@ -806,5 +806,6 @@
   "common.run": "Healthy",
   "common.uploading": "Uploading",
   "common.unZiping": "UnZiping",
-  "common.selectAll": "Select All"
+  "common.selectAll": "Select All",
+  "common.expirationDate": "Authorization Expiration Date"
 }

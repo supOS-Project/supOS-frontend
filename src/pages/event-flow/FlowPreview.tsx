@@ -35,6 +35,7 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
   const flowIframeRef = useRef<HTMLIFrameElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [apiLoading, setApiLoading] = useState(false);
+  const observerRef = useRef<any>(null);
   // const [buttonDisabled, setDisabled] = useState(state?.status === 'RUNNING');
   const loadRef = useRef(false);
   // iframe的key
@@ -194,6 +195,63 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
       type: 'divider',
     },
   ];
+
+  useEffect(() => {
+    const targetId = 'red-ui-loading-progress';
+    const iframe = flowIframeRef.current;
+    const handleVisibilityChange = (isVisible: boolean) => {
+      setLoading(isVisible);
+    };
+    const setupObserver = () => {
+      if (!iframe) return;
+      try {
+        // 获取iframe的document对象
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        const targetElement = iframeDoc?.getElementById(targetId);
+
+        if (!targetElement) {
+          console.warn(`未找到ID为 ${targetId} 的元素`);
+          return;
+        }
+        // 创建观察者实例
+        observerRef.current = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+              const isVisible = targetElement.style.display !== 'none';
+              handleVisibilityChange(isVisible);
+            }
+          });
+        });
+
+        // 配置观察选项
+        const observerOptions = {
+          attributes: true,
+          attributeFilter: ['style'], // 只观察style属性变化
+          subtree: false,
+        };
+
+        // 开始观察
+        observerRef.current.observe(targetElement, observerOptions);
+
+        // 初始状态检查
+        const initialVisibility = targetElement.style.display !== 'none';
+        handleVisibilityChange(initialVisibility);
+      } catch (error) {
+        console.error('访问iframe内容出错:', error);
+      }
+    };
+    if (iframe) {
+      iframe.addEventListener('load', setupObserver);
+    }
+    return () => {
+      if (iframe) {
+        iframe.removeEventListener('load', setupObserver);
+      }
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [key, state?.id, state?.flowId]);
 
   const onSave = async () => {
     const values = await form.validateFields();
