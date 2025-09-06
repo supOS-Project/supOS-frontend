@@ -1,22 +1,20 @@
-import { ContainerItemProps, RoutesProps, SystemInfoProps, UserInfoProps } from '@/stores/types.ts';
+import { ContainerItemProps, ResourceProps, SystemInfoProps, UserInfoProps } from '@/stores/types.ts';
 
 export type TBaseStore = {
-  // 最原始的routes
-  rawRoutes: RoutesProps[];
-  // 动态路由集合(未处理过的)
-  routes: RoutesProps[];
-  // 筛选出勾选的路由
-  pickedRoutes: RoutesProps[];
-  // 可给select使用
-  pickedRoutesOptions: RoutesProps[];
-  // 可给select使用
-  pickedRoutesOptionsNoChildrenMenu: RoutesProps[];
-  // 父级排序
-  parentOrderMap: { [key: string]: string };
-  // 带分组
-  pickedGroupRoutes: RoutesProps[];
-  // 带分组，给home页用
-  pickedGroupRoutesForHome: RoutesProps[];
+  // 菜单树
+  menuTree: ResourceProps[];
+  // home页树
+  homeTree: ResourceProps[];
+  // 菜单分组
+  menuGroup: ResourceProps[];
+  // home页分组
+  homeGroup: ResourceProps[];
+  // home页tab分组
+  homeTabGroup: ResourceProps[];
+  // 原始菜单
+  originMenu: ResourceProps[];
+  // 按钮信息
+  allButtonGroup: ResourceProps[];
   // 路由状态，401控制
   routesStatus?: number;
   // 用户信息集合
@@ -35,7 +33,7 @@ export type TBaseStore = {
   // 数据看板类型 fuxa grafana
   dashboardType: string[];
   // 当前菜单信息
-  currentMenuInfo?: RoutesProps;
+  currentMenuInfo?: ResourceProps;
   // 用户是否启用tips
   userTipsEnable: string;
   loading: boolean;

@@ -17,6 +17,7 @@ export interface ComContentProps {
   hasBack?: boolean;
   backPath?: any;
   wrapperStyle?: CSSProperties;
+  titleStyle?: CSSProperties;
   className?: string;
   mustShowTitle?: boolean;
   mustHasBack?: boolean;
@@ -34,6 +35,7 @@ const ComContent: FC<ComContentProps> = ({
   mustHasBack = true,
   backPath = -1,
   wrapperStyle,
+  titleStyle,
   className,
 }) => {
   const navigate = useNavigate();
@@ -46,10 +48,10 @@ const ComContent: FC<ComContentProps> = ({
     <div className={classNames(styles['com-content'], className)} style={wrapperStyle}>
       {noTitle && title && (
         <div
-          style={{ paddingLeft: hasPadding && !isTop ? 300 : 25, ...(border ? {} : { border: 'none' }) }}
+          style={{ paddingLeft: hasPadding && !isTop ? 300 : 25, ...(border ? {} : { border: 'none' }), ...titleStyle }}
           className="title"
         >
-          <div style={{ flex: 1 }}>{title}</div>
+          <div style={{ flex: 1, overflow: 'hidden' }}>{title}</div>
           {extra}
           {noBack && hasBack && (
             <Tooltip placement="bottom" title={formatMessage('common.back')}>

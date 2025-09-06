@@ -18,6 +18,9 @@ export const deleteFlow = async (id: string) => api.delete(`/flow`, { params: { 
 // 发布流程
 export const deployFlow = async (data: any) => api.post('/flow/deploy', data);
 
+// 获取版本
+export const getVersionFlow = async () => api.get('/flow/version');
+
 // 保存流程
 export const saveFlow = async (data: any) => api.put('/flow/save', data);
 

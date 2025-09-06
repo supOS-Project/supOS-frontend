@@ -7,9 +7,11 @@ import tsEslint from 'typescript-eslint';
 
 export default tsEslint.config(
   { ignores: ['dist', 'build', '**/node_modules/*'] },
+  js.configs.recommended,
+  ...tsEslint.configs.recommended,
+  eslintPluginPrettierRecommended,
   {
-    extends: [js.configs.recommended, ...tsEslint.configs.recommended, eslintPluginPrettierRecommended],
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,

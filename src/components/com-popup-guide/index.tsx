@@ -3,8 +3,7 @@ import { cloneElement, FC, isValidElement, ReactNode, useEffect, useRef, useStat
 import { CloseOutline } from '@carbon/icons-react';
 import classNames from 'classnames';
 import './index.scss';
-import { useBaseStore } from '@/stores/base';
-import { I18nEnum } from '@/stores/i18n-store.ts';
+import { I18nEnum, useI18nStore } from '@/stores/i18n-store.ts';
 
 type ComPopupGuideProps = TooltipProps & {
   timer?: number;
@@ -26,7 +25,7 @@ const ComPopupGuide: FC<ComPopupGuideProps> = ({
   steps = [],
   ...restProps
 }) => {
-  const systemInfo = useBaseStore((state) => state.systemInfo);
+  const lang = useI18nStore((state) => state.lang);
 
   const [percent, setPercent] = useState(100);
   const [open, setOpen] = useState(stepName === currentStep);
@@ -77,7 +76,7 @@ const ComPopupGuide: FC<ComPopupGuideProps> = ({
     setOpen(false);
     onFinish?.(stepName, info.nextStep, info);
   };
-  const title = systemInfo?.lang !== I18nEnum.EnUS ? info?.titleEnglish : info?.title;
+  const title = lang !== I18nEnum.EnUS ? info?.titleEnglish : info?.title;
   const customTitle = typeof title === 'function' ? title?.() : title;
   const Children = isValidElement(children) ? (
     cloneElement(children, {

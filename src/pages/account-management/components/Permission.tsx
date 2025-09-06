@@ -5,6 +5,7 @@ import { ScisControlTower } from '@carbon/icons-react';
 import { usePropsValue, useTranslate } from '@/hooks';
 import { PermissionNode, PermissionRefProps } from './useRoleSetting';
 import ComCheckbox from '@/components/com-checkbox';
+import { formatShowName } from '@/utils';
 
 interface PermissionProps {
   onChange?: (permissionData: PermissionNode[]) => void;
@@ -24,8 +25,6 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
       defaultValue: initValue,
       onChange,
     });
-    console.log(permissionData);
-
     useImperativeHandle(ref, () => {
       return {
         getValue: () => permissionData,
@@ -80,7 +79,7 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
             // 更新子菜单的选中状态（页面权限）
             if (node.children && node.children.length > 0) {
               updatedNode.children = node.children.map((child) => {
-                if (child.type === 'menu') {
+                if (child.type === 2) {
                   return { ...child, checked };
                 }
                 return child;
@@ -114,7 +113,7 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
                   return {
                     ...menu,
                     children: menu.children.map((button) => {
-                      if (button.type === 'button') {
+                      if (button.type === 3) {
                         return { ...button, checked };
                       }
                       return button;
@@ -140,9 +139,9 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
     // 检查组的状态并更新
     const checkAndUpdateGroupState = useCallback((data: PermissionNode[]): PermissionNode[] => {
       return data.map((group) => {
-        if (group.type === 'group' && group.children && group.children.length > 0) {
+        if (group.type === 1 && group.children && group.children.length > 0) {
           // 检查所有菜单是否都被选中
-          const allMenusChecked = group.children.every((menu) => (menu.type === 'menu' ? menu.checked : true));
+          const allMenusChecked = group.children.every((menu) => (menu.type === 2 ? menu.checked : true));
 
           // 检查所有按钮是否都被选中
           let allButtonsChecked = true;
@@ -283,7 +282,11 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
                   label={
                     <Flex gap={4} align="center">
                       <ScisControlTower />
-                      {item.menuNameKey ? formatMessage(item.menuNameKey) : item.name}
+                      {formatShowName({
+                        code: item.code,
+                        formatMessage: formatMessage,
+                        showName: item.showName,
+                      })}
                     </Flex>
                   }
                   checked={item.checked}
@@ -303,7 +306,7 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
                 <Flex
                   align="center"
                   style={{
-                    flex: 1,
+                    flex: '1 1 30%',
                     padding: '0 16px',
                     borderRight: '1px solid var(--supos-t-dividr-color)',
                   }}
@@ -320,7 +323,13 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
                     onChange={(e) => handlePagePermissionChange(item.id, e.target.checked)}
                   />
                 </Flex>
-                <Flex align="center" style={{ flex: 1, padding: '0 16px' }}>
+                <Flex
+                  align="center"
+                  style={{
+                    flex: '1 1 70%',
+                    padding: '0 16px',
+                  }}
+                >
                   {/*actionPermissionChecked控制children下面所有的按钮全选反选*/}
                   <ComCheckbox
                     rootStyle={{
@@ -335,10 +344,10 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
                 </Flex>
               </Flex>
               {/* 菜单和按钮 */}
-              {item?.children?.map((c, index) => {
+              {item?.children?.map((menu, index) => {
                 return (
                   <Flex
-                    key={c.id}
+                    key={menu.id}
                     style={{
                       borderBottom:
                         item?.children?.length === index + 1 ? undefined : '1px solid var(--supos-t-dividr-color)',
@@ -346,7 +355,8 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
                   >
                     <Flex
                       style={{
-                        flex: 1,
+                        flex: '1 1 30%',
+                        overflow: 'hidden',
                         borderRight: '1px solid var(--supos-t-dividr-color)',
                         padding: '8px 16px',
                       }}
@@ -356,33 +366,43 @@ const Permission = forwardRef<PermissionRefProps, PermissionProps>(
                         rootStyle={{
                           '--custom-border-color': 'var(--supos-table-tr-color)',
                         }}
-                        label={c.menuNameKey ? formatMessage(c.menuNameKey) : c.name}
-                        checked={c.checked}
+                        label={formatShowName({
+                          code: menu.code,
+                          formatMessage: formatMessage,
+                          showName: menu.showName,
+                        })}
+                        checked={menu.checked}
                         disabled={disabled}
-                        onChange={(e) => handleMenuCheckChange(c.id, e.target.checked)}
+                        onChange={(e) => handleMenuCheckChange(menu.id, e.target.checked)}
                       />
                     </Flex>
                     <Flex
                       style={{
-                        flex: 1,
+                        overflow: 'hidden',
+                        // flex: 1,
+                        flex: '1 1 70%',
                         padding: '8px 16px',
                       }}
                       wrap
                       gap={8}
                     >
-                      {c?.children?.length ? (
-                        c?.children?.map((cc) => {
+                      {menu?.children?.length ? (
+                        menu?.children?.map((button) => {
                           return (
-                            <Flex key={cc.id}>
+                            <Flex key={button.id}>
                               {/*控制自己的cheked*/}
                               <ComCheckbox
                                 disabled={disabled}
                                 rootStyle={{
                                   '--custom-border-color': 'var(--supos-table-tr-color)',
                                 }}
-                                label={cc.menuNameKey ? formatMessage(cc.menuNameKey) : cc.name}
-                                checked={cc.checked}
-                                onChange={(e) => handleButtonCheckChange(cc.id, e.target.checked)}
+                                label={formatShowName({
+                                  code: button.code,
+                                  formatMessage: formatMessage,
+                                  showName: button.showName,
+                                })}
+                                checked={button.checked}
+                                onChange={(e) => handleButtonCheckChange(button.id, e.target.checked)}
                               />
                             </Flex>
                           );

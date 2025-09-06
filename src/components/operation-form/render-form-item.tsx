@@ -60,7 +60,7 @@ const RenderFormItem = (item: RenderFormItemProps) => {
   }
   return (
     <Form.Item {...restFormProps} valuePropName={['Switch', 'Checkbox'].includes(type) ? 'checked' : 'value'}>
-      {component || !restFormProps?.name ? null : render(type, properties)}
+      {component ? component : !restFormProps?.name ? null : render(type, properties)}
     </Form.Item>
   );
 };

@@ -116,7 +116,9 @@ export const appendTreeData = (
   list: UnsTreeNode[],
   key: Key,
   childrenToAppend: UnsTreeNode[],
-  type?: string
+  type?: string,
+  nodeDetail?: UnsTreeNode,
+  cb?: () => void
 ): UnsTreeNode[] => {
   // 使用深度优先搜索找到目标节点并直接修改
   const findAndAppend = (nodes: UnsTreeNode[]): boolean => {
@@ -125,15 +127,42 @@ export const appendTreeData = (
       if (node.key === key) {
         // 移出更多，然后加上新值
         const existingChildren = node.children?.filter((child) => !(child as any).isLoadMoreNode) || [];
+        if (childrenToAppend?.[0] && !childrenToAppend?.[0]?.preId) {
+          childrenToAppend[0].preId = existingChildren?.[existingChildren.length - 1]?.id;
+        }
         node.children = [...existingChildren, ...childrenToAppend];
         // 特殊处理
         if (type === 'addFile') {
           node.hasChildren = true;
           node.isLeaf = false;
-          node.countChildren = (node.countChildren ?? 0) + 1;
+          // 递归数量
+          const updateAncestors = (key: string) => {
+            let parent = findNodeInfoById(list, key);
+            while (parent) {
+              parent.countChildren = (parent.countChildren ?? 0) + 1;
+              parent = findNodeInfoById(list, parent.parentId as string);
+            }
+          };
+          updateAncestors(key as string);
         } else if (type === 'addFolder') {
           node.hasChildren = true;
           node.isLeaf = false;
+        } else if (type === 'deleteFile' || type === 'deleteFolder') {
+          const countChild = type === 'deleteFolder' ? nodeDetail?.countChildren || 0 : 1;
+          // 递归处理数量减掉
+          const updateAncestors = (key: string) => {
+            let parent = findNodeInfoById(list, key);
+            while (parent) {
+              parent.countChildren = (parent.countChildren ?? 0) - countChild || 0;
+              parent = findNodeInfoById(list, parent.parentId as string);
+            }
+          };
+          updateAncestors(key as string);
+        }
+        if (node.children?.length === 0) {
+          node.hasChildren = false;
+          node.isLeaf = true;
+          cb?.();
         }
         return true; // 找到并修改成功
       }
@@ -164,15 +193,18 @@ export const appendTreeData = (
  * 将API返回的数据转换为树节点格式
  * @param data API返回的数据
  * @param parentPath 父节点路径
+ * @param preId 上个节点id
  * @returns 转换后的树节点数据
  */
-export const formatNodeData = (data: any[], parentPath: string = ''): UnsTreeNode[] => {
-  return data.map((item: any) => ({
+export const formatNodeData = (data: any[], parentPath: string = '', preId?: any): UnsTreeNode[] => {
+  return data.map((item: any, index: number) => ({
     ...item,
     title: item.pathName,
     parentPath: parentPath,
     key: item.id,
     isLeaf: !item.hasChildren,
+    preId: index === 0 && preId ? preId : data?.[index - 1]?.id,
+    nextId: data?.[index + 1]?.id,
   }));
 };
 

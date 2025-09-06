@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef, useImperativeHandle, useCallback } from 'react';
-import { Renew, Folder, FolderOpen, Document, DocumentImport } from '@carbon/icons-react';
+import { Folder, FolderOpen, Document, DocumentImport } from '@carbon/icons-react';
 import debounce from 'lodash/debounce';
 import { useTranslate } from '@/hooks';
 import { App, Flex, Divider } from 'antd';
@@ -12,6 +12,8 @@ import ProSearch from '@/components/pro-search';
 import { collectChildrenIds, findParentIds } from '@/utils/uns';
 import { useTreeStore } from '../../store/treeStore';
 import { useBaseStore } from '@/stores/base';
+import { ClearOutlined } from '@ant-design/icons';
+import { clearExternalTreeData } from '@/apis/inter-api/external.ts';
 
 export interface UnusedTopicTreeProps {
   treeData: any[];
@@ -175,11 +177,13 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
           }}
         />
         <div className="treeOperateIconWrap">
-          <span title={formatMessage('common.refresh')}>
-            <Renew
+          <span title={formatMessage('common.clear')}>
+            <ClearOutlined
               onClick={() => {
-                initTreeData({ reset: false, query: searchQuery }, () => {
-                  message.success(formatMessage('common.refreshSuccessful'));
+                setSearchQuery('');
+                clearExternalTreeData().then(() => {
+                  message.success(formatMessage('common.clearSuccessful'));
+                  initTreeData({ reset: true });
                 });
               }}
             />
@@ -245,7 +249,6 @@ const UnusedTopicTree: FC<UnusedTopicTreeProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       operationFns?.setOptionOpen?.('topicToFile', item);
-                      console.log(item);
                     }}
                   >
                     <DocumentImport />

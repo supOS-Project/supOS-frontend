@@ -1,12 +1,11 @@
 import { CSSProperties, FC } from 'react';
 import { ConfigProvider, Pagination } from 'antd';
-import type { TableColumnsType } from 'antd';
 import classNames from 'classnames';
 import ProTable from '../pro-table';
 import './index.scss';
 
 interface ComTableListProps {
-  columns: TableColumnsType;
+  columns: any;
   pagination: any;
   className?: string;
   style?: CSSProperties;

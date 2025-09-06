@@ -7,7 +7,17 @@ import { AuthButton } from '@/components/auth';
 import ProModal from '@/components/pro-modal';
 const { Dragger } = AntUpload;
 
-const UploadButton = ({ alias, documentListRef, auth }: { auth?: string; alias: string; documentListRef: any }) => {
+const UploadButton = ({
+  alias,
+  documentListRef,
+  auth,
+  setActiveList,
+}: {
+  auth?: string;
+  alias: string;
+  documentListRef: any;
+  setActiveList?: any;
+}) => {
   const formatMessage = useTranslate();
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
@@ -35,7 +45,11 @@ const UploadButton = ({ alias, documentListRef, auth }: { auth?: string; alias: 
     )
       .then(() => {
         documentListRef?.current?.refresh?.();
+        message.success(formatMessage('common.optsuccess'));
         onClose();
+        setActiveList?.((pre: string[]) => {
+          return [...new Set([...(pre || []), 'document'])];
+        });
       })
       .finally(() => {
         setLoading(false);

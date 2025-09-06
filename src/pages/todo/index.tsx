@@ -8,7 +8,6 @@ import { getModuleList, todoPageList } from '@/apis/inter-api/todo';
 import { useTranslate, usePagination, useMediaSize } from '@/hooks';
 import { useActivate } from '@/contexts/tabs-lifecycle-context.ts';
 import styles from './index.module.scss';
-import { ButtonPermission } from '@/common-types/button-permission.ts';
 import { AuthWrapper } from '@/components/auth';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
@@ -57,13 +56,13 @@ const Todo = () => {
   const columns: any = useMemo(() => {
     return [
       {
-        title: formatMessage('common.origin'),
+        title: () => formatMessage('common.origin'),
         dataIndex: 'moduleName',
         key: 'moduleName',
         width: '10%',
       },
       {
-        title: formatMessage('common.task'),
+        title: () => formatMessage('common.task'),
         dataIndex: 'todoMsg',
         key: 'todoMsg',
         width: '40%',
@@ -75,7 +74,7 @@ const Todo = () => {
         },
       },
       {
-        title: formatMessage('common.creationTime'),
+        title: () => formatMessage('common.creationTime'),
         dataIndex: 'createAt',
         width: '14%',
         key: 'createAt',
@@ -84,7 +83,7 @@ const Todo = () => {
       ...(radioValue === 'completed'
         ? [
             {
-              title: formatMessage('common.processingTime'),
+              title: () => formatMessage('common.processingTime'),
               dataIndex: 'handlerTime',
               width: '14%',
               key: 'handlerTime',
@@ -95,7 +94,7 @@ const Todo = () => {
       ...(radioValue === 'todo'
         ? [
             {
-              title: formatMessage('common.ToDoPerson'),
+              title: () => formatMessage('common.ToDoPerson'),
               dataIndex: 'username',
               width: '10%',
               key: 'username',
@@ -103,13 +102,13 @@ const Todo = () => {
           ]
         : [
             {
-              title: formatMessage('common.completedPerson'),
+              title: () => formatMessage('common.completedPerson'),
               dataIndex: 'handlerUsername',
               width: '10%',
               key: 'handlerUsername',
             },
             {
-              title: formatMessage('common.recipient'),
+              title: () => formatMessage('common.recipient'),
               dataIndex: 'username',
               width: '10%',
               key: 'username',
@@ -118,13 +117,13 @@ const Todo = () => {
       ...(radioValue === 'todo'
         ? [
             {
-              title: formatMessage('common.operation'),
+              title: () => formatMessage('common.operation'),
               key: 'Operation',
               fixed: 'right',
               width: '10%',
               dataIndex: 'Operation',
               render: (_: any, e: any) => (
-                <AuthWrapper auth={ButtonPermission['common.processTask']}>
+                <AuthWrapper>
                   <Space size="middle">
                     <Button
                       type="text"

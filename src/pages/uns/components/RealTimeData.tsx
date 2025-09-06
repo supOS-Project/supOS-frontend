@@ -45,9 +45,9 @@ const RealTimeData: FC<IProps> = ({ currentNode: { id, type, pathName } }) => {
       if (isJsonString(dataJson)) {
         const data = JSON.parse(dataJson);
         if (!isEmpty(data)) {
-          if (!isJsonString(data.payload)) {
-            data.payload = 'null';
-          }
+          // if (!isJsonString(data.payload)) {
+          //   data.payload = 'null';
+          // }
           // 最多保留100条
           let newSource = [...dataSource, data];
           if (newSource.length > 100) {

@@ -1,4 +1,4 @@
 export const getDefaultFields = (qualityName: string, timestampName: string) => [
-  { name: qualityName, type: 'LONG', isDefault: true },
-  { name: timestampName, type: 'DATETIME', isDefault: true },
+  { name: qualityName, type: 'LONG', systemField: true },
+  { name: timestampName, type: 'DATETIME', systemField: true },
 ];

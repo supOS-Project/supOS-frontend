@@ -23,7 +23,6 @@ export const parseConfig = (config: any) => {
 
 export const proxyList = [
   'inter-api',
-  'hasura/home/v1/graphql',
   'gateway',
   'copilotkit',
   'chat2db/api',

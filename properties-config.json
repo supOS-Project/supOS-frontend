@@ -1,0 +1,4 @@
+{
+  "src": "./src/locale",
+  "dist": "./properties-output"
+}

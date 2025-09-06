@@ -2,7 +2,7 @@
  * 国际化store
  * @description 国际化相关
  */
-import { StoreApi } from 'zustand/index';
+import { StoreApi } from 'zustand';
 import { shallow } from 'zustand/vanilla/shallow';
 import { createIntl, createIntlCache, IntlShape } from 'react-intl';
 import { SUPOS_LANG_MESSAGE, SUPOS_LANG } from '@/common-types/constans.ts';
@@ -10,6 +10,12 @@ import { I18nData, antSources, loadMessages } from '@/utils/i18ns';
 import { storageOpt } from '@/utils/storage';
 import { createWithEqualityFn, UseBoundStoreWithEqualityFn } from 'zustand/traditional';
 import { subscribeWithSelector } from 'zustand/middleware';
+import 'dayjs/locale/zh-cn';
+import dayjs from 'dayjs';
+const loadDayjsLocale = (locale: string) => {
+  if (dayjs.locale() === locale) return;
+  dayjs.locale(locale);
+};
 
 export enum I18nEnum {
   EnUS = 'en-US',
@@ -50,6 +56,7 @@ export const useI18nStore: UseBoundStoreWithEqualityFn<StoreApi<TI18nStore>> = c
 
 // 初始化国际化
 export const initI18n = async (lang: string = defaultLanguage, pluginLang: any = {}) => {
+  loadDayjsLocale(lang === I18nEnum.EnUS ? 'en' : 'zh-cn');
   return await loadMessages(lang as I18nEnum).then((res: I18nData) => {
     const finallyMsg = { ...res, ...pluginLang };
     storageOpt.set(SUPOS_LANG_MESSAGE, finallyMsg);

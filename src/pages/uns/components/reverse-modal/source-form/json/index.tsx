@@ -215,7 +215,9 @@ const JsonForm = forwardRef<JsonFormRefProps, JsonFormProps>(
               addFlow,
               addDashBoard,
               save2db,
-              fields: fields?.filter((i) => !(i?.isDefault || [qualityName, timestampName].includes(i?.name))),
+              fields: fields?.filter(
+                (i) => !(i?.systemField || (dataType === 1 && [qualityName, timestampName].includes(i?.name)))
+              ),
               alias,
               parentAlias,
               pathType: 2,
@@ -410,8 +412,8 @@ const JsonForm = forwardRef<JsonFormRefProps, JsonFormProps>(
             allowClear
             placeholder={`{
     "Example": {
-        "FolderName": {
-            "FileName": [
+        "PathName": {
+            "TopicName": [
                 {
                     "attribute1": 1380,
                     "attribute2": 1440

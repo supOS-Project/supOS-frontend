@@ -51,7 +51,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
   const formItemOptions = (isEdit: boolean) => {
     return [
       {
-        label: `${isEdit ? formatMessage('common.edit') : formatMessage('common.create')} DashBoard`,
+        label: `${isEdit ? formatMessage('common.edit') : formatMessage('common.create')} ${formatMessage('dashboards.dashboard')}`,
       },
       {
         label: formatMessage('common.name'),
@@ -162,7 +162,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
               }}
               onSearch={() => setSearchParams(searchForm.getFieldsValue())}
             />
-            <AuthButton auth={ButtonPermission['dashboards.add']} type="primary" onClick={onAddHandle}>
+            <AuthButton auth={ButtonPermission['Dashboards.add']} type="primary" onClick={onAddHandle}>
               + {formatMessage('dashboards.newDashboard')}
             </AuthButton>
           </>
@@ -172,12 +172,12 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           className="dashboard-table-list"
           columns={[
             {
-              title: formatMessage('common.name'),
+              titleIntlId: 'common.name',
               dataIndex: 'name',
               width: '30%',
-              render: (text, item) => (
+              render: (text: any, item: any) => (
                 <>
-                  <AuthWrapper auth={ButtonPermission['dashboards.design']}>
+                  <AuthWrapper auth={ButtonPermission['Dashboards.design']}>
                     <Button
                       type="link"
                       onClick={() => {
@@ -195,12 +195,12 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
               ),
             },
             {
-              title: formatMessage('dashboards.dashboardsTemplate'),
+              titleIntlId: 'dashboards.dashboardsTemplate',
               dataIndex: 'typeName',
               width: '25%',
             },
             {
-              title: formatMessage('common.description'),
+              titleIntlId: 'common.description',
               dataIndex: 'description',
               width: '30%',
               ellipsis: true,
@@ -211,7 +211,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
               width: '10%',
               align: 'right',
               fixed: 'right',
-              render: (_, record) => (
+              render: (_: any, record: any) => (
                 <OperationButtons
                   className="list-operation"
                   options={[
@@ -228,7 +228,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                         title: formatMessage('dashboards.preview'),
                         icon: <View />,
                       },
-                      auth: ButtonPermission['dashboards.preview'],
+                      auth: ButtonPermission['Dashboards.preview'],
                     },
                     {
                       label: '',
@@ -238,7 +238,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                         title: formatMessage('common.edit'),
                         icon: <Edit />,
                       },
-                      auth: ButtonPermission['dashboards.edit'],
+                      auth: ButtonPermission['Dashboards.edit'],
                     },
                     {
                       label: '',
@@ -253,7 +253,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                         title: formatMessage('common.delete'),
                         icon: <TrashCan />,
                       },
-                      auth: ButtonPermission['dashboards.delete'],
+                      auth: ButtonPermission['Dashboards.delete'],
                     },
                   ]}
                   record={record}

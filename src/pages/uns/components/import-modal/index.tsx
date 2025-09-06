@@ -169,7 +169,7 @@ const Module: FC<ImportModalProps> = (props) => {
       open={importModal}
       onCancel={close}
       title={
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>{formatMessage('common.import')}</span>
           <Dropdown
             menu={{

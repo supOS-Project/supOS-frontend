@@ -11,6 +11,7 @@ import ComCopyContent from '../com-copy/ComCopyContent';
 interface ItemChildTypes {
   key: string; // 唯一标识
   label?: string; // 标题
+  subTitle?: string; // 子标题
   value?: string; // 内容
   type?: string; // 组件类型
   minCollapsedNumberOfRows?: number; // 最小行数，仅对type为codeSnippet生效
@@ -71,9 +72,19 @@ const ServerDemo = (props: PropsTypes) => {
   }, [heights]);
 
   const renderComp = (item: any, index: number, direction: 'left' | 'right') => {
-    const { key, type, label, value, collapseItems, minCollapsedNumberOfRows, maxCollapsedNumberOfRows, isJSON } = item;
+    const {
+      key,
+      type,
+      label,
+      subTitle,
+      value,
+      collapseItems,
+      minCollapsedNumberOfRows,
+      maxCollapsedNumberOfRows,
+      isJSON,
+    } = item;
     const Comp = components[type] ?? ComCopyContent;
-    const params: { [x: string]: any } = { label, labelClassName };
+    const params: { [x: string]: any } = { label, subTitle, labelClassName };
 
     switch (type) {
       case 'copyContent':

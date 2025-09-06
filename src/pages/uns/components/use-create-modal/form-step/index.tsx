@@ -1,4 +1,4 @@
-import { FC, useState, Dispatch, SetStateAction } from 'react';
+import { FC, useState, Dispatch, SetStateAction, useEffect } from 'react';
 import { ChevronRight, ChevronLeft } from '@carbon/icons-react';
 import { Form, App, Button, Flex } from 'antd';
 import { addModel, makeLabel } from '@/apis/inter-api/uns';
@@ -49,7 +49,6 @@ const FormStep: FC<FormStepProps> = ({
     operationFns: state.operationFns,
     setCurrentTreeMapType: state.setCurrentTreeMapType,
   }));
-  console.log(operationFns);
 
   //以下变量用于控制步骤按钮的显示
   const advancedOptions = useFormValue('advancedOptions', form) || false;
@@ -144,7 +143,7 @@ const FormStep: FC<FormStepProps> = ({
             case 1:
             case 2:
               if (dataType === 1) {
-                data.fields = fields.filter((e: FieldItem) => !e.isDefault);
+                data.fields = fields.filter((e: FieldItem) => !e.systemField);
               }
               data.addFlow = addFlow;
               if (dataType === 2 && mainKey > -1) {
@@ -161,7 +160,7 @@ const FormStep: FC<FormStepProps> = ({
               break;
             case 3:
               if (calculationType === 3) {
-                data.fields = fields.filter((e: FieldItem) => !e.isDefault);
+                data.fields = fields.filter((e: FieldItem) => !e.systemField);
                 type ReferItemType = {
                   refer: {
                     label: string;
@@ -218,7 +217,7 @@ const FormStep: FC<FormStepProps> = ({
               break;
             case 7:
               Object.assign(data, {
-                referIds: [referId],
+                referIds: [referId?.value],
                 fields: undefined,
                 save2db: undefined,
                 addDashBoard: undefined,
@@ -232,7 +231,7 @@ const FormStep: FC<FormStepProps> = ({
         setLoading(true);
         const handleCallback = (id: string, queryType: string) => {
           successCallBack(
-            { queryType, key: sourceId ? sourceId : ROOT_NODE_ID, newNodeKey: id },
+            { queryType, key: sourceId ? sourceId : ROOT_NODE_ID, newNodeKey: id, reset: !sourceId },
             (_, selectInfo, opt) => {
               const currentNode = getTargetNode(_ || [], id);
 
@@ -316,6 +315,11 @@ const FormStep: FC<FormStepProps> = ({
       }
     });
   };
+
+  useEffect(() => {
+    const drawerBody = document.querySelector('.newFolderOrFileModalBody');
+    if (drawerBody) drawerBody.scrollTop = 0;
+  }, [step]);
 
   return (
     <Flex align="center" justify="flex-end" gap={10}>

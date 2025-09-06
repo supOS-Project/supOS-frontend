@@ -1,7 +1,7 @@
 {
   "name": "supos-community",
   "private": true,
-  "version": "1.0.9+public",
+  "version": "1.0.11+public",
   "type": "module",
   "scripts": {
     "intl": "node ./scripts/i18n.js",
@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "commit": "git-cz",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "properties:convert": "node ./scripts/jsonToProperties.js"
   },
   "husky": {
     "hooks": {
@@ -36,7 +37,7 @@
     }
   },
   "dependencies": {
-    "@ant-design/icons": "5.5.2",
+    "@ant-design/icons": "6.0.0",
     "@antv/x6": "^2.18.1",
     "@antv/x6-react-shape": "^2.2.3",
     "@carbon/icons-react": "11.60.0",
@@ -50,14 +51,12 @@
     "@dnd-kit/modifiers": "^7.0.0",
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@graphiql/plugin-explorer": "^3.2.5",
-    "@graphiql/toolkit": "^0.11.1",
     "@ibm/plex-sans": "^1.1.0",
     "@module-federation/enhanced": "^0.14.3",
     "@module-federation/vite": "^1.4.0",
     "@uiw/react-codemirror": "^4.23.7",
     "ahooks": "3.8.5",
-    "antd": "5.25.2",
+    "antd": "5.27.1",
     "axios": "1.8.2",
     "blueimp-md5": "^2.19.0",
     "braft-editor": "^2.3.9",
@@ -65,8 +64,6 @@
     "clipboard": "^2.0.11",
     "codemirror": "^5.65.18",
     "dayjs": "^1.11.13",
-    "graphiql": "^3.8.3",
-    "graphql": "^16.10.0",
     "immer": "^10.1.1",
     "insert-css": "^2.0.0",
     "js-beautify": "^1.15.1",
@@ -74,6 +71,7 @@
     "lodash": "4.17.21",
     "mermaid": "^11.5.0",
     "pinyin-pro": "^3.26.0",
+    "properties-file": "^3.5.12",
     "qs": "^6.13.1",
     "react": "18.3.1",
     "react-cookie": "^7.2.2",
@@ -86,6 +84,7 @@
     "react-router-dom": "6.27.0",
     "react-sticky-box": "^2.0.5",
     "sass": "1.80.4",
+    "screenfull": "^6.0.2",
     "shepherd.js": "^14.4.0",
     "use-immer": "^0.11.0",
     "uuid": "^11.0.3",
@@ -97,6 +96,7 @@
     "@commitlint/config-conventional": "^19.6.0",
     "@eslint/js": "^9.17.0",
     "@types/blueimp-md5": "^2.18.2",
+    "@types/codemirror": "^5.60.16",
     "@types/insert-css": "^2.0.3",
     "@types/js-beautify": "^1.14.3",
     "@types/js-cookie": "^3.0.6",

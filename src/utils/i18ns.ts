@@ -2,14 +2,11 @@ import zhCN from 'antd/locale/zh_CN';
 import enUS from 'antd/locale/en_US';
 import localZhCN from '@/locale/zh-CN.json';
 import localEnUS from '@/locale/en-US.json';
-
-import { MENU_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans';
+import { getProperties } from 'properties-file';
+import { getSystemI18Api } from '@/apis/inter-api';
 
 type I18n = 'zh-CN' | 'en-US';
 export type I18nData = { [x: string]: string };
-
-// 服务器上语言包的基础 URL
-const SERVER_BASE_URL = `${STORAGE_PATH}${MENU_TARGET_PATH}`;
 
 const localSources: { [x: string]: any } = {
   'zh-CN': localZhCN,
@@ -27,22 +24,16 @@ export const loadMessages = async (lang: I18n) => {
     // 加载本地语言包
     const localMessages = localSources[lang];
 
-    // 尝试从 MinIO 服务器加载语言包
-    let minioMessages = {};
+    // 尝试从 服务器加载语言包
+    let backEndMessages = {};
     try {
-      const response = await fetch(`${SERVER_BASE_URL}/${lang}.json`);
-      if (response.ok) {
-        minioMessages = await response.json();
-      } else {
-        console.warn(`Failed to load language file from MinIO for ${lang}:`, `HTTP error! status: ${response.status}`);
-      }
-    } catch (minioError) {
-      console.warn(`Failed to load language file from MinIO for ${lang}:`, minioError);
+      const content = await getSystemI18Api(lang);
+      backEndMessages = getProperties(content);
+    } catch (e) {
+      console.log(e);
     }
-
-    // 合并语言包，以MinIO服务器的为准
-    const messages = { ...localMessages, ...minioMessages };
-
+    // 合并语言包，以后端服务器存储的为准
+    const messages = { ...localMessages, ...backEndMessages };
     // 如果两个来源都没有加载到语言包，则抛出错误
     if (Object.keys(messages).length === 0) {
       throw new Error(`Failed to load any language file for ${lang}`);

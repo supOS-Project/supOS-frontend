@@ -15,7 +15,7 @@ interface SearchSelectProps {
 
 const SearchSelect: FC<SearchSelectProps> = ({ onSearchCallback, value, onChange, selectStyle }) => {
   const formatMessage = useTranslate();
-  const pickedRoutesOptionsNoChildrenMenu = useBaseStore((state) => state.pickedRoutesOptionsNoChildrenMenu);
+  const menuGroup = useBaseStore((state) => state.menuGroup?.filter((f) => !f.subMenu));
   const selectRef = useRef<any>(null);
 
   const handleNavigate = useMenuNavigate();
@@ -47,14 +47,21 @@ const SearchSelect: FC<SearchSelectProps> = ({ onSearchCallback, value, onChange
         defaultOpen
         ref={selectRef}
         variant="filled"
-        options={pickedRoutesOptionsNoChildrenMenu}
+        options={menuGroup}
         placeholder={formatMessage('common.searchPage')}
         style={{ width: 180, height: '100%', ...selectStyle }}
         onChange={(_: any, options: any) => {
+          console.log(options);
           handleNavigate(options);
           setIcon(true);
         }}
-        filterOption={(input, option) => ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase())}
+        fieldNames={{
+          value: 'id',
+          label: 'showName',
+        }}
+        filterOption={(input, option) =>
+          ((option?.showName as string) ?? '').toLowerCase().includes(input.toLowerCase())
+        }
         allowClear
         showSearch
       />

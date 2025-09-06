@@ -8,6 +8,7 @@ import { uniqBy } from 'lodash';
 import type { FieldItem } from '@/pages/uns/types';
 import ComPopupGuide from '@/components/com-popup-guide';
 import { useBaseStore } from '@/stores/base';
+import { useI18nStore } from '@/stores/i18n-store';
 
 export interface FormContentProps {
   step: number;
@@ -31,13 +32,10 @@ type GetFormDataParamsType = {
 const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddNamespaceForAi, open, addModalType }) => {
   const form = Form.useFormInstance();
   const formatMessage = useTranslate();
-  const {
-    dashboardType,
-    systemInfo: { lang },
-  } = useBaseStore((state) => ({
+  const { dashboardType } = useBaseStore((state) => ({
     dashboardType: state.dashboardType,
-    systemInfo: state.systemInfo,
   }));
+  const lang = useI18nStore((state) => state.lang);
 
   const [types, setTypes] = useState([]);
   const [templateList, setTemplateList] = useState<TemplateItemType[]>([]); //模版列表
@@ -534,7 +532,22 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
               },
               childProps: {
                 placeholder: formatMessage('uns.searchInstance'),
-                apiParams: { type: 2, dataTypes: 1 },
+                apiParams: { type: 2, normal: true },
+                labelInValue: true,
+              },
+            },
+            { formType: 'divider', formProps: { name: 'tagsDivider' } },
+            {
+              formType: 'tagSelect',
+              formProps: {
+                name: 'tags',
+                label: formatMessage('common.label'),
+                tooltip: {
+                  title: formatMessage('uns.labelTooltip'),
+                },
+              },
+              childProps: {
+                tagMaxLen: 63,
               },
             }
           );
@@ -568,8 +581,14 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
       if (dataType === 3) {
         if (calculationType === 3) {
           formItemList.push(
-            { formType: 'calculationForm', formProps: { name: 'calculationForm' } },
-            { formType: 'divider', formProps: { name: 'calculationFormDivider' } }
+            {
+              formType: 'expressionForm',
+              formProps: { name: 'expressionForm' },
+              childProps: {
+                showTimeReference: true,
+              },
+            },
+            { formType: 'divider', formProps: { name: 'expressionFormDivider' } }
           );
         }
         if (calculationType === 4) {
@@ -617,6 +636,7 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
             tooltip: {
               title: formatMessage('uns.autoDashboardTooltip'),
             },
+            className: lang === 'zh-CN' ? '' : 'customLabelStyle',
           },
         });
       }

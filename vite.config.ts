@@ -69,6 +69,7 @@ export default defineConfig({
         './i18nStore': './src/stores/i18n-store.ts',
         './baseStore': './src/stores/base/index.ts',
         './tabs-lifecycle-context': './src/contexts/tabs-lifecycle-context.ts',
+        './useTabsContext': './src/contexts/tabs-context.ts',
       },
       shared: {
         react: {

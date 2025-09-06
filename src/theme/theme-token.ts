@@ -79,7 +79,7 @@ export default {
       colorFill: 'var(--supos-fill-tertiary)',
     },
     Tabs: {
-      itemSelectedColor: 'var(--supos-text-color)',
+      itemSelectedColor: 'var(--supos-theme-color)',
       inkBarColor: 'var(--supos-theme-color)',
     },
     DatePicker: {

@@ -80,7 +80,7 @@ const Details: FC<DetailsProps> = ({ instanceInfo, updateTime }) => {
         <div className="detailKey">{formatMessage('uns.databaseType')}</div>
         <div>{dataTypeMap[instanceInfo.dataType]}</div>
       </div>
-      {![6, 7].includes(instanceInfo.dataType) && (
+      {![6].includes(instanceInfo.dataType) && (
         <div className="detailItem">
           <div className="detailKey">{formatMessage('common.label')}</div>
           <div>

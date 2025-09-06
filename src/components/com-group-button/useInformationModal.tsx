@@ -126,7 +126,7 @@ const useInformationModal = ({ onCallBack }: any) => {
             </Flex>
 
             <AuthButton
-              auth={ButtonPermission['alert.confirm']}
+              auth={ButtonPermission['Alert.confirm']}
               size="small"
               type="primary"
               disabled={!data.some((item: any) => item.canHandler) || data.every((item: any) => item.readStatus)}
@@ -190,7 +190,7 @@ const useInformationModal = ({ onCallBack }: any) => {
                       <Flex justify="flex-end" style={{ marginTop: 4 }}>
                         {!item.readStatus || (item.canHandler && !item.readStatus) ? (
                           <AuthButton
-                            auth={ButtonPermission['alert.confirm']}
+                            auth={ButtonPermission['Alert.confirm']}
                             size="small"
                             type="primary"
                             disabled={!item.canHandler}

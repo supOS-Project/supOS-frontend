@@ -1,4 +1,4 @@
-import { FC, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import { TreeView as TreeViewIcon } from '@carbon/icons-react/lib/generated/bucket-17';
 import { App, Drawer, Splitter } from 'antd';
 import { useUnsTreeMapContext } from '@/UnsTreeMapContext.tsx';
@@ -12,6 +12,7 @@ import type { InitTreeDataFnType, UnsTreeNode } from '@/pages/uns/types';
 import { getExternalTreeData } from '@/apis/inter-api/external.ts';
 import ComLeft from '@/components/com-layout/ComLeft';
 import Loading from '@/components/loading';
+import { useWebSocket } from 'ahooks';
 
 const panelCloseSize = 48;
 const panelOpenSize = 500;
@@ -80,28 +81,42 @@ const LeftDom: FC<{
     }
   }, [selectedNode?.id]);
 
+  const { connect, disconnect } = useWebSocket(
+    `${location.protocol.includes('https') ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/external/topic`,
+    {
+      reconnectLimit: 0,
+      onMessage: (event) => {
+        if (event.data === 'refresh_notify') {
+          initUnusedTopicTreeData({ query: unusedTopicTreeRef?.current?.searchQuery });
+        }
+      },
+      manual: true,
+      onError: (error) => console.error('WebSocket error:', error),
+    }
+  );
+
   //滚动到目标树节点
   const scrollUnusedTopicTreeNode = (id: string) => {
     setTimeout(() => {
       if (unusedTopicTreeRef.current) unusedTopicTreeRef.current.scrollTo(id);
     }, 500);
   };
-
-  useLayoutEffect(() => {
+  useEffect(() => {
     const updatePanelSize = () => {
-      if (splitterWrapRef.current) {
+      const isShow = !!splitterWrapRef?.current?.offsetHeight;
+      if (splitterWrapRef.current && isShow && !unusedTopicPanelSize[0]) {
         setUnusedTopicPanelSize([splitterWrapRef.current.offsetHeight - panelCloseSize, panelCloseSize]);
       }
     };
     updatePanelSize();
-    // const resizeObserver = new ResizeObserver(updatePanelSize);
-    // if (splitterWrapRef.current) {
-    //   resizeObserver.observe(splitterWrapRef.current);
-    // }
-    // return () => {
-    //   resizeObserver.disconnect();
-    // };
-  }, []);
+    const resizeObserver = new ResizeObserver(updatePanelSize);
+    if (splitterWrapRef.current) {
+      resizeObserver.observe(splitterWrapRef.current);
+    }
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [unusedTopicPanelSize[0]]);
 
   useEffect(() => {
     //监听选中节点获取面包屑数据
@@ -110,13 +125,20 @@ const LeftDom: FC<{
       setUnusedTopicBreadcrumbList(nodeParents as any);
     }
   }, [currentUnusedTopicNode.id, unusedTopicTreeData, treeType]);
+  // const abortControllerRef = useRef<AbortController>();
 
   //初始化UnusedTopic树数据
   const initUnusedTopicTreeData: InitTreeDataFnType = ({ reset, query }, cb) => {
     if (treeType === 'uns') {
+      // 取消之前的请求
+      // const prevController = abortControllerRef.current;
+      // abortControllerRef.current = new AbortController();
+      // prevController?.abort();
       setUnusedTopicLoading(true);
+      // getExternalTreeData({ key: query }, { signal: abortControllerRef.current.signal })
       getExternalTreeData({ key: query })
         .then((res: any) => {
+          // 组树
           if (res?.length) {
             handleTreeDataAddId(res);
             setUnusedTopicTreeData(res);
@@ -144,9 +166,16 @@ const LeftDom: FC<{
   };
 
   useEffect(() => {
+    if (treeType === 'uns') {
+      connect?.();
+    }
     // 初始化 其他topic
     initUnusedTopicTreeData({ reset: true });
     setCurrentTreeMapType('all');
+    return () => {
+      // abortControllerRef.current?.abort();
+      disconnect?.();
+    };
   }, [treeType]);
 
   const { isTreeMapVisible, setTreeMapVisible } = useUnsTreeMapContext();
@@ -158,7 +187,11 @@ const LeftDom: FC<{
           <Tree
             treeNodeExtra={(dataNode) => {
               return (
-                <TreeNodeExtra handleDelete={() => handleDelete(dataNode)} handleCopy={() => handleCopy(dataNode)} />
+                <TreeNodeExtra
+                  type={dataNode.type}
+                  handleDelete={() => handleDelete(dataNode)}
+                  handleCopy={() => handleCopy(dataNode)}
+                />
               );
             }}
           />

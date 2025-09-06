@@ -45,11 +45,11 @@ const SuggestionsContext = ({ children }: { children: ReactNode }) => {
 
 // 通用的readable和action放这里
 const CopilotContext: FC<{ children: ReactNode; copilotCatRef: any }> = ({ children }) => {
-  const { pickedRoutesOptionsNoChildrenMenu, systemInfo } = useBaseStore((state) => ({
-    pickedRoutesOptionsNoChildrenMenu: state.pickedRoutesOptionsNoChildrenMenu,
+  const { menuGroupNoSub, systemInfo } = useBaseStore((state) => ({
     systemInfo: state.systemInfo,
+    menuGroupNoSub: state.menuGroup?.filter((f) => !f.subMenu),
   }));
-  const routeMap = pickedRoutesOptionsNoChildrenMenu?.map((item) => item.name);
+  const routeMap = menuGroupNoSub?.map((item) => item.showName ?? item.code);
   const [currentPage, setPage] = useState<string>('');
   const location = useLocation();
   useEffect(() => {

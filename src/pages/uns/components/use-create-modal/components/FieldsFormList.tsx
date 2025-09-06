@@ -71,7 +71,7 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
 
   //fields必填校验
   const validateFieldsRequired = (_: any, value: FieldItem[]) => {
-    if ([1, 2].includes(dataType) && !isCreateFolder && value?.filter((e) => !e?.isDefault).length === 0) {
+    if ([1, 2].includes(dataType) && !isCreateFolder && value?.filter((e) => !e?.systemField).length === 0) {
       return Promise.reject(new Error(formatMessage('uns.fieldsRequiredTip')));
     } else {
       return Promise.resolve();
@@ -94,7 +94,7 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
 
   useEffect(() => {
     const removeDefaultFields = fieldList?.filter(
-      (e: FieldItem) => !(e?.isDefault || [qualityName, timestampName].includes(e?.name))
+      (e: FieldItem) => !(e?.systemField || [qualityName, timestampName].includes(e?.name))
     );
     if (
       !isCreateFolder &&
@@ -104,14 +104,15 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
     ) {
       form.setFieldValue(fieldsName, [...removeDefaultFields, ...defaultFields]);
     }
-    if (dataType === 2 && fieldList?.some((e: FieldItem) => [qualityName, timestampName].includes(e?.name))) {
-      form.setFieldValue(fieldsName, removeDefaultFields);
+    if (dataType === 2 && fieldList?.some((e: FieldItem) => e?.systemField)) {
+      form.setFieldValue(fieldsName, removeDefaultFields?.length > 0 ? removeDefaultFields : [{}]);
+      triggerNameFieldValidation();
     }
   }, [dataType, fieldList]);
 
   const defaultDisabled = (item: FieldItem) => {
-    const { isDefault } = item || {};
-    return !isCreateFolder && [1, 3].includes(dataType) && isDefault;
+    const { systemField } = item || {};
+    return !isCreateFolder && [1, 3].includes(dataType) && systemField;
   };
 
   const handleChangeType = (type: string, index: number) => {

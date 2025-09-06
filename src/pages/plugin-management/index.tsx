@@ -1,4 +1,4 @@
-import { FC, useCallback, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { PageProps } from '@/common-types';
 import { SoftwareResourceCluster as _App, InformationFilled, Grid, List, FolderAdd } from '@carbon/icons-react';
 import { useTranslate } from '@/hooks';
@@ -143,7 +143,7 @@ const CardOperation = ({
         if (apiStr === 'installPluginApi') {
           // 安装成功，预先加载国际化
           try {
-            const langMessages = await preloadPluginLang([{ name: `/${routeName}` }], lang);
+            const langMessages = await preloadPluginLang([{ name: `/${routeName}`, backendName: info?.name }], lang);
             connectI18nMessage(langMessages);
           } catch (e) {
             console.error('插件国际化', e);
@@ -168,7 +168,7 @@ const CardOperation = ({
           return (
             <Space>
               <AuthButton
-                auth={ButtonPermission['pluginManagement.install']}
+                auth={ButtonPermission['PluginManagement.install']}
                 size="small"
                 type="primary"
                 onClick={() => onOptHandle('installPluginApi')}
@@ -176,7 +176,7 @@ const CardOperation = ({
                 {formatMessage('plugin.install')}
               </AuthButton>
               <AuthButton
-                auth={ButtonPermission['pluginManagement.update']}
+                auth={ButtonPermission['PluginManagement.update']}
                 size="small"
                 type="primary"
                 onClick={() => openModal(info)}
@@ -189,7 +189,7 @@ const CardOperation = ({
           return (
             <Space>
               <AuthButton
-                auth={ButtonPermission['pluginManagement.install']}
+                auth={ButtonPermission['PluginManagement.install']}
                 size="small"
                 type="primary"
                 onClick={() => onOptHandle('installPluginApi')}
@@ -197,7 +197,7 @@ const CardOperation = ({
                 {formatMessage('plugin.reInstall')}
               </AuthButton>
               <AuthButton
-                auth={ButtonPermission['pluginManagement.update']}
+                auth={ButtonPermission['PluginManagement.update']}
                 size="small"
                 type="primary"
                 onClick={() => openModal(info)}
@@ -211,7 +211,7 @@ const CardOperation = ({
             <Space>
               <AuthButton
                 disabled={info?.plugInfoYml?.removable === false}
-                auth={ButtonPermission['pluginManagement.unInstall']}
+                auth={ButtonPermission['PluginManagement.unInstall']}
                 size="small"
                 style={{ color: 'var(--supos-text-color)' }}
                 onClick={() => {
@@ -230,7 +230,7 @@ const CardOperation = ({
                 {formatMessage('common.unInstall')}
               </AuthButton>
               <AuthButton
-                auth={ButtonPermission['pluginManagement.update']}
+                auth={ButtonPermission['PluginManagement.update']}
                 size="small"
                 type="primary"
                 onClick={() => openModal(info)}
@@ -269,6 +269,7 @@ const LoadingCard = ({ d, refreshRequest, openModal }: any) => {
   const primaryColor = useThemeStore((state) => state.primaryColor);
   const [loading, setLoading] = useState(false);
   const { plugInfoYml = {}, name } = d;
+  const icon = plugInfoYml?.resources?.find((f: any) => f.groupType === 2)?.icon || plugInfoYml?.route?.name;
   return (
     <ComCard
       key={plugInfoYml.name}
@@ -284,9 +285,7 @@ const LoadingCard = ({ d, refreshRequest, openModal }: any) => {
           <CardTag status={d.installStatus} latestFailMsg={d.latestFailMsg} />
         </Flex>
       }
-      customImage={
-        <IconImage theme={primaryColor} iconName={plugInfoYml?.route?.homeIconUrl ?? plugInfoYml?.route?.icon} />
-      }
+      customImage={<IconImage theme={primaryColor} iconName={icon} />}
       loading={loading}
       operation={
         <CardOperation
@@ -305,16 +304,12 @@ const LoadingCard = ({ d, refreshRequest, openModal }: any) => {
 
 const IconImageWrapper = ({ record }: any) => {
   const primaryColor = useThemeStore((state) => state.primaryColor);
+  const icon =
+    record?.plugInfoYml?.resources?.find((f: any) => f.groupType === 2)?.icon || record?.plugInfoYml?.route?.name;
 
   return (
     <>
-      <IconImage
-        theme={primaryColor}
-        width={20}
-        height={20}
-        wrapperStyle={{ marginRight: 8 }}
-        iconName={record?.plugInfoYml?.route?.homeIconUrl ?? record?.plugInfoYml?.route?.icon}
-      />
+      <IconImage theme={primaryColor} width={20} height={20} wrapperStyle={{ marginRight: 8 }} iconName={icon} />
       {record?.plugInfoYml?.showName}
     </>
   );
@@ -324,10 +319,12 @@ const Index: FC<PageProps> = ({ title }) => {
     setPluginList(data);
   };
   const commonFormatMessage = useTranslate();
+  const lang = useI18nStore((state) => state.lang);
   const [open, setOpen] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
   const selectName = useRef('');
   const [uploadTitle, setUploadTitle] = useState('save');
+  const isFirstRender = useRef(true);
 
   const [mode, setMode] = useLocalStorageState<string>('SUPOS_PLUGIN_MODE', {
     defaultValue: 'card',
@@ -341,12 +338,20 @@ const Index: FC<PageProps> = ({ title }) => {
     getPluginListApi();
   });
 
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+    } else {
+      refreshRequest();
+    }
+  }, [lang]);
+
   const columns: any = [
     {
       dataIndex: 'showName',
       ellipsis: true,
       fixed: 'left',
-      title: commonFormatMessage('common.pluginName'),
+      title: () => commonFormatMessage('common.pluginName'),
       width: '20%',
       render: (_: string, record: any) => {
         return <IconImageWrapper record={record} />;
@@ -355,7 +360,7 @@ const Index: FC<PageProps> = ({ title }) => {
     {
       dataIndex: 'vendorName',
       ellipsis: true,
-      title: commonFormatMessage('common.dev'),
+      title: () => commonFormatMessage('common.dev'),
       width: '10%',
       render: (_: string, record: any) => {
         return record?.plugInfoYml?.vendorName;
@@ -364,7 +369,7 @@ const Index: FC<PageProps> = ({ title }) => {
     {
       dataIndex: 'version',
       ellipsis: true,
-      title: commonFormatMessage('common.version'),
+      title: () => commonFormatMessage('common.version'),
       width: '10%',
       render: (_: string, record: any) => {
         return record?.plugInfoYml?.version;
@@ -373,13 +378,13 @@ const Index: FC<PageProps> = ({ title }) => {
     {
       dataIndex: 'name',
       ellipsis: true,
-      title: commonFormatMessage('common.name'),
+      title: () => commonFormatMessage('common.name'),
       width: '10%',
     },
     {
       dataIndex: 'description',
       ellipsis: true,
-      title: commonFormatMessage('common.description'),
+      title: () => commonFormatMessage('common.description'),
       width: '23%',
       render: (_: string, record: any) => {
         return record?.plugInfoYml?.description;
@@ -388,7 +393,7 @@ const Index: FC<PageProps> = ({ title }) => {
     {
       dataIndex: 'installTime',
       ellipsis: true,
-      title: commonFormatMessage('common.installTime'),
+      title: () => commonFormatMessage('common.installTime'),
       width: '10%',
       render: (t: number) => {
         return formatTimestamp(t);
@@ -397,7 +402,7 @@ const Index: FC<PageProps> = ({ title }) => {
     {
       dataIndex: 'installStatus',
       ellipsis: true,
-      title: commonFormatMessage('common.states'),
+      title: () => commonFormatMessage('common.states'),
       width: '5%',
       render: (status: string) => {
         const info = StatusOptions?.find((f) => f.value === status) ?? {
@@ -416,7 +421,7 @@ const Index: FC<PageProps> = ({ title }) => {
       dataIndex: 'operation',
       ellipsis: true,
       fixed: 'right',
-      title: commonFormatMessage('common.operation'),
+      title: () => commonFormatMessage('common.operation'),
       width: '10%',
       render: (_: any, record: any) => {
         return <LoadingOperation openModal={openModal} d={record} refreshRequest={refreshRequest} />;
@@ -492,7 +497,7 @@ const Index: FC<PageProps> = ({ title }) => {
         }}
         className={styles['plugin-management']}
       >
-        <Flex justify="flex-end" align="center" style={{ marginTop: 16, paddingRight: 16 }}>
+        <Flex justify="flex-end" align="center" style={{ marginBottom: 16, marginTop: 16, paddingRight: 16 }}>
           <Segmented
             size="small"
             value={mode}
@@ -517,7 +522,7 @@ const Index: FC<PageProps> = ({ title }) => {
             ]}
           />
         </Flex>
-        <div style={{ flex: 1, padding: 24, overflow: 'auto' }}>
+        <div style={{ flex: 1, padding: '0 16px 16px', overflow: 'auto' }}>
           {mode === 'card' ? (
             <Flex gap={18} wrap align="flex-start" justify="flex-start">
               {data.length > 0 ? (

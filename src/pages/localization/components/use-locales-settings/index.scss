@@ -1,0 +1,11 @@
+.use-locales-settings {
+  .custom-tab {
+    .ant-tabs-tab {
+      padding: 8px 0;
+    }
+
+    .ant-tabs-tab-active {
+      color: var(--supos-theme-color);
+    }
+  }
+}

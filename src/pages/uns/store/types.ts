@@ -88,6 +88,7 @@ export type TreeStoreActions = {
       clearExpanded?: boolean; // 清空展开态
       clearLoadedKeys?: boolean; // 清空请求
       startLoading?: boolean; // 启动loading
+      nodeDetail?: UnsTreeNode; // 当前操作节点信息
     },
     // cb 回调函数
     cb?: (

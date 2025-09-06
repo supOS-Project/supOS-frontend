@@ -1,24 +1,23 @@
 import { FC, ReactNode, useEffect, useState } from 'react';
 import { Popover, Divider, Flex, PopoverProps, Button, Form, Input, App, ConfigProvider, Tabs } from 'antd';
-import { Calendar, Checkmark, ColorPalette, Contrast, Logout, SettingsEdit, UserAvatar } from '@carbon/icons-react';
+import { Checkmark, ColorPalette, Contrast, Earth, Logout, SettingsEdit, UserAvatar } from '@carbon/icons-react';
 import { useTranslate } from '@/hooks';
 import ComSelect from '../com-select';
 import ProModal from '../pro-modal';
 import { setHomePageApi, updateUser, userResetPwd } from '@/apis/inter-api/user-manage';
 import { LOGIN_URL, OMC_MODEL } from '@/common-types/constans';
 import { SUPOS_USER_GUIDE_ROUTES, SUPOS_USER_TIPS_ENABLE } from '@/common-types/constans';
-import { RoutesProps } from '@/stores/types.ts';
+import { ResourceProps } from '@/stores/types.ts';
 import { removeToken } from '@/utils/auth';
 import { storageOpt } from '@/utils/storage';
 import { passwordRegex, phoneRegex, validSpecialCharacter } from '@/utils/pattern';
 import { fetchBaseStore, updateForUserInfo, useBaseStore } from '@/stores/base';
 import { PrimaryColorType, setPrimaryColor, setTheme, ThemeType, useThemeStore } from '@/stores/theme-store.ts';
 import Cookies from 'js-cookie';
-import { logoutApi } from '@/apis/inter-api';
+import { logoutApi, updatePersonConfigApi } from '@/apis/inter-api';
+import { initI18n, useI18nStore } from '@/stores/i18n-store.ts';
+import { preloadPluginLang } from '@/utils/plugin.ts';
 import { queryDeadline } from '@/apis/inter-api/license';
-// import { initI18n, useI18nStore } from '@/stores/i18n-store.ts';
-// import { getPluginListApi } from '@/apis/inter-api/plugin.ts';
-// import { preloadPluginLang } from '@/utils';
 
 const logout = (path?: string) => {
   logoutApi().then(() => {
@@ -85,19 +84,19 @@ const colorList = [
 ];
 const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
   const formatMessage = useTranslate();
-  const { currentUserInfo, systemInfo, pickedRoutesOptionsNoChildrenMenu, pluginList } = useBaseStore((state) => ({
+  const { currentUserInfo, systemInfo, pluginList, menuGroupNoSub } = useBaseStore((state) => ({
     currentUserInfo: state.currentUserInfo,
     systemInfo: state.systemInfo,
-    pickedRoutesOptionsNoChildrenMenu: state.pickedRoutesOptionsNoChildrenMenu,
     pluginList: state.pluginList,
+    menuGroupNoSub: state.menuGroup?.filter((f) => !f.subMenu),
   }));
   const { _theme, primaryColor } = useThemeStore((state) => ({
     _theme: state._theme,
     primaryColor: state.primaryColor,
   }));
-  // const { lang } = useI18nStore((state) => ({
-  //   lang: state.lang,
-  // }));
+  const { lang } = useI18nStore((state) => ({
+    lang: state.lang,
+  }));
   const [expirationDate, setExpirationDate] = useState();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -113,7 +112,7 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
     setPrimaryColor(v as PrimaryColorType);
   };
   const name = currentUserInfo.firstName || currentUserInfo.preferredUsername;
-  const version = `${systemInfo.appTitle} Version : ${systemInfo?.version || '1.0.0'}`;
+  const version = `${systemInfo.appTitle} Version： ${systemInfo?.version || '1.0.0'}`;
   const userContent = (
     <div className="userPopoverWrap">
       <div className="userAvatar">{name?.slice(0, 1)?.toLocaleUpperCase()}</div>
@@ -210,39 +209,45 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
               </ul>
             ),
           },
-          // {
-          //   icon: <Earth color="var(--supos-text-color)" size={18} />,
-          //   label: <div style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.language')}</div>,
-          //   key: 'language',
-          //   children: (
-          //     <ComSelect
-          //       onChange={(v) => {
-          //         getPluginListApi().then(async (data) => {
-          //           const pluginLang = await preloadPluginLang(
-          //             data
-          //               ?.filter((f: any) => f.installStatus === 'installed')
-          //               ?.filter((f: any) => f?.plugInfoYml?.route?.name)
-          //               ?.map((m: any) => ({ name: `/${m?.plugInfoYml?.route?.name}` })) || [],
-          //             v
-          //           );
-          //           return initI18n(v, pluginLang);
-          //         });
-          //       }}
-          //       value={lang}
-          //       style={{ height: 28, width: 94, backgroundColor: 'var(--supos-bg-color) !important' }}
-          //       options={[
-          //         {
-          //           label: 'English',
-          //           value: 'en-US',
-          //         },
-          //         {
-          //           label: '中文',
-          //           value: 'zh-CN',
-          //         },
-          //       ]}
-          //     />
-          //   ),
-          // },
+          {
+            icon: <Earth color="var(--supos-text-color)" size={18} />,
+            label: <div style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.language')}</div>,
+            key: 'language',
+            children: (
+              <ComSelect
+                disabled={!currentUserInfo?.sub}
+                onChange={(v) => {
+                  if (currentUserInfo?.sub) {
+                    // 重新过滤插件国际化文件;
+                    updatePersonConfigApi({ userId: currentUserInfo.sub!, mainLanguage: v }).then(async () => {
+                      const pluginLang = await preloadPluginLang(
+                        pluginList
+                          ?.filter((f: any) => f.installStatus === 'installed')
+                          ?.filter((f: any) => f?.plugInfoYml?.route?.name)
+                          ?.map((m: any) => ({ name: `/${m?.plugInfoYml?.route?.name}`, backendName: m?.name })) || [],
+                        v
+                      );
+                      // 更新路由，名称和描述是后端国际化
+                      fetchBaseStore?.();
+                      return initI18n(v, pluginLang);
+                    });
+                  }
+                }}
+                value={lang}
+                style={{ height: 28, width: 94, backgroundColor: 'var(--supos-bg-color) !important' }}
+                options={[
+                  {
+                    label: 'English',
+                    value: 'en-US',
+                  },
+                  {
+                    label: '中文',
+                    value: 'zh-CN',
+                  },
+                ]}
+              />
+            ),
+          },
         ]}
       />
       <Divider
@@ -276,7 +281,8 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
               form1.setFieldValue('email', currentUserInfo?.email);
             },
             // 免登环境未登录的用户禁用设置
-            disabled: systemInfo?.ldapEnable || currentUserInfo?.sub === 'guest',
+            disabled:
+              systemInfo?.ldapEnable || currentUserInfo?.sub === 'guest' || currentUserInfo?.source === 'external',
           },
           {
             icon: <Logout color="var(--supos-text-color)" size={18} />,
@@ -287,30 +293,15 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
         ]}
       />
       {name === 'supos' && expirationDate && (
-        <>
-          <Divider
-            style={{
-              background: '#c6c6c6',
-              margin: '15px auto',
-            }}
-          />
-          <ComList
-            list={[
-              {
-                icon: <Calendar color="var(--supos-text-color)" size={18} />,
-                label: (
-                  <div style={{ color: 'var(--supos-text-color)' }}>
-                    {formatMessage('common.expirationDate')}：{expirationDate}
-                  </div>
-                ),
-                key: 'layout',
-                disabled: true,
-              },
-            ]}
-          />
-        </>
+        <span
+          className="userEmail"
+          style={{ marginTop: 10 }}
+          title={`${formatMessage('common.expirationDate')}:${expirationDate}`}
+        >
+          {formatMessage('common.expirationDate')}：{expirationDate}
+        </span>
       )}
-      <span style={{ marginTop: 10 }} className="userEmail" title={version}>
+      <span style={{ marginTop: name === 'supos' && expirationDate ? 0 : 10 }} className="userEmail" title={version}>
         {version}
       </span>
     </div>
@@ -360,12 +351,12 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
   const onSave3 = async () => {
     const info = await form3.validateFields();
     if (info) {
-      const option = pickedRoutesOptionsNoChildrenMenu?.find((f) => f.value === info.homePage);
-      const getHomePage = (item?: RoutesProps) => {
+      const option = menuGroupNoSub?.find((f) => f.code === info.homePage);
+      const getHomePage = (item?: ResourceProps) => {
         if (!item) return '';
-        if (item.isFrontend) return item.menu!.url;
-        if (item.indexUrl) return item.indexUrl;
-        return `/${item.key}`;
+        if (item.urlType === 1) return item.url;
+        // if (item.indexUrl) return item.indexUrl;
+        return `/${item.code}`;
       };
       const homePage = getHomePage(option);
       setHomePageApi({ homePage })?.then(() => {
@@ -379,7 +370,7 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
     if (name !== 'supos') return;
     if (pluginList?.filter((f: any) => f.installStatus === 'installed')?.find((f: any) => f?.name === 'license')) {
       queryDeadline().then((data) => {
-        setExpirationDate(data);
+        setExpirationDate(data?.date);
       });
     }
   }, [name, pluginList]);
@@ -388,13 +379,10 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
     if (open) {
       // 更新路由
       fetchBaseStore?.().then(() => {
-        const info = pickedRoutesOptionsNoChildrenMenu?.find(
-          (f) =>
-            '/' + f.value === currentUserInfo?.homePage ||
-            f.menu?.url === currentUserInfo?.homePage ||
-            f.indexUrl === currentUserInfo?.homePage
+        const info = menuGroupNoSub?.find(
+          (f) => '/' + f.code === currentUserInfo?.homePage || f.url === currentUserInfo?.homePage
         );
-        form3.setFieldValue('homePage', info?.value);
+        form3.setFieldValue('homePage', info?.code);
       });
     }
   }, [open]);
@@ -428,15 +416,11 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
             >
               <Input className={'input'} placeholder={formatMessage('account.displayName')} />
             </Form.Item>
-            <Form.Item
-              label={formatMessage('common.update') + formatMessage('account.email')}
-              name="email"
-              rules={[{ type: 'email' }]}
-            >
+            <Form.Item label={formatMessage('common.updateEmail')} name="email" rules={[{ type: 'email' }]}>
               <Input placeholder={formatMessage('account.email')} />
             </Form.Item>
             <Form.Item
-              label={formatMessage('common.update') + formatMessage('account.phone')}
+              label={formatMessage('common.updatePhone')}
               name="phone"
               rules={[{ pattern: phoneRegex, message: formatMessage('rule.phone') }]}
               validateTrigger={['onBlur']}
@@ -562,11 +546,15 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
         >
           <Form.Item label={formatMessage('account.homePage')} name="homePage">
             <ComSelect
-              options={pickedRoutesOptionsNoChildrenMenu}
+              options={menuGroupNoSub}
               placeholder={formatMessage('common.searchPage')}
               filterOption={(input, option) =>
-                ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase())
+                ((option?.showName as string) ?? '').toLowerCase().includes(input.toLowerCase())
               }
+              fieldNames={{
+                value: 'code',
+                label: 'showName',
+              }}
               allowClear
               showSearch
             />

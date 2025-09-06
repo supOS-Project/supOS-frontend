@@ -73,11 +73,11 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
                 <Paragraph
                   style={{ margin: 0, width: '100%' }}
                   editable={
-                    hasPermission(ButtonPermission['uns.editTemplateDescription'])
+                    hasPermission(ButtonPermission['uns.templateDetail'])
                       ? {
                           icon: (
                             <Icon
-                              data-button-auth={ButtonPermission['uns.editTemplateDescription']}
+                              data-button-auth={ButtonPermission['uns.templateDetail']}
                               component={FileEdit}
                               style={{
                                 fontSize: 17,
@@ -126,7 +126,7 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
       label: <span>{formatMessage('uns.definition')}</span>,
       extra: (
         <EditButton
-          auth={ButtonPermission['uns.templateDefinition']}
+          auth={ButtonPermission['uns.templateDetail']}
           modelInfo={info}
           getModel={() => getModel(id as string)}
         />
@@ -192,11 +192,11 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
             level={2}
             style={{ margin: 0, width: '100%', insetInlineStart: 0 }}
             editable={
-              hasPermission(ButtonPermission['uns.editTemplateName'])
+              hasPermission(ButtonPermission['uns.templateDetail'])
                 ? {
                     icon: (
                       <Icon
-                        data-button-auth={ButtonPermission['uns.editTemplateName']}
+                        data-button-auth={ButtonPermission['uns.templateDetail']}
                         component={FileEdit}
                         style={{
                           fontSize: 25,
@@ -211,6 +211,10 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
                         return message.warning(
                           formatMessage('uns.labelMaxLength', { label: formatMessage('common.name'), length: 63 })
                         );
+                      }
+                      const reg = /^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/;
+                      if (!reg.test(val)) {
+                        return message.error(formatMessage('uns.nameFormat'));
                       }
                       editTemplateName({ id, name: val }).then(() => {
                         message.success(formatMessage('uns.editSuccessful'));
@@ -244,7 +248,7 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
             style={{ background: token.colorBgContainer }}
           />
         </div>
-        <AuthWrapper auth={ButtonPermission['uns.templateDelete']}>
+        <AuthWrapper auth={ButtonPermission['uns.templateDetail']}>
           <div className="deleteBtnWrap" style={{ marginTop: 0 }}>
             <Button
               type="primary"

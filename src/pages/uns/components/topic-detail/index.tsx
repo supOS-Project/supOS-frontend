@@ -1,5 +1,5 @@
 import { useState, useEffect, FC, useRef } from 'react';
-import { getInstanceInfo, modifyModel } from '@/apis/inter-api/uns';
+import { createDashboard, getInstanceInfo, modifyModel, checkDashboardIsExist } from '@/apis/inter-api/uns';
 import { useWebSocket } from 'ahooks';
 import { Button, Collapse, Flex, theme, Typography, App } from 'antd';
 import Icon from '@ant-design/icons';
@@ -42,14 +42,14 @@ const Module: FC<FileDetailProps> = (props) => {
     currentNode: { id },
     initTreeData,
   } = props;
-  const { dashboardType, systemInfo } = useBaseStore((state) => ({
-    dashboardType: state.dashboardType,
+  const { systemInfo } = useBaseStore((state) => ({
     systemInfo: state.systemInfo,
   }));
   const formatMessage = useTranslate();
   const { message } = App.useApp();
   const documentListRef = useRef();
   const [instanceInfo, setInstanceInfo] = useState<InstanceInfoType>({});
+  const [createLoading, setCreateLoading] = useState(false);
   const [activeList, setActiveList] = useState<string[]>([
     'topologyChart',
     'definition',
@@ -120,8 +120,12 @@ const Module: FC<FileDetailProps> = (props) => {
 
   const getFileDetail = (id: string) => {
     getInstanceInfo({ id })
-      .then((data: any) => {
+      .then(async (data: any) => {
         if (data?.id) {
+          if (data.withDashboard) {
+            const { code } = await checkDashboardIsExist({ alias: data.alias });
+            data.dashboardIsExist = code === 200;
+          }
           setInstanceInfo(data);
         }
       })
@@ -140,11 +144,17 @@ const Module: FC<FileDetailProps> = (props) => {
         style: panelStyle,
         extra: (
           <EditDetailButton
-            auth={ButtonPermission['uns.editFileDetail']}
+            auth={ButtonPermission['uns.fileDetail']}
             modelInfo={instanceInfo}
             getModel={() => getFileDetail(id as string)}
           />
         ),
+      },
+      {
+        key: 'definition',
+        label: formatMessage('uns.definition'),
+        children: <Definition instanceInfo={instanceInfo} />,
+        style: panelStyle,
       },
       {
         key: [1, 2, 3, 6, 7].includes(instanceInfo.dataType) ? 'payload' : '',
@@ -165,22 +175,19 @@ const Module: FC<FileDetailProps> = (props) => {
           />
         ),
       },
-      {
-        key: 'definition',
-        label: formatMessage('uns.definition'),
-        children: <Definition instanceInfo={instanceInfo} />,
-        style: panelStyle,
-      },
       ...(!isH5
         ? [
             {
-              key:
-                instanceInfo.withDashboard && instanceInfo.withSave2db && dashboardType?.includes('grafana')
-                  ? 'dashboard'
-                  : '',
+              key: instanceInfo.dataType !== 6 ? 'dashboard' : '',
               label: formatMessage('uns.dashboard'),
               children: <Dashboard instanceInfo={instanceInfo} />,
               style: panelStyle,
+              extra: [1, 2, 3].includes(instanceInfo.dataType) &&
+                (!instanceInfo.withDashboard || !instanceInfo.dashboardIsExist) && (
+                  <Button loading={createLoading} onClick={handleCreateDashboard}>
+                    {formatMessage('common.create')}
+                  </Button>
+                ),
             },
             {
               key: [1, 2].includes(instanceInfo.dataType) ? 'topologyChart' : '',
@@ -210,7 +217,8 @@ const Module: FC<FileDetailProps> = (props) => {
         style: panelStyle,
         extra: (
           <UploadButton
-            auth={ButtonPermission['uns.uploadDoc']}
+            setActiveList={setActiveList}
+            auth={ButtonPermission['uns.fileDetail']}
             alias={instanceInfo.alias}
             documentListRef={documentListRef}
           />
@@ -218,6 +226,18 @@ const Module: FC<FileDetailProps> = (props) => {
       },
     ];
     return items.filter((item: any) => item.key);
+  };
+
+  const handleCreateDashboard = () => {
+    setCreateLoading(true);
+    createDashboard(instanceInfo.alias)
+      .then(() => {
+        message.success(formatMessage('common.optsuccess'));
+        getFileDetail(instanceInfo.id);
+      })
+      .finally(() => {
+        setCreateLoading(false);
+      });
   };
 
   return (
@@ -236,11 +256,11 @@ const Module: FC<FileDetailProps> = (props) => {
             level={2}
             style={{ margin: 0, width: '100%', insetInlineStart: 0 }}
             editable={
-              hasPermission(ButtonPermission['uns.editFileName']) && systemInfo?.useAliasPathAsTopic
+              hasPermission(ButtonPermission['uns.fileDetail']) && systemInfo?.useAliasPathAsTopic
                 ? {
                     icon: (
                       <Icon
-                        data-button-auth={ButtonPermission['uns.editFileName']}
+                        data-button-auth={ButtonPermission['uns.fileDetail']}
                         component={FileEdit}
                         style={{
                           fontSize: 25,
@@ -281,13 +301,6 @@ const Module: FC<FileDetailProps> = (props) => {
             items={getItems(panelStyle, instanceInfo)}
           />
         </div>
-        {/* <AuthWrapper auth={ButtonPermission['uns.delete']}>
-          <div className="deleteBtnWrap">
-            <Button type="primary" style={{ width: '100px', fontWeight: 'bold' }} onClick={deleteTopic}>
-              {formatMessage('common.delete')}
-            </Button>
-          </div>
-        </AuthWrapper> */}
       </div>
     </div>
   );

@@ -63,32 +63,32 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
     {
       dataIndex: 'preferredUsername',
       ellipsis: true,
-      title: formatMessage('account.account'),
+      titleIntlId: 'account.account',
       width: '10%',
     },
     {
       width: '10%',
       dataIndex: 'firstName',
       ellipsis: true,
-      title: formatMessage('common.name'),
+      titleIntlId: 'common.name',
     },
     {
       width: '10%',
       dataIndex: 'phone',
       ellipsis: true,
-      title: formatMessage('account.phone'),
+      titleIntlId: 'account.phone',
     },
     {
       width: '10%',
       dataIndex: 'email',
       ellipsis: true,
-      title: formatMessage('account.email'),
+      titleIntlId: 'account.email',
     },
     {
       width: '10%',
       dataIndex: 'roleList',
       ellipsis: true,
-      title: formatMessage('account.role'),
+      titleIntlId: 'account.role',
       render: (text: any) => {
         return text?.map((i: any) => i.roleName)?.join(',');
       },
@@ -97,7 +97,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
       width: '10%',
       dataIndex: 'enabled',
       ellipsis: true,
-      title: formatMessage('common.status'),
+      titleIntlId: 'common.status',
       render: (text: any) => {
         return text ? (
           <Tag bordered={false} style={{ borderRadius: 15 }} color={'green'}>
@@ -114,7 +114,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
       dataIndex: 'edit',
       width: '15%',
       ellipsis: true,
-      title: formatMessage('common.operation'),
+      titleIntlId: 'common.operation',
       render: (_: any, record: any) => {
         return (
           <Flex>
@@ -122,8 +122,8 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
               <AuthButton
                 color="danger"
                 variant="text"
-                disabled={ldapEnable}
-                auth={ButtonPermission['accountManagement.disable']}
+                disabled={ldapEnable || record?.source === 'external'}
+                auth={ButtonPermission['UserManagement.disable']}
                 style={{ height: 18, fontSize: 12, textDecoration: 'underline', textUnderlineOffset: 4 }}
                 onClick={() => {
                   handle(
@@ -140,11 +140,11 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
               </AuthButton>
             ) : (
               <AuthButton
-                auth={ButtonPermission['accountManagement.enable']}
+                auth={ButtonPermission['UserManagement.enable']}
                 style={{ height: 18, fontSize: 12 }}
                 color="primary"
                 variant="link"
-                disabled={ldapEnable}
+                disabled={ldapEnable || record?.source === 'external'}
                 onClick={() => {
                   handle(
                     {
@@ -164,7 +164,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
       },
     },
     {
-      title: formatMessage('common.edit'),
+      titleIntlId: 'common.edit',
       dataIndex: 'Operation',
       width: '15%',
       minWidth: 350,
@@ -173,7 +173,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
         return (
           <Flex gap={16} style={{ fontSize: 12 }}>
             <AuthButton
-              auth={ButtonPermission['accountManagement.edit']}
+              auth={ButtonPermission['UserManagement.edit']}
               style={{
                 height: 18,
                 fontSize: 12,
@@ -184,12 +184,13 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
               onClick={() => {
                 onAddOpen?.(record);
               }}
+              disabled={record?.source === 'external'}
             >
               {formatMessage('common.edit')}
               <Edit size={14} />
             </AuthButton>
             <AuthButton
-              auth={ButtonPermission['accountManagement.resetPassword']}
+              auth={ButtonPermission['UserManagement.resetPassword']}
               style={{
                 height: 18,
                 fontSize: 12,
@@ -207,12 +208,12 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
             </AuthButton>
             {record?.preferredUsername !== 'supos' ? (
               <AuthButton
-                auth={ButtonPermission['accountManagement.delete']}
+                auth={ButtonPermission['UserManagement.delete']}
                 style={{
                   height: 18,
                   fontSize: 12,
                 }}
-                disabled={ldapEnable && record?.preferredUsername !== 'supos'}
+                disabled={(ldapEnable && record?.preferredUsername !== 'supos') || record?.source === 'external'}
                 color="default"
                 variant="filled"
                 onClick={() => {
@@ -253,7 +254,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
         extra={
           <>
             <AuthButton
-              auth={ButtonPermission['accountManagement.add']}
+              auth={ButtonPermission['UserManagement.add']}
               style={{ height: 28 }}
               onClick={onAddHandle}
               type="primary"
@@ -265,7 +266,7 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
               </Flex>
             </AuthButton>
             <AuthButton
-              auth={ButtonPermission['accountManagement.roleSettings']}
+              auth={ButtonPermission['UserManagement.roleSettings']}
               style={{ height: 28, backgroundColor: buttonBg }}
               color="default"
               variant="filled"

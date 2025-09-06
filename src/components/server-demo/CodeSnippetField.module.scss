@@ -1,6 +1,11 @@
 .container {
   width: 100%;
 
+  &.hasLabel {
+    padding: 16px;
+    background: #fff;
+  }
+
   div.content {
     padding: 0;
     border-radius: 3px;

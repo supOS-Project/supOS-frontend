@@ -39,6 +39,9 @@ export * from './com-card';
 export * from './com-click-trigger';
 export * from './pro-tree-select';
 export * from './operation-buttons';
+export * from './com-input';
+export * from './com-dot';
+export * from './com-tag-filter';
 
 export { default as withAuth } from './auth';
 export { default as ComCardList } from './com-card-list';
@@ -104,3 +107,4 @@ export { default as DynamicMFComponent } from './dynamic-mf-component';
 export { default as ServerDemo } from './server-demo';
 export { default as MqttDemo } from './server-demo/MqttDemo';
 export { default as demoData } from './server-demo/data';
+export { default as ComInput } from './com-input';

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { Badge, Button, Flex, message, Modal, Space, Tabs, TabsProps, Typography } from 'antd';
 import OverviewList from '@/pages/home/components/OverviewList.tsx';
-import { RoutesProps } from '@/stores/types';
+import { ResourceProps } from '@/stores/types';
 import styles from './index.module.scss';
 import StickyBox from 'react-sticky-box';
 import { useGuideSteps, useTranslate } from '@/hooks';
@@ -20,7 +20,10 @@ import ImportModal from './components/import-modal';
 import ExportModal from './components/export-modal';
 import { getGlobalExportRecords } from '@/apis/inter-api/global.ts';
 import ComClickTrigger from '@/components/com-click-trigger';
-import { useErrorStore } from '@/stores/error-store.ts';
+import IframeWrapper from '../../components/iframe-wrapper';
+import { FullscreenOutlined } from '@ant-design/icons';
+import screenfull from 'screenfull';
+import { useI18nStore } from '@/stores/i18n-store.ts';
 
 const { Title, Paragraph } = Typography;
 
@@ -41,16 +44,24 @@ const exampleTypes: { [x: string | number]: string } = {
   2: 'ITDataConnections',
 };
 
+export interface ExampleProps extends ResourceProps {
+  iconComp?: ReactElement;
+  status?: number | string;
+}
+
 const Index = () => {
   const selectedIdRef = useRef<string | number>();
-  const { pickedGroupRoutesForHome, systemInfo } = useBaseStore((state) => ({
-    pickedGroupRoutesForHome: state.pickedGroupRoutesForHome,
+  const { systemInfo, homeTree, homeTabGroup } = useBaseStore((state) => ({
     systemInfo: state.systemInfo,
+    homeTree: state.homeTree,
+    homeTabGroup: state.homeTabGroup,
   }));
+  const lang = useI18nStore((state) => state.lang);
+  const [tabKey, setTabKey] = useState('overview');
   const formatMessage = useTranslate();
   const navigate = useNavigate();
   const [pathname, setPathname] = useState('');
-  const [exampleDataSource, setExampleDataSource] = useState<RoutesProps[]>([]);
+  const [exampleDataSource, setExampleDataSource] = useState<ExampleProps[]>([]);
   const [loadingViews, setLoadingViews] = useState<string[]>([]);
   const [importModal, setImportModal] = useState(false);
   const exportRef = useRef<any>(null);
@@ -60,6 +71,9 @@ const Index = () => {
     fetchBaseStore?.();
     getRecords?.();
   }, []);
+  useEffect(() => {
+    getExamples();
+  }, [lang]);
   const primaryColor = useThemeStore((state) => state.primaryColor);
 
   // 解决routesStore?.fetchRoutes导致跳转路由方法失效的问题：通过state改变再触发navigate跳转
@@ -85,7 +99,7 @@ const Index = () => {
   const getExamples = (open = true) => {
     queryExamples().then((data: any) => {
       const newExamplesMap = new Map();
-      const newExampleDataSource: RoutesProps[] = [];
+      const newExampleDataSource: ExampleProps[] = [];
 
       if (!data?.length) return;
 
@@ -107,9 +121,8 @@ const Index = () => {
 
         if (!newExamplesMap.has(type)) {
           newExamplesMap.set(type, {
-            name: item.name,
-            key: type,
-            hasChildren: true,
+            showName: item.name,
+            id: type,
             children: [],
           });
         }
@@ -120,13 +133,11 @@ const Index = () => {
           children: [
             ...newExamplesMap.get(type).children,
             {
-              name: item.name,
-              isFrontend: false,
-              parentName: formatMessage(`common.${type}`) || type,
-              parentKey: type,
-              key: item.id,
+              showName: item.name,
+              parentId: type,
+              id: item.id,
               status: item.status,
-              description: item.description,
+              showDescription: item.description,
               iconComp: type === 'OTDataConnections' ? <TemperatureWater color="#1D77FE" /> : <Code color="#1D77FE" />,
             },
           ],
@@ -142,20 +153,20 @@ const Index = () => {
   };
 
   // 安装example
-  const handleInstall = (params: RoutesProps) => {
+  const handleInstall = (params: ExampleProps) => {
     Modal.confirm({
       title: formatMessage('common.confirmInstall'),
       onOk: () => {
-        if (!params.key) return;
-        setLoadingViews([...loadingViews, params.key]);
-        selectedIdRef.current = params.key;
-        installExample(params.key)
+        if (!params.id) return;
+        setLoadingViews([...loadingViews, params.id]);
+        selectedIdRef.current = params.id;
+        installExample(params.id)
           .then(() => {
             message.success(formatMessage('common.installedSuccess'));
             getExamples();
           })
           .finally(() => {
-            loadingViews.splice(loadingViews.indexOf(params.key as string), 1);
+            loadingViews.splice(loadingViews.indexOf(params.id as string), 1);
             setLoadingViews(loadingViews);
           });
       },
@@ -163,20 +174,20 @@ const Index = () => {
   };
 
   // 卸载example
-  const handleUnInstall = (params: RoutesProps) => {
+  const handleUnInstall = (params: ExampleProps) => {
     Modal.confirm({
       title: formatMessage('common.confirmUnInstall'),
       onOk: () => {
-        if (!params.key) return;
-        setLoadingViews([...loadingViews, params.key]);
-        selectedIdRef.current = params.key;
-        unInstallExample(params.key)
+        if (!params.id) return;
+        setLoadingViews([...loadingViews, params.id]);
+        selectedIdRef.current = params.id;
+        unInstallExample(params.id)
           .then(() => {
             message.success(formatMessage('common.unInstalledSuccess'));
             getExamples(false);
           })
           .finally(() => {
-            loadingViews.splice(loadingViews.indexOf(params.key as string), 1);
+            loadingViews.splice(loadingViews.indexOf(params.id as string), 1);
             setLoadingViews(loadingViews);
           });
       },
@@ -185,6 +196,7 @@ const Index = () => {
 
   // 切换tab
   const handleChangeTab = (key: string) => {
+    setTabKey(key);
     if (key !== 'example') return;
     getExamples();
   };
@@ -195,7 +207,7 @@ const Index = () => {
     </StickyBox>
   );
 
-  const renderExampleOpt = (params: RoutesProps) => {
+  const renderExampleOpt = (params: ExampleProps) => {
     return params.status === 1 ? (
       <Button size="small" type="primary" onClick={() => handleInstall(params)}>
         {formatMessage('common.install')}
@@ -212,21 +224,22 @@ const Index = () => {
       setExportRecords(data);
     });
   };
-
+  const isHidden = !['overview', 'example'].includes(tabKey);
   return (
     <ComLayout>
       <ComContent title={<div></div>} hasBack={false} mustShowTitle={false}>
-        <div className={styles['home-title']}>
+        <div className={styles['home-title']} style={{ display: isHidden ? 'none' : 'block' }}>
           <Title style={{ fontWeight: 400, marginBottom: 5 }} type="secondary" level={2}>
             {formatMessage('common.welcome', { appTitle: systemInfo?.appTitle })}
           </Title>
 
           <Paragraph style={{ marginBottom: 0 }}>{formatMessage('common.excellence')}</Paragraph>
         </div>
-        <div className={styles['home-tabs']}>
+        <div className={styles['home-tabs']} style={{ height: isHidden ? '100%' : undefined }}>
           <Tabs
             renderTabBar={renderTabBar}
             defaultActiveKey="overview"
+            activeKey={tabKey}
             onChange={handleChangeTab}
             tabBarExtraContent={
               <Space
@@ -240,39 +253,70 @@ const Index = () => {
                   style={{ width: 50, height: 40 }}
                   onTrigger={() => {
                     console.warn(useBaseStore.getState());
-                    console.warn(useErrorStore.getState());
                   }}
                 />
-                <AuthButton auth={ButtonPermission['home.import']} type="primary" onClick={() => setImportModal(true)}>
-                  <Flex gap={8}>
-                    <Download />
-                    {formatMessage('common.import')}
-                  </Flex>
-                </AuthButton>
-                <AuthWrapper auth={ButtonPermission['home.export']}>
-                  <Badge dot={exportRecords?.some((s: any) => !s.confirm)}>
-                    <Button
-                      color="default"
-                      variant="filled"
-                      style={{ background: '#c6c6c6', color: '#161616' }}
-                      onClick={() => {
-                        exportRef.current?.setOpen(true);
-                      }}
+                {!isHidden ? (
+                  <>
+                    <AuthButton
+                      auth={ButtonPermission['Home.import']}
+                      type="primary"
+                      onClick={() => setImportModal(true)}
                     >
                       <Flex gap={8}>
-                        <Export />
-                        {formatMessage('common.export')}
+                        <Download />
+                        {formatMessage('common.import')}
                       </Flex>
-                    </Button>
-                  </Badge>
-                </AuthWrapper>
+                    </AuthButton>
+                    <AuthWrapper auth={ButtonPermission['Home.export']}>
+                      <Badge dot={exportRecords?.some((s: any) => !s.confirm)}>
+                        <Button
+                          color="default"
+                          variant="filled"
+                          style={{ background: '#c6c6c6', color: '#161616' }}
+                          onClick={() => {
+                            exportRef.current?.setOpen(true);
+                          }}
+                        >
+                          <Flex gap={8}>
+                            <Export />
+                            {formatMessage('common.export')}
+                          </Flex>
+                        </Button>
+                      </Badge>
+                    </AuthWrapper>
+                  </>
+                ) : (
+                  <Button
+                    icon={<FullscreenOutlined />}
+                    onClick={() => {
+                      if (screenfull.isEnabled) {
+                        const el = document.getElementById(tabKey);
+                        if (el) {
+                          screenfull.request(el);
+                        } else {
+                          message.error('未找到全屏元素');
+                        }
+                      } else {
+                        message.error('该浏览器,不支持全屏功能');
+                      }
+                    }}
+                  />
+                )}
               </Space>
             }
             items={[
               {
                 label: formatMessage('common.overview'),
                 key: 'overview',
-                children: <OverviewList list={pickedGroupRoutesForHome?.filter((i) => i?.menu?.url !== '/home')} />,
+                children: (
+                  <OverviewList
+                    list={homeTree}
+                    style={{
+                      '--supos-line-height': 2,
+                      '--supos-card-height': '125px',
+                    }}
+                  />
+                ),
               },
               {
                 label: formatMessage('common.example'),
@@ -286,7 +330,16 @@ const Index = () => {
                   />
                 ),
               },
-            ]}
+              ...(homeTabGroup?.map((item) => {
+                return {
+                  label: item.showName || item.code,
+                  key: item.code + '_tab',
+                  children: (
+                    <IframeWrapper id={item.code + '_tab'} title={item.showName || item.code} src={item?.url || ''} />
+                  ),
+                };
+              }) || []),
+            ]?.filter((f) => f.key !== 'example')}
           />
         </div>
         <ImportModal importModal={importModal} setImportModal={setImportModal} />

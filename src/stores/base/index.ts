@@ -1,60 +1,43 @@
 import { UseBoundStoreWithEqualityFn, createWithEqualityFn } from 'zustand/traditional';
 import { StoreApi } from 'zustand';
 import { shallow } from 'zustand/vanilla/shallow';
-import { DataItem, RoutesProps, UserInfoProps } from '@/stores/types.ts';
+import { DataItem, ResourceProps, UserInfoProps } from '@/stores/types.ts';
 import { storageOpt } from '@/utils/storage';
-import {
-  APP_TITLE,
-  SUPOS_LANG,
-  SUPOS_UNS_TREE,
-  SUPOS_USER_GUIDE_ROUTES,
-  SUPOS_USER_LAST_LOGIN_ENABLE,
-  SUPOS_USER_TIPS_ENABLE,
-} from '@/common-types/constans.ts';
-import { getRoutes, getSystemConfig, getUserInfo, postPickRoutes, getAllThemeConfig } from '@/apis/inter-api';
+import { APP_TITLE, SUPOS_LANG, SUPOS_UNS_TREE, SUPOS_USER_TIPS_ENABLE } from '@/common-types/constans.ts';
+import { getSystemConfig, getUserInfo, postPickRoutes, getAllThemeConfig, getPersonConfigApi } from '@/apis/inter-api';
 import { getPluginListApi } from '@/apis/inter-api/plugin.ts';
 import {
   Criteria,
   filterArrays,
-  filterByMatch,
   filterContainerList,
   filterObjectArrays,
-  getGroupedData,
-  getGroupedOptions,
-  getTags,
+  guideConfig,
   handleButtonPermissions,
   multiGroupByCondition,
 } from '@/stores/utils.ts';
-import { ButtonPermission } from '@/common-types/button-permission.ts';
-import { getToken } from '@/utils/auth.ts';
 import { preloadPluginLang } from '@/utils/plugin.ts';
-import { filter, includes, isBoolean, isEmpty, map } from 'lodash';
-import dayjs from 'dayjs';
 import { TBaseStore } from '@/stores/base/type.ts';
-import { initI18n, defaultLanguage, I18nEnum } from '../i18n-store.ts';
-import 'dayjs/locale/zh-cn';
-import { setErrorInfo } from '@/stores/error-store.ts';
-
-const loadDayjsLocale = (locale: string) => {
-  dayjs.locale(locale);
-};
-
-// 包含新手导航的页面路由集合，新增页面导航时务必在这里添加url
-const GuidePagePaths = ['/home', '/uns'];
-
+import { initI18n, defaultLanguage } from '../i18n-store.ts';
+import { getRoutesResourceApi } from '@/apis/inter-api/resource.ts';
+import { buildResourceTrees, filterRouteByUserResource, mapResource } from '../utils.ts';
 /**
- * 系统基础store
- * @description 路由、用户信息、系统信息、当前菜单信息等
- */
+ * @description: 系统基础store 路由、用户信息、系统信息、当前菜单信息等
+ *
+ * currentUserInfo: 用户相关信息，包含：用户角色，用户存在的操作权限buttonList,拒绝优先操作资源组denyButtonGroup，操作资源组buttonGroup 等；
+ * 导航路由信息-根据权限显示：menuTree, menuGroup
+ * home页路由信息-根据权限显示：homeTree, homeGroup
+ * home页Tab: homeTabGroup（暂未控制权限）
+ * 原始菜单组（导航的不控制权限 含父级目录）: originMenu
+ * 所有按钮组（不控制权限）: allButtonGroup
+ * **/
 export const initBaseContent = {
-  rawRoutes: [],
-  routes: [],
-  pickedRoutes: [],
-  pickedRoutesOptions: [],
-  pickedRoutesOptionsNoChildrenMenu: [],
-  parentOrderMap: {},
-  pickedGroupRoutes: [],
-  pickedGroupRoutesForHome: [],
+  originMenu: [],
+  menuTree: [],
+  homeTree: [],
+  menuGroup: [],
+  homeGroup: [],
+  homeTabGroup: [],
+  allButtonGroup: [],
   currentUserInfo: {},
   systemInfo: { appTitle: '' },
   dataBaseType: [],
@@ -83,9 +66,9 @@ const updateBaseStore = async (isFirst: boolean = false) => {
   if (isFirst) {
     try {
       // 首次需要同时拿到用户信息的url和路由
-      const [{ value: routes, reason }, { value: info }, { value: systemInfo }, { value: pluginList }]: any =
-        await Promise.allSettled([getRoutes(), getUserInfo(), getSystemConfig(), getPluginListApi()]);
-
+      const [{ value: resource, reason }, { value: info }, { value: systemInfo }, { value: pluginList }]: any =
+        await Promise.allSettled([getRoutesResourceApi(), getUserInfo(), getSystemConfig(), getPluginListApi()]);
+      // 加载登录页主题
       try {
         const themePlugin = pluginList?.find((e: any) => e?.plugInfoYml?.route?.name === 'ThemeManagement');
         if (themePlugin?.installStatus === 'installed') {
@@ -98,61 +81,61 @@ const updateBaseStore = async (isFirst: boolean = false) => {
       const criteria: Criteria<DataItem> = {
         buttonGroup: (item: any) => item?.uri?.includes('button:'),
       };
+      // 过滤菜单资源、按钮资源
       const { buttonGroup, others } = multiGroupByCondition(info?.resourceList, criteria);
+      // 过滤拒绝有限的 菜单资源、按钮资源
       const { buttonGroup: denyButtonGroup, others: denyOthers } = multiGroupByCondition(
         info?.denyResourceList,
         criteria
       );
-      const pickedRouters = filterObjectArrays(denyOthers, others);
-
+      // 用户路由资源组
+      const userRoutesResourceList = filterObjectArrays(denyOthers, others);
+      // 过滤后的路由组,含home\home_tab\menu及目录
+      const allRoutes = filterRouteByUserResource(
+        mapResource(resource?.filter((r: ResourceProps) => r.type !== 3)),
+        userRoutesResourceList,
+        systemInfo?.authEnable && !info?.superAdmin
+      );
+      // 剔除未启用的路由
+      const enableRoutes = allRoutes?.filter((f) => f.enable);
+      // 获取终极菜单
+      const { homeTree, homeTabGroup, homeGroup, menuGroup, menuTree } = buildResourceTrees(enableRoutes);
+      const allButtonGroup = resource?.filter((r: ResourceProps) => r.groupType === 1 && r.type === 3);
       const _buttonList =
         systemInfo?.authEnable === false || info?.superAdmin === true
-          ? handleButtonPermissions(['button:*'], ButtonPermission) || []
+          ? handleButtonPermissions(['button:*'], allButtonGroup) || []
           : filterArrays(
-              handleButtonPermissions(denyButtonGroup?.map((i: any) => i.uri) || [], ButtonPermission) || [],
-              handleButtonPermissions(buttonGroup?.map((i: any) => i.uri) || [], ButtonPermission) || []
+              handleButtonPermissions(denyButtonGroup?.map((i: any) => i.uri) || [], allButtonGroup) || [],
+              handleButtonPermissions(buttonGroup?.map((i: any) => i.uri) || [], allButtonGroup) || []
             ) || [];
-      // FIXME: 调试用，后续删除
-      setErrorInfo({
-        routes,
-        info,
-        systemInfo,
-        pluginList,
-        buttonList: _buttonList,
-      });
-
       // 储存用户信息
       storageOpt.set('personInfo', {
         username: info?.preferredUsername,
       });
       const containerList = filterContainerList(systemInfo?.containerMap);
-      const _routes = filterByMatch(routes, pickedRouters, systemInfo?.authEnable && !info?.superAdmin);
-      const pickedRoutes = _routes?.filter((f) => f.menu?.picked);
-      const pickedRoutesOptions = getGroupedOptions(pickedRoutes);
-      const parentOrderMap =
-        getTags(_routes?.find((f) => getTags(f?.service?.tags || [])?.root)?.service?.tags || []) || {};
-      // 设置
+      // 个人用户设置
       const currentUserInfo = {
         ...info,
         roleList: info?.roleList || [],
         roleString: info?.roleList?.map((i: any) => i.roleName)?.join('/') || '',
         buttonList: buttonGroup?.map((i: any) => i.uri) || [],
-        pageList: pickedRouters || [],
+        pageList: userRoutesResourceList || [],
         superAdmin: info?.superAdmin,
+        denyButtonGroup,
+        buttonGroup,
       };
       useBaseStore.setState({
         ...initBaseContent,
-        rawRoutes: routes,
+        homeTree,
+        homeTabGroup,
+        homeGroup,
+        menuGroup,
+        menuTree,
+        originMenu: resource?.filter((r: ResourceProps) => r.groupType === 1),
+        allButtonGroup,
         pluginList,
         routesStatus: reason?.status,
         currentUserInfo,
-        routes: _routes,
-        pickedRoutes,
-        pickedRoutesOptions,
-        pickedRoutesOptionsNoChildrenMenu: pickedRoutesOptions?.filter((f) => !f.isRemoteChildMenu),
-        parentOrderMap,
-        pickedGroupRoutes: getGroupedData(pickedRoutes, parentOrderMap),
-        pickedGroupRoutesForHome: getGroupedData(pickedRoutes, parentOrderMap, 'homeParentName'),
         systemInfo: {
           ...(systemInfo ?? {}),
           appTitle: systemInfo?.appTitle || APP_TITLE,
@@ -166,89 +149,29 @@ const updateBaseStore = async (isFirst: boolean = false) => {
             ?.filter((i) => ['fuxa', 'grafana'].includes(i.name) && i.envMap?.service_is_show)
             ?.map((m) => m.name) ?? [],
       });
+      // 设置新手引导
+      guideConfig({ systemInfo, menuGroup, info });
 
-      // 1.新手导航：根据authenable和token区分是否为免登录
-      //      a.先获取上次免登录状态和当前比较，如果发生改变，则说明用户登录发生变化（比如由需要登陆变为免登或者免登变为需要），需要清除之前的SUPOS_USER_GUIDE_ROUTES状态，并设置新的免登状态
-      //      b.然后判断当前是否为免登
-      //          如果是免登录，先判断SUPOS_USER_GUIDE_ROUTES是否存在，不存在，则添加，存在则不做处理
-      //          如果需要登陆，再按原有逻辑（用户第一次登录）进行引导
-      // 2.tips: 用户访问时进入系统则展示tips，且可勾选不再展示（每次登录或者每次免登状态都需考虑）
-      //         1).判断是否免登 2).是否为刚登录 3).判断用户是否支持展示
-      const lastLoginEnable = storageOpt.getOrigin(SUPOS_USER_LAST_LOGIN_ENABLE);
-
-      const token = getToken();
-      const isLoginEnable = isBoolean(systemInfo?.authEnable) && !isEmpty(token);
-
-      // 获取上次免登录状态和当前比较，如果发生改变，则说明用户登录发生变化,或者systemInfo?.authEnable获取失败则清除缓存
-      if (!isBoolean(systemInfo?.authEnable) || lastLoginEnable !== `${isLoginEnable}`) {
-        storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
-        storageOpt.setOrigin(
-          SUPOS_USER_LAST_LOGIN_ENABLE,
-          `${isBoolean(systemInfo?.authEnable) ? isLoginEnable : systemInfo?.authEnable}`
-        );
-        storageOpt.remove(SUPOS_USER_TIPS_ENABLE);
-      }
-
-      // 是否为免登录：authEnable===false并且不存在token时
-      const notLogin = systemInfo?.authEnable === false && !token;
+      // 设置unsTree信息
       const unsTreeInfo = storageOpt.get(SUPOS_UNS_TREE);
       if (unsTreeInfo) {
         storageOpt.set(SUPOS_UNS_TREE, { ...unsTreeInfo, state: { lazyTree: systemInfo?.lazyTree } });
       } else {
         storageOpt.set(SUPOS_UNS_TREE, { state: { lazyTree: systemInfo?.lazyTree }, version: 0 });
       }
-      // 如果为免登录，则判断是否存在新手导航数据，存在则继续触发，不存在则添加
-      if (notLogin) {
-        if (!storageOpt.getOrigin(SUPOS_USER_TIPS_ENABLE)) {
-          setUserTipsEnable('1');
-        }
-        if (!storageOpt.get(SUPOS_USER_GUIDE_ROUTES)) {
-          storageOpt.set(
-            SUPOS_USER_GUIDE_ROUTES,
-            map(
-              filter(_routes, (r) => includes(GuidePagePaths, r?.menu?.url)),
-              (route) => ({ name: route.name, menu: route.menu, isVisited: false })
-            )
-          );
-        }
-      }
-      // 如果是登录状态
-      if (isLoginEnable) {
-        // 判断用户是否手动禁用tips展示
-        const tipsEnable = info?.tipsEnable;
-        if (tipsEnable && !storageOpt.getOrigin(SUPOS_USER_TIPS_ENABLE)) {
-          setUserTipsEnable('1');
-        }
-        if (!tipsEnable) {
-          setUserTipsEnable('0');
-        }
-        const isFirstLogin = info?.firstTimeLogin;
-        // 首次登录且未初始化用户引导路由信息，则需初始化该信息；已经初始化则继续使用缓存的状态
-        if (isFirstLogin === 1 && !storageOpt.get(SUPOS_USER_GUIDE_ROUTES)) {
-          storageOpt.set(
-            SUPOS_USER_GUIDE_ROUTES,
-            map(
-              filter(_routes, (r) => includes(GuidePagePaths, r?.menu?.url)),
-              (route) => ({ name: route.name, menu: route.menu, isVisited: false })
-            )
-          );
-        }
-        // 由于存在手动启用新手导航功能，先取消清除的逻辑
-        // if (isFirstLogin !== 1) {
-        //   // 非首次登录直接清除用户引导路由信息
-        //   storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
-        // }
-      }
-      const _lang =
-        import.meta.env.REACT_APP_LOCAL_LANG || systemInfo?.lang || storageOpt.getOrigin(SUPOS_LANG) || defaultLanguage;
+      // 请求国际化语言
+      const _lang = await fetchUserLanguage({
+        userId: currentUserInfo?.sub,
+        lang: systemInfo?.lang,
+      });
+      // 预加载插件国际化
       const pluginLang = await preloadPluginLang(
         pluginList
           ?.filter((f: any) => f.installStatus === 'installed')
           ?.filter((f: any) => f?.plugInfoYml?.route?.name)
-          ?.map((m: any) => ({ name: `/${m?.plugInfoYml?.route?.name}` })) || [],
-        systemInfo?.lang
+          ?.map((m: any) => ({ name: `/${m?.plugInfoYml?.route?.name}`, backendName: m.name })) || [],
+        _lang
       );
-      loadDayjsLocale(_lang === I18nEnum.EnUS ? 'en' : 'zh-cn');
       // 首次需要初始化语言包
       return await initI18n(_lang, pluginLang);
     } catch (_) {
@@ -258,30 +181,41 @@ const updateBaseStore = async (isFirst: boolean = false) => {
     }
   } else {
     const baseState = useBaseStore.getState();
-    return getRoutes()
-      .then((data: any) => {
-        const routes: RoutesProps[] = filterByMatch(
-          data,
-          baseState?.currentUserInfo?.pageList,
-          baseState.systemInfo?.authEnable && !baseState.currentUserInfo?.superAdmin
-        );
-        const pickedRoutes = routes?.filter((f) => f.menu?.picked);
-        const pickedRoutesOptions = getGroupedOptions(pickedRoutes);
-        const parentOrderMap =
-          getTags(routes?.find((f) => getTags(f?.service?.tags || [])?.root)?.service?.tags || []) || {};
-        useBaseStore.setState({
-          rawRoutes: data,
-          routes,
-          pickedRoutes: routes?.filter((f) => f.menu?.picked),
-          pickedRoutesOptions,
-          pickedRoutesOptionsNoChildrenMenu: pickedRoutesOptions?.filter((f) => !f.isRemoteChildMenu),
-          parentOrderMap,
-          pickedGroupRoutes: getGroupedData(pickedRoutes, parentOrderMap),
-          pickedGroupRoutesForHome: getGroupedData(pickedRoutes, parentOrderMap, 'homeParentName'),
-        });
-        return routes;
-      })
-      .catch(() => {});
+    // 重新获取菜单
+    return getRoutesResourceApi().then((resource: ResourceProps[]) => {
+      const allRoutes = filterRouteByUserResource(
+        mapResource(resource.filter((r: ResourceProps) => r.type !== 3)),
+        baseState?.currentUserInfo?.pageList,
+        baseState.systemInfo?.authEnable && !baseState.currentUserInfo?.superAdmin
+      );
+      const enableRoutes = allRoutes?.filter((f) => f.enable);
+      const { homeTree, homeTabGroup, homeGroup, menuGroup, menuTree } = buildResourceTrees(enableRoutes);
+      const allButtonGroup = resource?.filter((r: ResourceProps) => r.groupType === 1 && r.type === 3);
+      const _buttonList =
+        baseState?.systemInfo?.authEnable === false || baseState?.currentUserInfo?.superAdmin === true
+          ? handleButtonPermissions(['button:*'], allButtonGroup) || []
+          : filterArrays(
+              handleButtonPermissions(
+                baseState?.currentUserInfo?.denyButtonGroup?.map((i: any) => i.uri) || [],
+                allButtonGroup
+              ) || [],
+              handleButtonPermissions(
+                baseState?.currentUserInfo?.buttonGroup?.map((i: any) => i.uri) || [],
+                allButtonGroup
+              ) || []
+            ) || [];
+      useBaseStore.setState({
+        homeTree,
+        homeTabGroup,
+        homeGroup,
+        menuGroup,
+        menuTree,
+        originMenu: resource?.filter((r: ResourceProps) => r.groupType === 1),
+        allButtonGroup,
+        buttonList: _buttonList,
+      });
+      return allRoutes;
+    });
   }
 };
 
@@ -304,7 +238,7 @@ export const postRoutes = async (data: { menuName?: string; picked?: boolean }[]
 };
 
 // 设置当前菜单信息
-export const setCurrentMenuInfo = (data: RoutesProps) => {
+export const setCurrentMenuInfo = (data: ResourceProps) => {
   useBaseStore.setState({
     currentMenuInfo: data,
   });
@@ -324,4 +258,19 @@ export const setPluginList = (pluginList: any[]) => {
   useBaseStore.setState({
     pluginList,
   });
+};
+
+const fetchUserLanguage = async (info: { userId?: string; lang?: string }) => {
+  const { lang, userId } = info;
+  try {
+    if (!userId) {
+      return import.meta.env.REACT_APP_LOCAL_LANG || lang || storageOpt.getOrigin(SUPOS_LANG) || defaultLanguage;
+    } else {
+      const response = await getPersonConfigApi(userId);
+      return import.meta.env.REACT_APP_LOCAL_LANG || response.mainLanguage;
+    }
+  } catch (error) {
+    console.error('配置请求失败', error);
+    return import.meta.env.REACT_APP_LOCAL_LANG || lang || storageOpt.getOrigin(SUPOS_LANG) || defaultLanguage;
+  }
 };

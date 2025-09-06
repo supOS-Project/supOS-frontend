@@ -4,6 +4,7 @@ import { useDeepCompareEffect } from 'ahooks';
 import { useTranslate } from '@/hooks';
 import { useBaseStore } from '@/stores/base';
 import { getRoutesDom } from '@/routers';
+import { formatShowName } from '@/utils';
 
 interface MatchRouteType {
   // 菜单名称
@@ -28,8 +29,8 @@ interface MatchRouteType {
 
 // 匹配路由，拿到信息
 export function useMatchRoute(): MatchRouteType | undefined {
-  const { pickedRoutesOptions, systemInfo, currentUserInfo } = useBaseStore((state) => ({
-    pickedRoutesOptions: state.pickedRoutesOptions,
+  const { menuGroup, systemInfo, currentUserInfo } = useBaseStore((state) => ({
+    menuGroup: state.menuGroup,
     systemInfo: state.systemInfo,
     currentUserInfo: state.currentUserInfo,
   }));
@@ -45,16 +46,17 @@ export function useMatchRoute(): MatchRouteType | undefined {
   // 监听pathname变了，说明路由有变化，重新匹配，返回新路由信息
   useDeepCompareEffect(() => {
     // 获取当前匹配的路由
-    const matches =
-      matchRoutes(getRoutesDom({ pickedRoutesOptions, systemInfo, currentUserInfo }), location.pathname) || [];
+    const matches = matchRoutes(getRoutesDom({ menuGroup, systemInfo, currentUserInfo }), location.pathname) || [];
     const lastRoute = matches.at(-1)?.route;
 
     if (!lastRoute?.handle) return;
 
     setMatchRoute({
-      title: (lastRoute?.handle as any)?.menuNameKey
-        ? formatMessage((lastRoute?.handle as any)?.menuNameKey)
-        : (lastRoute?.handle as any)?.name,
+      title: formatShowName({
+        code: (lastRoute?.handle as any)?.code,
+        showName: (lastRoute?.handle as any)?.showName,
+        formatMessage,
+      }),
       icon: (lastRoute?.handle as any)?.icon,
       path: (lastRoute?.handle as any)?.path,
       pathname: location.pathname,
@@ -64,7 +66,7 @@ export function useMatchRoute(): MatchRouteType | undefined {
       parentPath: (lastRoute?.handle as any)?.parentPath,
       location,
     });
-  }, [location, pickedRoutesOptions, systemInfo, currentUserInfo]);
+  }, [location, menuGroup, systemInfo, currentUserInfo]);
 
   return matchRoute;
 }

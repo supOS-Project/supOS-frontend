@@ -27,12 +27,16 @@ export function removeCookie(key: any) {
 }
 
 export const hasPermission = (auth: string | string[]) => {
-  // const perms = storageOpt.get(SUPOS_USER_BUTTON_LIST);
+  // 开发环境不控制权限
+  if (import.meta.env.DEV) {
+    return true;
+  }
+  // button: 必须要有
   const perms = useBaseStore.getState().buttonList;
   if (auth instanceof Array) {
-    return auth?.some((item) => perms?.includes(item));
+    return auth?.some((item) => perms?.includes('button:' + item));
   } else {
-    return perms?.includes(auth);
+    return perms?.includes('button:' + auth);
   }
 };
 

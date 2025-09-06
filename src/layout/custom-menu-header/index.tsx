@@ -27,10 +27,10 @@ import { isInIframe } from '@/utils/url-util.ts';
 const CustomMenuHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { pickedGroupRoutes, currentMenuInfo, pluginList } = useBaseStore((state) => ({
-    pickedGroupRoutes: state.pickedGroupRoutes,
+  const { currentMenuInfo, pluginList, menuTree } = useBaseStore((state) => ({
     currentMenuInfo: state.currentMenuInfo,
     pluginList: state.pluginList,
+    menuTree: state.menuTree,
   }));
   const { primaryColor, theme } = useThemeStore((state) => ({
     primaryColor: state.primaryColor,
@@ -71,29 +71,27 @@ const CustomMenuHeader = () => {
   useEffect(() => {
     if (hasNoticePlugin) getNoticeStatus();
   }, [hasNoticePlugin]);
-
-  const navList = [...pickedGroupRoutes];
-
-  const items = navList?.map?.((parent) => {
-    if (parent.hasChildren) {
+  const items = menuTree?.map?.((parent) => {
+    if (parent.children?.length && parent.type !== 2) {
       return {
         icon: (
           <IconImage
             theme={primaryColor}
-            iconName={parent.iconUrl}
+            iconName={parent.icon}
             width={24}
             height={24}
             style={{ paddingRight: 4, verticalAlign: 'middle' }}
           />
         ),
-        key: parent.key!,
-        label: <HMenuLabel label={parent.name} iconUrl={parent.iconUrl} />,
+        popupClassName: 'custom-menu-popover',
+        key: parent.code!,
+        label: <HMenuLabel label={parent.showName} iconUrl={parent.icon} />,
         children: parent?.children?.map((child) => ({
-          key: child.key!,
+          key: child.code!,
           icon: (
             <IconImage
               theme={primaryColor}
-              iconName={child.iconUrl}
+              iconName={child.icon}
               width={24}
               height={24}
               style={{ paddingRight: 4, verticalAlign: 'middle' }}
@@ -102,7 +100,7 @@ const CustomMenuHeader = () => {
           onClick: () => {
             handleNavigate(child);
           },
-          label: <HMenuLabel label={child.name} iconUrl={child.iconUrl} />,
+          label: <HMenuLabel label={child.showName} iconUrl={child.icon} />,
         })),
       };
     } else {
@@ -110,14 +108,15 @@ const CustomMenuHeader = () => {
         icon: (
           <IconImage
             theme={primaryColor}
-            iconName={parent.iconUrl}
+            iconName={parent.icon}
             width={24}
             height={24}
             style={{ paddingRight: 4, verticalAlign: 'middle' }}
           />
         ),
-        key: parent.key!,
-        label: <HMenuLabel label={parent.name} iconUrl={parent.iconUrl} />,
+        popupClassName: 'custom-menu-popover',
+        key: parent.code!,
+        label: <HMenuLabel label={parent.showName} iconUrl={parent.icon} />,
         onClick: () => {
           handleNavigate(parent);
         },
@@ -153,8 +152,8 @@ const CustomMenuHeader = () => {
               }}
             />
           </div>
-          <span className="title" title={currentMenuInfo?.name}>
-            {currentMenuInfo?.name}
+          <span className="title" title={currentMenuInfo?.code}>
+            {currentMenuInfo?.showName}
           </span>
           <Divider style={{ height: 24 }} type="vertical" />
         </div>
@@ -178,7 +177,7 @@ const CustomMenuHeader = () => {
                 <Menu
                   mode="horizontal"
                   items={items}
-                  selectedKeys={currentMenuInfo?.selectKey ? currentMenuInfo?.selectKey : []}
+                  selectedKeys={currentMenuInfo?.code ? [currentMenuInfo?.code] : []}
                 />
               </div>
             </Splitter.Panel>
@@ -307,7 +306,7 @@ const CustomMenuHeader = () => {
         open={drawerVisible}
         width={256}
       >
-        <Menu mode="inline" items={items} selectedKeys={currentMenuInfo?.selectKey ? currentMenuInfo?.selectKey : []} />
+        <Menu mode="inline" items={items} selectedKeys={currentMenuInfo?.code ? [currentMenuInfo?.code] : []} />
       </Drawer>
       <ProModal
         destroyOnHidden

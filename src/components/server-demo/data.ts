@@ -248,12 +248,12 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
             {
               key: 'MQTTUrl',
               label: getIntl('uns.MQTTUrl'),
-              value: `ws://${hostName}`,
+              value: `mqtt://${hostName}`,
             },
             {
               key: 'MQTTPort',
               label: getIntl('uns.MQTTPort'),
-              value: 8083,
+              value: 1883,
             },
             {
               key: 'topic',
@@ -576,6 +576,125 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
       defer taos.Close()
   }
 `,
+          },
+        ],
+      },
+    ],
+  },
+  mcpServer: {
+    title: getIntl('mcpServerAccessMethod'),
+    tabItems: [
+      {
+        label: 'usage',
+        key: 'usage',
+        leftFormItems: [
+          {
+            key: 'install',
+            label: getIntl('installation'),
+            value: 'npm install -g @sup-platform/mcp-server',
+          },
+          {
+            key: 'commandParameters',
+            label: getIntl('commandLineParameters'),
+            type: 'html',
+            value: `
+              <strong>${getIntl('commandLineParametersDesc')}:</strong>
+              <br />
+              <table class="demo-table">
+                <tr>
+                  <th>${getIntl('parameter')}</th>
+                  <th>${getIntl('description')}</th>
+                  <th>${getIntl('default')}</th>
+                  <th>${getIntl('example')}</th>
+                </tr>
+                <tr>
+                  <td>--port</td>
+                  <td>${getIntl('portDesc')}</td>
+                  <td>3000</td>
+                  <td>--port 3000</td>
+                </tr>
+                <tr>
+                  <td>--transport</td>
+                  <td>${getIntl('transportDesc')}</td>
+                  <td>stdio</td>
+                  <td>--transport streamable</td>
+                </tr>
+                <tr>
+                  <td>--supos-api-url</td>
+                  <td>${getIntl('suposApiUrlDesc')}</td>
+                  <td>-</td>
+                  <td>--supos-api-url https://api.supos.com</td>
+                </tr>
+                <tr>
+                  <td>--supos-api-key</td>
+                  <td>${getIntl('suposApiKeyDesc')}</td>
+                  <td>-</td>
+                  <td>--supos-api-key your-api-key</td>
+                </tr>
+                <tr>
+                  <td>--openapi-path</td>
+                  <td>${getIntl('openapiPathDesc')}</td>
+                  <td>{supos-api-url}/swagger-ui/v3/api-docs/supOS-openAPI</td>
+                  <td>--openapi-path http://api.supos.com/openapi.yaml</td>
+                </tr>
+              </table>
+            `,
+          },
+          {
+            key: 'environmentVariables',
+            label: getIntl('environmentVariables'),
+            type: 'html',
+            value: `
+              <strong>${getIntl('environmentVariablesDesc')}:</strong>
+              <br />
+              <table class="demo-table">
+                <tr>
+                  <th>${getIntl('environmentVariables')}</th>
+                  <th>${getIntl('description')}</th>
+                  <th>${getIntl('correspondingCommandLineParameter')}</th>
+                </tr>
+                <tr>
+                  <td>SUPOS_API_URL</td>
+                  <td>${getIntl('suposApiUrlDesc')}</td>
+                  <td>--supos-api-url</td>
+                </tr>
+                <tr>
+                  <td>SUPOS_API_KEY</td>
+                  <td>${getIntl('suposApiKeyDesc')}</td>
+                  <td>--supos-api-key</td>
+                </tr>
+              </table>
+            `,
+          },
+        ],
+        rightFormItems: [
+          {
+            key: 'desktopApplicationIntegration',
+            type: 'codeSnippet',
+            label: getIntl('desktopApplicationIntegration'),
+            subTitle: `${getIntl('desktopApplicationIntegrationDesc')}:`,
+            minCollapsedNumberOfRows: 27,
+            maxCollapsedNumberOfRows: 27,
+            value: `{
+  "mcpServers": {
+    "mcp-server-supos-stdio": { // ${getIntl('stdioTransport')}
+      "disabled": false,
+      "timeout": 60,
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@sup-platform/mcp-server"],
+      "env": {
+        "SUPOS_API_URL": "xxx",
+        "SUPOS_API_KEY": "xxx"
+      }
+    },
+    "mcp-server-supos-streamable": { // ${getIntl('streamableTransport')}
+      "timeout": 60,
+      "url": "http://localhost:3000/mcp", // ${getIntl('streamableServerUrl')}
+      "type": "streamableHttp"
+    }
+  }
+}`,
           },
         ],
       },

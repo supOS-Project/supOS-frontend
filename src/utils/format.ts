@@ -51,3 +51,31 @@ export const processTimestamp = (item: string) => {
   }
   return item;
 };
+
+/**
+ * @param item 字符串
+ * @returns 转化国际化方法
+ */
+export const formatShowName = ({
+  code,
+  showName,
+  formatMessage,
+  finallyShowName,
+}: {
+  code?: string;
+  showName?: string;
+  formatMessage: any;
+  finallyShowName?: string;
+}) => {
+  // 如果code和showName一样，表明后端翻译未成功
+  if (showName && code !== showName) return showName;
+  if (code) {
+    try {
+      return formatMessage(code);
+    } catch (e) {
+      console.log(e);
+      return code;
+    }
+  }
+  return finallyShowName || '未配置国际化';
+};

@@ -1,30 +1,30 @@
 import { FC } from 'react';
 import { Flex, Menu } from 'antd';
-import { RoutesProps } from '@/stores/types';
+import { ResourceProps } from '@/stores/types';
 import { useMenuNavigate } from '@/hooks';
 import styles from './index.module.scss';
 import IconImage from '@/components/icon-image';
 import { useThemeStore } from '@/stores/theme-store.ts';
 
-const SideNavList: FC<{ navList: RoutesProps[]; selectedKeys: string[] }> = ({ navList, selectedKeys }) => {
+const SideNavList: FC<{ navList: ResourceProps[]; selectedKeys: string[] }> = ({ navList, selectedKeys }) => {
   const handleNavigate = useMenuNavigate();
   const primaryColor = useThemeStore((state) => state.primaryColor);
   const theme = useThemeStore((state) => state.theme);
 
   const createMenuItems = (): any[] => {
     return navList?.map((parent) => {
-      if (parent.hasChildren) {
+      if (parent.children?.length && parent.type !== 2) {
         return {
-          key: parent.key!,
-          label: parent.name,
-          icon: <IconImage theme={primaryColor} iconName={parent.iconUrl} width={'0.875rem'} height={'0.875rem'} />,
+          key: parent.code!,
+          label: parent.showName,
+          icon: <IconImage theme={primaryColor} iconName={parent.icon} width={'0.875rem'} height={'0.875rem'} />,
           children: parent.children?.map((child) => ({
-            key: child.key!,
+            key: child.code!,
             label: (
               <div>
                 <Flex align="center" gap={4}>
-                  <IconImage theme={primaryColor} iconName={child.iconUrl} width={'0.875rem'} height={'0.875rem'} />
-                  {child.name}
+                  <IconImage theme={primaryColor} iconName={child.icon} width={'0.875rem'} height={'0.875rem'} />
+                  {child.showName}
                 </Flex>
               </div>
             ),
@@ -36,12 +36,12 @@ const SideNavList: FC<{ navList: RoutesProps[]; selectedKeys: string[] }> = ({ n
       }
 
       return {
-        key: parent.key!,
+        key: parent.code!,
         label: (
           <div onClick={() => handleNavigate(parent)}>
             <Flex align="center" gap={4}>
-              <IconImage theme={primaryColor} iconName={parent.iconUrl} width={'0.875rem'} height={'0.875rem'} />
-              {parent.name}
+              <IconImage theme={primaryColor} iconName={parent.icon} width={'0.875rem'} height={'0.875rem'} />
+              {parent.showName}
             </Flex>
           </div>
         ),

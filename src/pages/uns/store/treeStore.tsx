@@ -87,7 +87,7 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
               }
             }),
           recursiveLoadData: async (options, cb) => {
-            const { key = '', newNodeKey, queryType } = options || {};
+            const { key = '', newNodeKey, queryType, nodeDetail } = options || {};
             const {
               onRefresh,
               searchValue,
@@ -97,6 +97,7 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
               setNodePaginationState,
               scrollTreeNode,
               loadMoreText,
+              setExpandedKeys,
             } = get();
             const _newNodeKey = newNodeKey as string;
             setLoading(true);
@@ -121,7 +122,11 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
                 });
 
                 // 处理返回的数据
-                const childNodes = formatNodeData(data, parentInfo?.path ?? '');
+                const childNodes = formatNodeData(
+                  data,
+                  parentInfo?.path ?? '',
+                  childrenData?.[childrenData.length - 1]?.id
+                );
 
                 childrenData = uniqueArr([...childrenData, ...childNodes]);
 
@@ -161,25 +166,30 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
               console.log('递归加载完成，找到节点:', found);
               console.log('加载的数据:', childrenData);
 
-              // 更新树数据
-              if (childrenData.length > 0) {
-                // 这里可以添加更新树数据的逻辑
-                if (parentId === ROOT_NODE_ID) {
-                  setTreeData(childrenData);
-                } else {
-                  setTreeData((pre) => {
-                    appendTreeData(pre, parentId as string, childrenData, queryType);
+              if (parentId === ROOT_NODE_ID) {
+                setTreeData(childrenData);
+              } else {
+                setTreeData((pre) => {
+                  appendTreeData(pre, parentId as string, childrenData, queryType, nodeDetail, () => {
+                    if (key) {
+                      setTimeout(() => {
+                        setExpandedKeys((draft) => {
+                          const index = draft.findIndex((id) => id === key);
+                          if (index !== -1) draft.splice(index, 1);
+                        });
+                      }, 0);
+                    }
                   });
-                }
-                setTimeout(() => {
-                  scrollTreeNode(_newNodeKey);
-                }, 0);
-                // 调用回调函数
-                cb?.(
-                  childrenData,
-                  childrenData?.find((f) => f.id === _newNodeKey)
-                );
+                });
               }
+              setTimeout(() => {
+                scrollTreeNode(_newNodeKey);
+              }, 0);
+              // 调用回调函数
+              cb?.(
+                childrenData,
+                childrenData?.find((f) => f.id === _newNodeKey)
+              );
             } catch (error) {
               console.error('递归加载过程出错:', error);
             } finally {
@@ -274,6 +284,12 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
                       // 新增操作特殊处理，要递归请求新增成功后的父级分页
                       return;
                     }
+                    if (queryType === 'deleteFile' || queryType === 'deleteFolder') {
+                      recursiveLoadData(options, cb);
+                      // 删除操作特殊处理，要递归请求删除成功后的父级分页
+                      return;
+                    }
+
                     if (loadingKeys.has(key)) {
                       console.log(`节点正在请求：${key};  page: ${page}`);
                       return;
@@ -309,18 +325,27 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
                             scrollTreeNode?.(rootNodes?.[0]?.id);
                           }
                         } else {
+                          let hasMore = false;
+                          hasMore = hasMoreData(restResponse);
                           // 追加到现有树数据
                           setTreeData((pre) => {
                             // 过滤掉之前的加载更多节点
                             const filteredData = pre.filter((node) => !node.isLoadMoreNode);
-                            const newNodes = formatNodeData(data, parentInfo?.path ?? '');
-                            return hasMoreData(restResponse)
+                            const newNodes = formatNodeData(
+                              data,
+                              parentInfo?.path ?? '',
+                              filteredData?.[filteredData.length - 1]?.id
+                            );
+                            return hasMore
                               ? [
                                   ...filteredData,
                                   ...newNodes,
                                   createLoadMoreNode(ROOT_NODE_ID, page, parentInfo, loadMoreText),
                                 ]
                               : [...filteredData, ...newNodes];
+                          });
+                          setNodePaginationState((pre) => {
+                            pre[key as string] = { currentPage: page, hasMore, isLoading: false };
                           });
                           if (reset) {
                             scrollTreeNode?.(get().treeData?.[0]?.id);
@@ -609,7 +634,12 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
             if (expandedBySelf) {
               setLoadedKeys((prev) => prev.filter((k) => k !== nodeKey && !descendantKeys.includes(k)));
             } else {
-              setLoadedKeys((prev) => prev.filter((k) => !descendantKeys.includes(k)));
+              setLoadedKeys((prev) => {
+                if (!prev.includes(nodeKey)) {
+                  prev.push(nodeKey);
+                }
+                return prev.filter((k) => !descendantKeys.includes(k));
+              });
             }
             // 清空所有children
             setTreeData((pre) => {

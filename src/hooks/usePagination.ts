@@ -155,14 +155,17 @@ const usePagination = <T>({
   }, []);
 
   // 参数请求
-  const setSearchParams = useCallback((value: any) => {
+  const setSearchParams = useCallback((value: any, reset: boolean = true) => {
     clearTime();
     cancelRequest();
-    setParamsData((o) => ({
-      ...o,
-      pageNo: 1, // 重置页数为 1
-      searchFormData: value || {},
-    }));
+    setParamsData((o) => {
+      const searchParams = reset ? value : Object.assign(o.searchFormData || {}, value || {});
+      return {
+        ...o,
+        pageNo: 1, // 重置页数为 1
+        searchFormData: searchParams || {},
+      };
+    });
   }, []);
 
   const onShowPageSizeChange = useCallback((pageNo: number, pageSize: number) => {

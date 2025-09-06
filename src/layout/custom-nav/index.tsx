@@ -16,8 +16,6 @@ import downDark from '@/assets/icons/down-dark.svg';
 import { useTranslate } from '@/hooks';
 import HelpNav from '../components/HelpNav';
 import './index.scss';
-import { ButtonPermission } from '@/common-types/button-permission.ts';
-import { AuthWrapper } from '@/components/auth';
 import UserPopover from '@/components/com-group-button/UserPopover';
 import DraggableContainer from '@/components/draggable-container';
 import ProModal from '@/components/pro-modal';
@@ -27,14 +25,13 @@ import { MenuTypeEnum, setMenuType, ThemeType, useThemeStore } from '@/stores/th
 
 const Module = () => {
   const navigate = useNavigate();
-  const { pickedGroupRoutes, currentMenuInfo } = useBaseStore((state) => ({
-    pickedGroupRoutes: state.pickedGroupRoutes,
+  const { menuTree, currentMenuInfo } = useBaseStore((state) => ({
+    menuTree: state.menuTree,
     currentMenuInfo: state.currentMenuInfo,
   }));
   const theme = useThemeStore((state) => state.theme);
   const isDark = theme === ThemeType.Dark;
   const formatMessage = useTranslate();
-  const navList = [...pickedGroupRoutes];
 
   const [openEdit, setEditOpen] = useState(false);
   const [openHoverNav, setOpenHoverNav] = useState(false);
@@ -72,8 +69,8 @@ const Module = () => {
               }}
             >
               <img src={isDark ? logoBlackWhite : logoBlack} />
-              <span style={{ margin: '0 5px' }} title={currentMenuInfo?.name}>
-                {currentMenuInfo?.name}
+              <span style={{ margin: '0 5px' }} title={currentMenuInfo?.showName}>
+                {currentMenuInfo?.showName}
               </span>
               <ChevronDown />
             </div>
@@ -107,7 +104,7 @@ const Module = () => {
             </Flex>
           </div>
           <div className="navContent">
-            <SideNavList navList={navList} selectedKeys={currentMenuInfo?.selectKeyPath ?? []} />
+            <SideNavList navList={menuTree} selectedKeys={currentMenuInfo?.code ? [currentMenuInfo?.code] : []} />
           </div>
           <div className="navBottom">
             <div className="iconWrap">
@@ -137,11 +134,11 @@ const Module = () => {
                 </div>
               </UserPopover>
 
-              <AuthWrapper auth={ButtonPermission['common.routerEdit']}>
-                <div className="iconWrapper" onClick={() => setEditOpen(true)}>
-                  <Edit size={18} />
-                </div>
-              </AuthWrapper>
+              {/*<AuthWrapper auth={ButtonPermission['common.routerEdit']}>*/}
+              <div className="iconWrapper" onClick={() => setEditOpen(true)}>
+                <Edit size={18} />
+              </div>
+              {/*</AuthWrapper>*/}
             </div>
           </div>
         </div>
@@ -149,8 +146,8 @@ const Module = () => {
           <div className="navHoverContent">
             <SideMenuList
               openHoverNav={openHoverNav}
-              navList={navList}
-              selectedKeys={currentMenuInfo?.selectKey ? currentMenuInfo?.selectKey : []}
+              navList={menuTree}
+              selectedKeys={currentMenuInfo?.code ? [currentMenuInfo?.code] : []}
               setOpenHoverNav={setOpenHoverNav}
             />
           </div>

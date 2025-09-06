@@ -40,7 +40,7 @@
 
 .menu-item {
   width: 350px;
-  height: 156px;
+  height: var(--supos-card-height, 156px);
   flex-shrink: 0;
   border-radius: 3px;
   background: var(--supos-uns-button-color);
@@ -85,7 +85,7 @@
       overflow: hidden;
       display: -webkit-box; /* 设置为弹性盒模型 */
       -webkit-box-orient: vertical; /* 设置为竖直排列 */
-      -webkit-line-clamp: 4; /* 显示 4 行，超过部分显示省略号 */
+      -webkit-line-clamp: var(--supos-line-height, 4); /* 显示 4 行，超过部分显示省略号 */
       text-overflow: ellipsis; /* 超出部分显示省略号 */
     }
   }

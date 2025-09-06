@@ -64,6 +64,10 @@
     justify-content: flex-start;
     align-items: center;
 
+    .ant-splitter-bar-dragger {
+      padding: 0 8px;
+    }
+
     .menu {
       overflow: hidden;
 
@@ -131,5 +135,11 @@
 
   .ant-drawer-content-wrapper {
     top: 48px;
+  }
+}
+
+.custom-menu-popover {
+  .ant-menu.ant-menu-sub.ant-menu-vertical {
+    max-height: 50vh;
   }
 }

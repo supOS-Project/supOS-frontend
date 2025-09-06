@@ -30,7 +30,7 @@ export interface FieldItem {
   displayName?: string;
   remark?: string;
   unique?: boolean;
-  isDefault?: boolean;
+  systemField?: boolean;
 }
 
 export interface TreeNode extends TreeDataNode {

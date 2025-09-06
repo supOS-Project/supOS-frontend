@@ -9,35 +9,19 @@ import { useTabsContext } from '@/contexts/tabs-context';
 import { ItemType } from 'antd/es/menu/interface';
 import { storageOpt } from '@/utils/storage';
 import { setUserTipsEnable, useBaseStore } from '@/stores/base';
+import { useI18nStore } from '@/stores/i18n-store.ts';
 
 const HelpNav = () => {
   const navigate = useNavigate();
+  const lang = useI18nStore((state) => state.lang);
   const { TabsContext } = useTabsContext();
-  const userRoute = useBaseStore((state) => state.pickedRoutes);
+  const userRoute = useBaseStore((state) => state.menuGroup);
   const formatMessage = useTranslate();
   const unsRoutePath = '/uns';
 
   const dropdownItems = useMemo(() => {
-    // const guideGroupChildren = [
-    //   // {
-    //   //   key: '/home',
-    //   // },
-    //   {
-    //     key: '/uns',
-    //   },
-    //   {
-    //     key: '/collection-flow',
-    //   },
-    // ];
     const groupChildren: ItemType[] = [];
-    // guideGroupChildren.forEach((item) => {
-    //   const route = find(userRoute, (route) => route?.menu?.url === item.key && route?.menu?.picked);
-    //   if (route) {
-    //     groupChildren.push({ ...item, label: route.showName });
-    //   }
-    // });
-
-    const route = find(userRoute, (route) => route?.menu?.url === unsRoutePath && route?.menu?.picked);
+    const route = find(userRoute, (route) => route?.url === unsRoutePath);
     if (route) {
       groupChildren.push(
         ...[
@@ -73,7 +57,7 @@ const HelpNav = () => {
     }
 
     return items;
-  }, [userRoute]);
+  }, [userRoute, lang]);
 
   const handleUserGuide = ({ key }: any) => {
     if (key === 'tips') {
@@ -85,9 +69,7 @@ const HelpNav = () => {
       }
       storageOpt.set(
         SUPOS_USER_GUIDE_ROUTES,
-        map(currentUserGuideRoute, (route) =>
-          route?.menu?.url === unsRoutePath ? { ...route, isVisited: false } : route
-        )
+        map(currentUserGuideRoute, (route) => (route?.url === unsRoutePath ? { ...route, isVisited: false } : route))
       );
       navigate(unsRoutePath, { state: { stepId: key } });
       TabsContext?.current?.onRefreshTab?.(unsRoutePath);

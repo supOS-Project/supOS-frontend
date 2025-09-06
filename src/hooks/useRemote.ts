@@ -2,7 +2,8 @@ import { createElement, useEffect, useRef, useState } from 'react';
 import { loadRemote, registerRemotes, registerPlugins } from '@module-federation/enhanced/runtime';
 import { PageProps } from '@/common-types.ts';
 import { useI18nStore, connectI18nMessage } from '@/stores/i18n-store';
-import { getPluginI18n, getRemotesInfo } from '@/utils';
+import { getRemotesInfo, preloadPluginLang } from '@/utils';
+import { useBaseStore } from '@/stores/base';
 
 const useRemote = ({
   name,
@@ -14,12 +15,12 @@ const useRemote = ({
   location?: PageProps['location'];
 }) => {
   const lang = useI18nStore((state) => state.lang);
+  const pluginList = useBaseStore((state) => state.pluginList);
   const initStateRef = useRef<boolean>(false);
   const [Module, setModule] = useState<any>(() => () => {
     return createElement('span');
   });
   const [errorMsg, setErrorMsg] = useState<any>('');
-
   useEffect(() => {
     if (!location?.pathname) return;
     if (!name) return;
@@ -76,7 +77,10 @@ const useRemote = ({
       setErrorMsg(remoteModule?.error ? remoteModule?.error.toString() : '');
       try {
         // 再加载一次国际化
-        const newMessages = await getPluginI18n({ name, lang });
+        const newMessages = await preloadPluginLang(
+          [{ name, backendName: pluginList?.find((f) => '/' + f.plugInfoYml?.route?.name === name)?.name }],
+          lang
+        );
         connectI18nMessage(newMessages);
       } catch (e) {
         console.log('国际化 error', e);

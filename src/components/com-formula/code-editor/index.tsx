@@ -168,7 +168,7 @@ const CodeEditor = forwardRef<CodeEditorRef | undefined, CodeEditorProp>(functio
       specialChars: /[\u0000-\u001f\u007f\u00ad\u200c-\u200f\u2028\u2029\ufeff]/,
       mode: 'formula',
     });
-    editor.current.setSize('auto', '73px');
+    editor.current.setSize('auto', '100%');
     const hintChange = (t: any) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-expect-error
@@ -187,16 +187,14 @@ const CodeEditor = forwardRef<CodeEditorRef | undefined, CodeEditorProp>(functio
   }, []);
   return (
     <div className={classNames('formulaCodeEditor', { formulaCodeEditorReadonly: readonly })}>
-      <div className="formulaHead">
-        {hiddenHead ? null : (
-          <>
-            <span className="formulaName" title={formulaName}>
-              {formulaName}
-            </span>
-            <span className="formulaEqual">=</span>
-          </>
-        )}
-      </div>
+      {!hiddenHead && (
+        <div className="formulaHead">
+          <span className="formulaName" title={formulaName}>
+            {formulaName}
+          </span>
+          <span className="formulaEqual">=</span>
+        </div>
+      )}
       <div className="formulaCodeMirrorWrap" ref={editorContainer} />
     </div>
   );

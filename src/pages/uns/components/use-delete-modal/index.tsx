@@ -1,13 +1,14 @@
 import { useCallback, useState } from 'react';
-import { Button, Form, App } from 'antd';
+import { Button, Form, App, Divider, Flex } from 'antd';
 import { WarningFilled } from '@carbon/icons-react';
-import { deleteTreeNode } from '@/apis/inter-api/uns';
+import { deleteTreeNode, detectIfRemoveApi } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 
 import type { UnsTreeNode, InitTreeDataFnType } from '@/pages/uns/types';
 import ComCheckbox from '@/components/com-checkbox';
 import ProModal from '@/components/pro-modal';
 import { useBaseStore } from '@/stores/base';
+import { ROOT_NODE_ID } from '@/pages/uns/store/treeStore.tsx';
 
 export interface DeleteModalProps {
   successCallBack: InitTreeDataFnType;
@@ -22,13 +23,26 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
   const [open, setOpen] = useState(false);
   const [deleteDetail, setDeleteDetail] = useState<UnsTreeNode | null>();
   const [loading, setLoading] = useState(false);
-  const { message, modal } = App.useApp();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const { message } = App.useApp();
   const dashboardType = useBaseStore((state) => state.dashboardType);
-
   const setModalOpen = useCallback(
     (detail: UnsTreeNode) => {
       setDeleteDetail(detail);
       setOpen(true);
+      setLoading(true);
+      // 先调校验接口
+      detectIfRemoveApi({ id: detail?.id })
+        .then((data) => {
+          if (data?.refs > 0) {
+            setShowConfirm(true);
+          } else {
+            setShowConfirm(false);
+          }
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     },
     [setOpen, setDeleteDetail]
   );
@@ -37,6 +51,7 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
     setOpen(false);
     form.resetFields();
     setLoading(false);
+    setShowConfirm(false);
   };
   const cancel = () => {
     close();
@@ -44,35 +59,29 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
 
   const deleteRequest = async (params: any) => {
     setLoading(true);
-    try {
-      const data: any = await deleteTreeNode(params);
-      if (data?.refs > 0) {
-        modal.confirm({
-          content: formatMessage('uns.thisNodeHasAssociatedComputingNodes'),
-          cancelText: formatMessage('common.cancel'),
-          okText: formatMessage('common.confirm'),
-          onOk() {
-            confirm(true);
-          },
-          onCancel() {
-            setLoading(false);
-          },
-        });
-      } else {
+    deleteTreeNode(params)
+      .then(() => {
         message.success(formatMessage('common.deleteSuccessfully'));
         const clearSelect =
           currentNode?.path?.startsWith(deleteDetail?.path || '') ||
           currentNode?.id === deleteDetail?.id ||
-          params.cascade;
-        const config = lazyTree ? { reset: true, clearSelect } : { clearSelect };
+          showConfirm;
+        const sourceId = deleteDetail?.parentId;
+        const config = lazyTree
+          ? {
+              queryType: deleteDetail?.type === 0 ? 'deleteFolder' : 'deleteFile',
+              clearSelect,
+              key: sourceId ? sourceId : ROOT_NODE_ID,
+              newNodeKey: deleteDetail?.preId || deleteDetail?.nextId,
+              nodeDetail: deleteDetail,
+            }
+          : { clearSelect };
         successCallBack(config);
         close();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   const confirm = async (cascade?: boolean) => {
@@ -100,6 +109,15 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
       <Form name="deleteForm" form={form} colon={false}>
         {deleteDetail?.type === 2 ? (
           <>
+            {showConfirm && (
+              <>
+                <div style={{ display: 'flex', gap: '5px', fontSize: '16px' }}>
+                  <WarningFilled style={{ color: '#faad14', flexShrink: 0, height: '25px' }} />
+                  <span>{formatMessage('uns.thisNodeHasAssociatedComputingNodes')}</span>
+                </div>
+                <Divider variant="dashed" style={{ margin: '8px 0', borderColor: '#c6c6c6' }} />
+              </>
+            )}
             <Form.Item
               name="withFlow"
               label=""
@@ -124,7 +142,13 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
         ) : (
           <div style={{ display: 'flex', gap: '5px', fontSize: '16px' }}>
             <WarningFilled style={{ color: '#faad14', flexShrink: 0, height: '25px' }} />
-            <span>{formatMessage('uns.deleteFolderTip')}</span>
+            <Flex vertical justify="flex-start">
+              <span>
+                {showConfirm ? '1、' : ''}
+                {formatMessage('uns.deleteFolderTip')}
+              </span>
+              {showConfirm && <span>2、{formatMessage('uns.thisFolderHasAssociatedComputingNodes')}</span>}
+            </Flex>
           </div>
         )}
       </Form>
@@ -144,7 +168,7 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
           color="primary"
           variant="solid"
           onClick={() => {
-            confirm(undefined);
+            confirm(true);
           }}
           style={{ width: '48%' }}
           size="large"

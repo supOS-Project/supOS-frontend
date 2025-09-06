@@ -77,7 +77,12 @@ const Module = ({ successCallBack, changeCurrentPath, setTreeMap, scrollTreeNode
         <Form.Item
           label={formatMessage('common.name')}
           name="name"
-          rules={[{ required: true }, { max: 63 }, { validator: validateTrim }]}
+          rules={[
+            { required: true },
+            { max: 63 },
+            { validator: validateTrim },
+            { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/, message: formatMessage('uns.nameFormat') },
+          ]}
         >
           <Input />
         </Form.Item>

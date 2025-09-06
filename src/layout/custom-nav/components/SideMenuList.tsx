@@ -1,5 +1,5 @@
 import { FC, useEffect, useRef, useState } from 'react';
-import { RoutesProps } from '@/stores/types';
+import { ResourceProps } from '@/stores/types';
 import { ConfigProvider, Flex, Menu, MenuProps } from 'antd';
 import { useMenuNavigate } from '@/hooks';
 import styles from './index.module.scss';
@@ -8,7 +8,7 @@ import { useThemeStore } from '@/stores/theme-store.ts';
 
 type MenuItem = Required<MenuProps>['items'][number];
 const SideMenuList: FC<{
-  navList: RoutesProps[];
+  navList: ResourceProps[];
   openHoverNav: boolean;
   setOpenHoverNav: any;
   selectedKeys: string[];
@@ -34,36 +34,36 @@ const SideMenuList: FC<{
     if (openHoverNav) {
       setItems(
         navList?.map?.((parent) => {
-          if (parent.hasChildren) {
+          if (parent.children?.length && parent.type !== 2) {
             return {
-              key: parent.key!,
+              key: parent.code!,
               label: (
                 <Flex align="center" gap={4} className={styles['side-menu-list-item']}>
-                  <IconImage theme={primaryColor} iconName={parent.iconUrl} width={24} height={24} />
-                  {parent.name}
+                  <IconImage theme={primaryColor} iconName={parent.icon} width={24} height={24} />
+                  {parent.showName}
                 </Flex>
               ),
               children: parent?.children?.map((child) => ({
-                key: child.key!,
+                key: child.code!,
                 onClick: () => {
                   handleNavigate(child);
                   setOpenHoverNav?.(false);
                 },
                 label: (
                   <Flex align="center" gap={4} className={styles['side-menu-list-item']}>
-                    <IconImage theme={primaryColor} iconName={child.iconUrl} width={24} height={24} />
-                    {child.name}
+                    <IconImage theme={primaryColor} iconName={child.code} width={24} height={24} />
+                    {child.showName}
                   </Flex>
                 ),
               })),
             };
           } else {
             return {
-              key: parent.key!,
+              key: parent.code!,
               label: (
                 <Flex align="center" gap={4} className={styles['side-menu-list-item']}>
-                  <IconImage theme={primaryColor} iconName={parent.iconUrl} width={24} height={24} />
-                  {parent.name}
+                  <IconImage theme={primaryColor} iconName={parent.icon} width={24} height={24} />
+                  {parent.showName}
                 </Flex>
               ),
               onClick: () => {

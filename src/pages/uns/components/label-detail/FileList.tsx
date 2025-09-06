@@ -102,7 +102,7 @@ const FileList = forwardRef<FileListRefProps, FileListProps>(({ labelId }, ref) 
             dataIndex: 'operation',
             width: '5%',
             align: 'center',
-            hidden: !hasPermission(ButtonPermission['uns.labelFileDel']),
+            hidden: !hasPermission(ButtonPermission['uns.labelDetail']),
             render: (_, record: any) => (
               <Tooltip title={formatMessage('common.delete')}>
                 <TrashCan

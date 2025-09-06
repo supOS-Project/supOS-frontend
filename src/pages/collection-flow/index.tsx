@@ -35,27 +35,28 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
   const runStatusOptions = [
     {
       value: 'RUNNING',
-      text: formatMessage('common.running'),
+      text: 'common.running',
       bgType: 'green',
     },
     {
       value: 'PENDING',
-      text: formatMessage('common.pending'),
+      text: 'common.pending',
       bgType: 'purple',
     },
     {
       value: 'STOPPED',
-      text: formatMessage('common.stopped'),
+      text: 'common.stopped',
       bgType: 'red',
     },
     {
       value: 'DRAFT',
-      text: formatMessage('common.draft'),
+      text: 'common.draft',
       bgType: 'blue',
     },
   ];
   const titleStatehandle = (item: any) => {
-    return runStatusOptions?.find((f: any) => f.value === item.flowStatus)?.text || item.flowStatus;
+    const key = runStatusOptions?.find((f: any) => f.value === item.flowStatus)?.text;
+    return key ? formatMessage(key) : item.flowStatus;
   };
   const formItemOptions = (isEdit: string) => [
     {
@@ -179,7 +180,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                 setSearchParams(searchForm.getFieldsValue());
               }}
             />
-            <AuthButton auth={ButtonPermission['collectionFlow.add']} type="primary" onClick={onAddHandle}>
+            <AuthButton auth={ButtonPermission['SourceFlow.add']} type="primary" onClick={onAddHandle}>
               + {formatMessage('collectionFlow.newFlow')}
             </AuthButton>
           </>
@@ -189,12 +190,12 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           className="flow-table-list"
           columns={[
             {
-              title: formatMessage('common.name'),
+              titleIntlId: 'common.name',
               dataIndex: 'flowName',
               width: '30%',
-              render: (text, item) => (
+              render: (text: any, item: any) => (
                 <>
-                  <AuthWrapper auth={ButtonPermission['collectionFlow.design']}>
+                  <AuthWrapper auth={ButtonPermission['SourceFlow.design']}>
                     <Button
                       type="link"
                       onClick={() => {
@@ -220,12 +221,12 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
               ),
             },
             {
-              title: formatMessage('collectionFlow.flowTemplate'),
+              titleIntlId: 'collectionFlow.flowTemplate',
               dataIndex: 'template',
               width: '25%',
             },
             {
-              title: formatMessage('common.description'),
+              titleIntlId: 'common.description',
               dataIndex: 'description',
               width: '30%',
               ellipsis: true,
@@ -236,7 +237,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
               width: '10%',
               align: 'right',
               fixed: 'right',
-              render: (_, record) => (
+              render: (_: any, record: any) => (
                 <OperationButtons
                   className="list-operation"
                   options={[
@@ -254,7 +255,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                         title: formatMessage('common.copy'),
                         icon: <CopyFile />,
                       },
-                      auth: ButtonPermission['collectionFlow.copy'],
+                      auth: ButtonPermission['SourceFlow.copy'],
                     },
                     {
                       label: '',
@@ -264,7 +265,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                         title: formatMessage('common.edit'),
                         icon: <Edit />,
                       },
-                      auth: ButtonPermission['collectionFlow.edit'],
+                      auth: ButtonPermission['SourceFlow.edit'],
                     },
                     {
                       label: '',
@@ -279,7 +280,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                         title: formatMessage('common.delete'),
                         icon: <TrashCan />,
                       },
-                      auth: ButtonPermission['collectionFlow.delete'],
+                      auth: ButtonPermission['SourceFlow.delete'],
                     },
                   ]}
                   record={record}

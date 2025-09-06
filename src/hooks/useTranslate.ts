@@ -17,8 +17,13 @@ import { useCallback } from 'react';
 const useTranslate = (prefix?: string) => {
   const lang = useI18nStore((state) => state.lang);
   return useCallback(
-    (id: string, opt?: any, defaultMessage?: string, description?: string | object) =>
-      getIntl(prefix ? `${prefix}.${id}` : id, opt, defaultMessage, description),
+    (id: string, opt?: any, defaultMessage?: string, description?: string | object) => {
+      if (id) {
+        return getIntl(prefix ? `${prefix}.${id}` : id, opt, defaultMessage, description);
+      } else {
+        return '';
+      }
+    },
     [lang]
   );
 };

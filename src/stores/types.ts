@@ -1,92 +1,8 @@
-import { ReactElement } from 'react';
-
-export interface TagProps {
-  key: string;
-  value: string;
-}
-export interface RoutesProps {
-  /**
-   * @description 作为唯一key,如果是iframe类型的会用来拼接成前端路由 uns  => /uns
-   * */
-  name: string;
-  /**
-   * @description 国际化显示名称
-   * */
-  showName: string;
-  /**
-   * @description 菜单信息 picked：是否显示，url：实际路由地址 暂时无用
-   * */
-  menu?: { picked: boolean; url: string };
-  /**
-   * @description 对应konga的 parentName: 分组名称；   iconUrl: icon地址；  description: 描述；  menu表示展示前端； menuName菜单名称；menuPort、menuProtocol、menuHost: iframe的实际host;
-   * {key: 国际化的key（既是tag的值），没有国际话的话是''，value是国际化的内容,如果key是空的，value就是tag的值} =》 {key: '', value: menu} {key: 'parentName:DevTools', value: 'DevTools'}
-   * */
-  tags?: TagProps[];
-  /**
-   * @description 用来判断是否是前端路由
-   * */
-  isFrontend?: boolean;
-  /**
-   * @description 用来判断是否是模块联邦远程路由 1 时候是
-   * */
-  isRemote?: string;
-  /**
-   * @description 子页面路由 不会在konga上面注册
-   * */
-  remoteSubPageList?: string[];
-  /**
-   * @description 用来判断是否有子建
-   * */
-  hasChildren?: boolean;
-  /**
-   * @description routes的上级service，以root为frontend来区分是否是前端还是iframe, description提过tag拿来作为描述
-   * */
-  service?: {
-    id: string;
-    host: string;
-    port: string;
-    protocol: string;
-    name: string;
-    /**
-     * @description iconUrl:  icon地址; root:frontend表示是前端的路由; description: 父级描述；
-     * */
-    tags?: string[];
-  };
-  children?: RoutesProps[];
-  parentName?: string;
-  // parentName国际化
-  parentNameI18?: string;
-  key?: string;
-  value?: string;
-  parentKey?: string;
-  iconComp?: ReactElement;
-  iconUrl?: string;
-  description?: string;
-  selectKey?: string[];
-  selectKeyPath?: string[];
-  // 排序
-  sort?: string;
-  // menu的port
-  menuPort?: string;
-  menuProtocol?: string;
-  menuHost?: string;
-  status?: number | string;
-  // 0:  iframe打开(自己域名)  1: 打开新页面（自己域名） 默认0  2：打开新页面（同域）
-  openType?: string;
-  // openType为3跳转的地址
-  indexUrl?: string;
-  // 是否是插件注册进来的子菜单
-  isRemoteChildMenu?: boolean;
-  // 子菜单的key 会和父级拼接 比如 AppMangament  key是 detail
-  childrenMenuKey?: string;
-}
-
 export interface DataItem {
   policyId: string;
   resourceId: string;
   url: string;
 }
-
 export interface UserInfoProps {
   /**
    * @description 邮箱
@@ -114,21 +30,26 @@ export interface UserInfoProps {
   roleList?: { roleDescription: string; roleId: string; roleName: string }[];
   roleString?: string;
   /**
-   * @description 页面 /xxx
+   * @description 页面 /xxx   用户资源组
    * */
   pageList?: DataItem[];
-  /**
-   * @description 按钮权限 button:xxx
-   * */
-  buttonList?: DataItem[];
   // 登录后跳转的地址
   homePage?: string;
   // 是否是超管
-  superAdmin?: string;
+  superAdmin?: boolean;
+  // 用户有的权限
+  buttonGroup?: any[];
+  // 用户拒绝优先的权限
+  denyButtonGroup?: any[];
+  /**
+   * @description 按钮权限 button:xxx 用户实际存在的按钮权限（通过组合拒绝优先权限过滤出来）
+   * */
+  buttonList?: DataItem[];
   // 手机号
   phone?: string;
+  // 来源，带source = external的  不允许编辑和删除
+  source?: string;
 }
-
 export interface ContainerItemProps {
   name: string;
   version: string;
@@ -175,4 +96,57 @@ export interface SystemInfoProps {
 
   // 主题插件配置信息
   themeConfig?: any;
+}
+
+/**
+ * @description 资源：目录、菜单、按钮
+ * */
+export interface ResourceProps {
+  // 父级ID
+  parentId?: string;
+  // 主键ID
+  id: string;
+  // 菜单分组 1-导航 2-菜单 home    属于哪组  3-tab home页tab
+  groupType?: number;
+  // 菜单类型（1-目录 2-菜单 3-按钮）
+  type: number;
+  // icon 不写类型默认svg, 不传默认使用code
+  icon?: string;
+  // konga的name既唯一键
+  code: string;
+  // 用code转成的国际化name
+  showName?: string;
+  // 国际化的描述key
+  description?: string;
+  // 国际化描述
+  showDescription?: string;
+  // 排序
+  sort: number;
+  // 创建时间
+  createAt?: number;
+  // 更新时间
+  updateAt?: number;
+  // 地址
+  url?: string;
+  // 类型 1-内部地址（前端地址） 2-外部链接（iframe地址）
+  urlType?: number;
+  // 打开方式：0-多页签 1-新窗口打开
+  openType?: number;
+  // 备注
+  remark?: string;
+  // 启用状态
+  enable?: boolean;
+  // ============
+  children?: ResourceProps[];
+  // 是否是子菜单，比如 /EvenFlow/Edit，那就是子菜单
+  subMenu?: boolean;
+  parentCode?: string;
+  // 是否是前端写死的路由
+  isFrontend?: boolean;
+  // 是否是插件模块
+  isRemote?: boolean;
+  // 子模块,直接使用的是 url 去掉/
+  remoteModelName?: boolean;
+  // 是否选中
+  checked?: boolean;
 }

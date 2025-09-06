@@ -170,6 +170,7 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
               },
               { max: 63 },
               { validator: validateTrim },
+              { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/, message: formatMessage('uns.nameFormat') },
             ]}
           >
             <Input placeholder={formatMessage('common.name')} />

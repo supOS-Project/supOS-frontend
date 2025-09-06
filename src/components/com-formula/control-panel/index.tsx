@@ -29,15 +29,15 @@ export interface ControlPanel {
   showDetail?: boolean;
 }
 
-const createIntroPane = (item: any, { usage, example }: any) => {
+const createIntroPane = (item: any, { usage, example }: any, formatMessage: any) => {
   if (!item) return '';
   const nameReg = new RegExp('(' + item.name + ')', 'g');
   const paramReg = /\{(.+?)\}/g;
   const nameTemplate = `<span class="formulaName">$1</span>`;
   const paramTemplate = `<span class="formulaField">$1</span>`;
-  return `<p>${item.intro.replace(nameReg, nameTemplate)}</p>
-      <p>${usage}：${item.usage.replace(nameReg, nameTemplate)}</p>
-      <p>${example}：${item.example.replace(nameReg, nameTemplate).replace(paramReg, paramTemplate)}</p>`;
+  return `<p>${formatMessage(item.intro).replace(nameReg, nameTemplate)}</p>
+      <p>${usage}：${formatMessage(item.usage).replace(nameReg, nameTemplate)}</p>
+      <p>${example}：${formatMessage(item.example).replace(nameReg, nameTemplate).replace(paramReg, paramTemplate)}</p>`;
 };
 
 const ControlPanel: FC<ControlPanel> = ({
@@ -119,7 +119,7 @@ const ControlPanel: FC<ControlPanel> = ({
               defaultValue={defaultFuncType}
               options={FUNCTIONS_TYPE?.map?.((item: any) => {
                 return {
-                  label: item.cateName,
+                  label: formatMessage(item.cateName),
                   value: item.cateValue,
                 };
               })}
@@ -140,8 +140,8 @@ const ControlPanel: FC<ControlPanel> = ({
                       className="fieldName"
                       dangerouslySetInnerHTML={{ __html: highlight(get(item, ['name'], ''), functionSearchKey) }}
                     />
-                    <span className="fieldType" title={get(item, ['label'], '')}>
-                      {get(item, ['label'], '')}
+                    <span className="fieldType" title={formatMessage(get(item, ['label'], ''))}>
+                      {formatMessage(get(item, ['label'], ''))}
                     </span>
                   </li>
                 );
@@ -154,10 +154,14 @@ const ControlPanel: FC<ControlPanel> = ({
               <div
                 className="description"
                 dangerouslySetInnerHTML={{
-                  __html: createIntroPane(activeFunc, {
-                    usage: formatMessage('common.usage'),
-                    example: formatMessage('common.example'),
-                  }),
+                  __html: createIntroPane(
+                    activeFunc,
+                    {
+                      usage: formatMessage('common.usage'),
+                      example: formatMessage('common.example'),
+                    },
+                    formatMessage
+                  ),
                 }}
               />
             </div>

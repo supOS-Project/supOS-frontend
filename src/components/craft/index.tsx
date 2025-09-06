@@ -3,14 +3,14 @@ import { Button, Flex, Input, message, Table, Typography } from 'antd';
 import CodeEditorWithPreview from '../craft/CodeEditorWithPreview';
 import { CopilotTask, useCopilotContext } from '@copilotkit/react-core';
 import { Subtract } from '@carbon/icons-react';
-import { searchGraphql } from '@/apis/hasura/graphql.ts';
+// import { searchGraphql } from '@/apis/hasura/graphql.ts';
 import { getGeneratedPrompt } from '../craft/util.ts';
 import ComSelect from '../com-select';
 import { useCopilotOperationContext } from '@/layout/context';
 import { useTranslate } from '@/hooks';
 import { AuthButton } from '../auth';
 import { ButtonPermission } from '@/common-types/button-permission';
-import { getBaseUrl } from '@/utils/url-util.ts';
+// import { getBaseUrl } from '@/utils/url-util.ts';
 import ProModal from '../pro-modal/index.tsx';
 import { setAiResult, useAiStore } from '@/stores/ai-store.ts';
 const { Title } = Typography;
@@ -107,7 +107,7 @@ const Board: FC<any> = ({ boardCodeRef }) => {
   const formatMessage = useTranslate();
   const aiResult = useAiStore((state) => state.aiResult);
   const copilotOperation = useCopilotOperationContext();
-  const apiUrl = getBaseUrl();
+  // const apiUrl = getBaseUrl();
   const initialCode = () => {
     if (typeof window !== 'undefined') {
       const savedCode = localStorage.getItem('code');
@@ -246,62 +246,62 @@ const Board: FC<any> = ({ boardCodeRef }) => {
       generateCode.run(context);
       return;
     }
-    searchGraphql({
-      query: String.raw`{
-              __type(name: "${codeCommand.databaseName}") {
-                fields {
-                  name
-                  type {
-                    name
-                    ofType {
-                      name
-                    }
-                  }
-                }
-              }
-            }`,
-    })
-      .then((data) => {
-        const fileds = data?.data?.__type?.fields?.map?.((field: any) => ({
-          name: field.name,
-          type: field.type?.name || field.type?.ofType?.name,
-        }));
-        const fieldsName = fileds?.map((item: any) => item.name).join(' ');
-        const generateCode = new CopilotTask({
-          instructions: getGeneratedPrompt({ apiUrl, codeCommand, fieldsName, fileds }),
-          actions: actions,
-        });
-        generateCode.run(context);
-      })
-      .catch(() => {
-        const generateCode = new CopilotTask({
-          instructions: getGeneratedPrompt({ codeCommand }),
-          actions: actions,
-          includeCopilotActions: false,
-        });
-        generateCode.run(context);
-      });
+    // searchGraphql({
+    //   query: String.raw`{
+    //           __type(name: "${codeCommand.databaseName}") {
+    //             fields {
+    //               name
+    //               type {
+    //                 name
+    //                 ofType {
+    //                   name
+    //                 }
+    //               }
+    //             }
+    //           }
+    //         }`,
+    // })
+    //   .then((data) => {
+    //     const fileds = data?.data?.__type?.fields?.map?.((field: any) => ({
+    //       name: field.name,
+    //       type: field.type?.name || field.type?.ofType?.name,
+    //     }));
+    //     const fieldsName = fileds?.map((item: any) => item.name).join(' ');
+    //     const generateCode = new CopilotTask({
+    //       instructions: getGeneratedPrompt({ apiUrl, codeCommand, fieldsName, fileds }),
+    //       actions: actions,
+    //     });
+    //     generateCode.run(context);
+    //   })
+    //   .catch(() => {
+    //     const generateCode = new CopilotTask({
+    //       instructions: getGeneratedPrompt({ codeCommand }),
+    //       actions: actions,
+    //       includeCopilotActions: false,
+    //     });
+    //     generateCode.run(context);
+    //   });
   };
-  const [databaseList, setDatabaseList] = useState<any>([]);
+  // const [databaseList, setDatabaseList] = useState<any>([]);
   useEffect(() => {
-    searchGraphql({
-      query: String.raw`query {
-  __type(name: "query_root") {
-    fields {
-      name
-    }
-  }
-}`,
-    }).then((data: any) => {
-      setDatabaseList(
-        data?.data?.__type?.fields
-          ?.filter((item: any) => !(item.name.includes('_by_pk') || item.name.includes('_aggregate')))
-          ?.map((item: any) => ({
-            label: item.name,
-            value: item.name,
-          }))
-      );
-    });
+    //     searchGraphql({
+    //       query: String.raw`query {
+    //   __type(name: "query_root") {
+    //     fields {
+    //       name
+    //     }
+    //   }
+    // }`,
+    //     }).then((data: any) => {
+    //       setDatabaseList(
+    //         data?.data?.__type?.fields
+    //           ?.filter((item: any) => !(item.name.includes('_by_pk') || item.name.includes('_aggregate')))
+    //           ?.map((item: any) => ({
+    //             label: item.name,
+    //             value: item.name,
+    //           }))
+    //       );
+    //     });
   }, []);
   return (
     <Flex style={{ height: '100%', width: '100%', padding: '40px 20px' }} gap="20px">
@@ -325,7 +325,7 @@ const Board: FC<any> = ({ boardCodeRef }) => {
               });
             }}
             showSearch
-            options={databaseList}
+            options={[]}
             style={{ margin: '8px 0', width: '100%' }}
             placeholder={formatMessage('appGui.yourCodeDatabaseName')}
             allowClear

@@ -26,7 +26,7 @@ export interface FieldItem {
   remark?: string;
   unique?: boolean;
   index?: number | string;
-  isDefault?: boolean;
+  systemField?: boolean;
   maxLen?: number;
 }
 

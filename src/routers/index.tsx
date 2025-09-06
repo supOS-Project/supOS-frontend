@@ -3,17 +3,19 @@ import Layout from '@/layout';
 import Uns from '@/pages/uns';
 import Todo from '@/pages/todo';
 import GrafanaDesign from '@/pages/grafana-design';
-import AppDisplay from '@/pages/app-management/AppDisplay';
-import AppSpace from '@/pages/app-management/AppSpace';
-import AppGUI from '@/pages/app-management/AppGUI';
-import AppPreview from '@/pages/app-management/AppPreview';
-import AppIframe from '@/pages/app-management/AppIframe';
+// import AppDisplay from '@/pages/app-management/AppDisplay';
+// import AppSpace from '@/pages/app-management/AppSpace';
+// import AppGUI from '@/pages/app-management/AppGUI';
+// import AppPreview from '@/pages/app-management/AppPreview';
+// import AppIframe from '@/pages/app-management/AppIframe';
 import NotFoundPage from '@/pages/not-found-Page/NotFoundPage';
 import NotPage from '@/pages/not-found-Page';
 import CollectionFlow from '@/pages/collection-flow';
 import FlowPreview from '@/pages/collection-flow/FlowPreview';
 import Dashboards from '@/pages/dashboards';
 import DashboardsPreview from '@/pages/dashboards/DashboardsPreview';
+// import Localization from '@/pages/localization';
+// import MenuConfiguration from '@/pages/menu-configuration';
 import Home from '@/pages/home';
 import AccountManagement from '@/pages/account-management';
 import AboutUs from '@/pages/aboutus';
@@ -28,11 +30,10 @@ import PluginManagement from '@/pages/plugin-management';
 import qs from 'qs';
 import { useEffect } from 'react';
 import { useBaseStore } from '@/stores/base';
-import { getIntl } from '@/stores/i18n-store.ts';
 import { setToken } from '@/utils';
 import DynamicMFComponent from '../components/dynamic-mf-component';
 import DynamicIframe from '@/pages/dynamic-iframe';
-import { RoutesProps, SystemInfoProps, UserInfoProps } from '@/stores/types.ts';
+import { ResourceProps, SystemInfoProps, UserInfoProps } from '@/stores/types.ts';
 import Cookies from 'js-cookie';
 
 // 根路径重定向到外部login页
@@ -66,7 +67,11 @@ const FreeLoginLoader = () => {
       setToken(params.token as string, {
         expires: 365,
       });
-      window.location.href = '/?isLogin=true';
+      if (params?.redirectUri) {
+        window.location.href = (params?.redirectUri as string) || '/?isLogin=true';
+      } else {
+        window.location.href = '/?isLogin=true';
+      }
     } else {
       window.location.href = '/403';
     }
@@ -88,8 +93,7 @@ export const childrenRoutes = [
     Component: Todo,
     handle: {
       parentPath: '/_common',
-      name: getIntl('common.todo', 'To-do'),
-      menuNameKey: 'common.todo',
+      code: 'common.todo',
       type: 'all',
     },
   },
@@ -98,45 +102,41 @@ export const childrenRoutes = [
     Component: GrafanaDesign,
     handle: {
       parentPath: '/_common',
-      name: getIntl('common.grafanaDesign', 'GrafanaDesign'),
-      menuNameKey: 'common.grafanaDesign',
+      code: 'common.grafanaDesign',
     },
   },
-  {
-    path: '/app-display',
-    Component: AppDisplay,
-  },
-  {
-    path: '/app-iframe',
-    Component: AppIframe,
-    handle: {
-      parentPath: '/app-display',
-      name: getIntl('route.appIframe', 'AppIframe'),
-      menuNameKey: 'route.appIframe',
-    },
-  },
-  {
-    path: '/app-space',
-    Component: AppSpace,
-  },
-  {
-    path: '/app-gui',
-    Component: AppGUI,
-    handle: {
-      parentPath: '/app-space',
-      name: getIntl('route.appGUI', 'AppGUI'),
-      menuNameKey: 'route.appGUI',
-    },
-  },
-  {
-    path: '/app-preview',
-    Component: AppPreview,
-    handle: {
-      parentPath: '/app-space',
-      name: getIntl('route.appPreview', 'AppPreview'),
-      menuNameKey: 'route.appPreview',
-    },
-  },
+  // {
+  //   path: '/app-display',
+  //   Component: AppDisplay,
+  // },
+  // {
+  //   path: '/app-iframe',
+  //   Component: AppIframe,
+  //   handle: {
+  //     parentPath: '/app-display',
+  //     code: 'route.appIframe',
+  //   },
+  // },
+  // {
+  //   path: '/app-space',
+  //   Component: AppSpace,
+  // },
+  // {
+  //   path: '/app-gui',
+  //   Component: AppGUI,
+  //   handle: {
+  //     parentPath: '/app-space',
+  //     code: 'route.appGUI',
+  //   },
+  // },
+  // {
+  //   path: '/app-preview',
+  //   Component: AppPreview,
+  //   handle: {
+  //     parentPath: '/app-space',
+  //     code: 'route.appPreview',
+  //   },
+  // },
   {
     path: '/collection-flow',
     Component: CollectionFlow,
@@ -146,8 +146,7 @@ export const childrenRoutes = [
     Component: FlowPreview,
     handle: {
       parentPath: '/collection-flow',
-      name: getIntl('route.flowEditor', 'SourceFlow Editor'),
-      menuNameKey: 'route.flowEditor',
+      code: 'route.flowEditor',
     },
   },
   {
@@ -155,12 +154,11 @@ export const childrenRoutes = [
     Component: EventFlow,
   },
   {
-    path: '/EvenFlow/Editor',
+    path: '/EventFlow/Editor',
     Component: EventFlowPreview,
     handle: {
       parentPath: '/EventFlow',
-      name: getIntl('route.eventFlowEditor', 'EventFlow Editor'),
-      menuNameKey: 'route.eventFlowEditor',
+      code: 'route.eventFlowEditor',
     },
   },
   {
@@ -172,11 +170,9 @@ export const childrenRoutes = [
     Component: DashboardsPreview,
     handle: {
       parentPath: '/dashboards',
-      name: getIntl('route.dashboardsPreview', 'DashboardsPreview'),
-      menuNameKey: 'route.dashboardsPreview',
+      code: 'route.dashboardsPreview',
     },
   },
-
   {
     path: '/account-management',
     Component: AccountManagement,
@@ -193,7 +189,7 @@ export const childrenRoutes = [
     path: '/dev-page',
     Component: DevPage,
     handle: {
-      name: 'devPage',
+      showName: 'devPage',
       type: 'dev',
     },
   },
@@ -206,7 +202,7 @@ export const childrenRoutes = [
     Component: NoPermission,
     handle: {
       parentPath: '/_common',
-      name: '403',
+      showName: '403',
       type: 'all',
     },
   },
@@ -215,11 +211,32 @@ export const childrenRoutes = [
     element: <NotFoundPage />,
     handle: {
       parentPath: '/_common',
-      name: '404',
+      showName: '404',
       type: 'all',
     },
   },
+  // {
+  //   path: '/Localization',
+  //   element: <Localization />,
+  //   handle: {
+  //     parentPath: '/_common',
+  //     showName: '国际化管理',
+  //     type: 'all',
+  //   },
+  // },
+  // {
+  //   path: '/MenuConfiguration',
+  //   element: <MenuConfiguration />,
+  //   handle: {
+  //     parentPath: '/_common',
+  //     showName: '菜单配置',
+  //     type: 'all',
+  //   },
+  // },
 ];
+
+// 前端路由路径
+export const frontendPathList = childrenRoutes?.map((item) => item.path);
 
 const routes = [
   {
@@ -261,11 +278,11 @@ const routes = [
 ];
 
 export const getRoutesDom = ({
-  pickedRoutesOptions,
+  menuGroup,
   systemInfo,
   currentUserInfo,
 }: {
-  pickedRoutesOptions: RoutesProps[];
+  menuGroup: ResourceProps[];
   systemInfo?: SystemInfoProps;
   currentUserInfo?: UserInfoProps;
 }) => {
@@ -277,15 +294,16 @@ export const getRoutesDom = ({
           // 前端路由
           ...((route.children ?? [])
             ?.map((child) => {
-              const info = pickedRoutesOptions?.find((f) => child.path === f?.menu?.url);
+              const info = menuGroup?.find((f) => f.isFrontend && child.path === f?.url);
               if (info) {
                 return {
                   ...child,
                   handle: {
                     ...child.handle,
                     path: child.path,
-                    name: info?.name,
-                    icon: info?.iconUrl,
+                    // code: info?.code,
+                    showName: info?.showName,
+                    icon: info?.icon,
                   },
                 };
               } else if (child.handle?.parentPath === '/_common') {
@@ -306,7 +324,7 @@ export const getRoutesDom = ({
                   handle: {
                     ...child.handle,
                     path: child.path,
-                    name: child.handle?.name ?? child.path,
+                    code: child.handle?.code ?? child.path,
                   },
                 };
               } else if (child.handle?.parentPath) {
@@ -316,7 +334,7 @@ export const getRoutesDom = ({
                   handle: {
                     ...child.handle,
                     path: child.path,
-                    name: child.handle?.name ?? child.path,
+                    code: child.handle?.code ?? child.path,
                   },
                 };
               } else {
@@ -327,60 +345,38 @@ export const getRoutesDom = ({
             })
             ?.filter((f) => f) || []),
           // 后端路由（及前端模块联邦路由）
-          ...(pickedRoutesOptions
+          ...(menuGroup
             ?.filter((item) => !item.isFrontend)
             ?.map((d) => {
-              // 模块联邦 子路由
-              if (d.isRemoteChildMenu) {
-                return {
-                  path: '/' + d?.key,
-                  Component: DynamicMFComponent,
-                  handle: {
-                    parentPath: '/' + d?.parentKey,
-                    name: getIntl(`${d?.parentKey}.${d?.childrenMenuKey}PageName`),
-                    menuNameKey: `${d?.parentKey}.${d?.childrenMenuKey}PageName`,
-                    key: d?.key,
-                    path: '/' + d?.key,
-                    moduleName: d?.childrenMenuKey,
-                  },
-                };
-              }
-              // 模块联邦
-              if (d.isRemote === '1') {
-                return {
-                  path: '/' + d?.key,
-                  Component: DynamicMFComponent,
-                  handle: {
-                    key: d?.key,
-                    name: d?.name,
-                    icon: d?.iconUrl,
-                    path: '/' + d?.key,
-                  },
-                };
-              }
               if (!d) return null;
-              let iframeRealUrl;
-              if (d.openType !== undefined) {
-                if (d.openType === '0') {
-                  const { port, protocol, host, name } = d.service as any;
-                  const path = d.menu?.url?.split(name)?.[1] || '';
-                  iframeRealUrl = port ? `${protocol}://${host}:${port}${path}` : `${protocol}://${host}${path}`;
-                } else {
-                  iframeRealUrl =
-                    d?.menuProtocol && d?.menuHost && d?.menuPort
-                      ? `${d?.menuProtocol}://${d?.menuHost}:${d?.menuPort}${d?.menu?.url}`
-                      : undefined;
-                }
+              // 模块联邦-插件及插件子路由
+              if (d.isRemote) {
+                const path = d?.remoteModelName ? `/${d?.parentCode}/${d?.remoteModelName}` : '/' + d?.code;
+                return {
+                  path,
+                  Component: DynamicMFComponent,
+                  handle: {
+                    key: d?.code,
+                    code: d?.code,
+                    showName: d?.showName,
+                    icon: d?.icon,
+                    path,
+                    // 模块联邦子模块
+                    moduleName: d?.remoteModelName,
+                    parentPath: '/' + d?.parentCode,
+                  },
+                };
               }
               return {
-                path: '/' + d?.key,
-                element: <DynamicIframe url={d?.menu?.url} name={d?.name} iframeRealUrl={iframeRealUrl} />,
+                path: '/' + d?.code,
+                element: <DynamicIframe url={d?.url} name={d?.showName} />,
                 handle: {
                   openType: d?.openType,
-                  key: d?.key,
-                  name: d?.name,
-                  icon: d?.iconUrl,
-                  path: '/' + d?.key,
+                  key: d?.code,
+                  code: d?.code,
+                  showName: d?.showName,
+                  icon: d?.icon,
+                  path: '/' + d?.code,
                 },
               };
             })

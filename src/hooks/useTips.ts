@@ -111,7 +111,7 @@ export const useTips = (originTips: any[] = []) => {
 
   useEffect(() => {
     const userGuideRoute = storageOpt.get(SUPOS_USER_GUIDE_ROUTES);
-    const currentRoute = find(userGuideRoute, (route) => route?.menu?.url === pathname);
+    const currentRoute = find(userGuideRoute, (route) => route?.url === pathname);
     // 新手导航存在则先不触发，新手导航优先级更高
     if (currentRoute && currentRoute?.isVisited === false) {
       setUserTipsEnable('0');

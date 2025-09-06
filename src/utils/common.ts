@@ -1,10 +1,14 @@
-export const isJsonString = (str: string): boolean => {
-  if (!str) return false;
+export const isJsonString = (value: any): boolean => {
+  if (!value) return false;
   try {
-    JSON.parse(str);
-    return true;
+    const jsonVal = JSON.parse(value);
+    if (['[object Object]', '[object Array]'].includes(Object.prototype.toString.call(jsonVal))) {
+      return true;
+    } else {
+      return false;
+    }
+    // eslint-disable-next-line
   } catch (err) {
-    console.log(err);
     return false;
   }
 };

@@ -94,6 +94,7 @@ iframe {
   --supos-useravatar-color: var(--supos-t-white-color);
   --supos-boxshadow-color: var(--supos-t-boxshadow-light-color);
   --supos-theme-color: var(--supos-t-blue-color-70);
+  --supos-theme-color-rgb: 29, 119, 254;
   --supos-theme-button-hover-color: var(--supos-t-blue-color-80);
   --supos-theme-button-active-color: var(--supos-t-blue-color-90);
   --supos-home-bg-color: var(--supos-t-white-color);
@@ -171,6 +172,7 @@ iframe {
   --supos-useravatar-color: var(--supos-t-gray-color-90);
   --supos-boxshadow-color: var(--supos-t-boxshadow-dark-color);
   --supos-theme-color: var(--supos-t-blue-color-70);
+  --supos-theme-color-rgb: 29, 119, 254;
   --supos-theme-button-hover-color: var(--supos-t-blue-color-80);
   --supos-theme-button-active-color: var(--supos-t-blue-color-90);
   --supos-home-bg-color: var(--supos-t-gray-color-100);
@@ -197,6 +199,7 @@ iframe {
 // chartreuse
 .chartreuse {
   --supos-theme-color: var(--supos-t-chartreuse-color-70);
+  --supos-theme-color-rgb: 148, 198, 24;
   --supos-theme-button-hover-color: var(--supos-t-chartreuse-color-80);
   --supos-theme-button-active-color: var(--supos-t-chartreuse-color-90);
   --supos-card-hover-color: var(--supos-t-chartreuse-color-10);

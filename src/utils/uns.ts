@@ -190,7 +190,7 @@ export const getExpression = (items: ExpressionItem[], inputStr: string, history
 };
 
 export const generateAlias = (name: string) => {
-  return `_${pinyin(name || '', { toneType: 'none' })
+  return `_${pinyin(name || '', { toneType: 'none', v: true })
     ?.replace(/\s+/g, '')
     ?.replace(/-/g, '_')
     .slice(0, 38)}_${uuidv4().replace(/-/g, '').slice(0, 20)}`;

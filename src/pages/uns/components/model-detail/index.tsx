@@ -114,7 +114,7 @@ const Module: FC<FolderDetailProps> = (props) => {
       style: panelStyle,
       extra: (
         <EditDetailButton
-          auth={ButtonPermission['uns.editFolderDetail']}
+          auth={ButtonPermission['uns.folderDetail']}
           type="folder"
           modelInfo={modelInfo}
           getModel={() => getModel(id as string)}
@@ -126,7 +126,7 @@ const Module: FC<FolderDetailProps> = (props) => {
       label: formatMessage('uns.definition'),
       extra: (
         <EditButton
-          auth={ButtonPermission['uns.definition']}
+          auth={ButtonPermission['uns.folderDetail']}
           modelInfo={modelInfo}
           getModel={() => getModel(id as string)}
         />
@@ -182,9 +182,10 @@ const Module: FC<FolderDetailProps> = (props) => {
       style: panelStyle,
       extra: (
         <UploadButton
-          auth={ButtonPermission['uns.uploadDoc']}
+          auth={ButtonPermission['uns.folderDetail']}
           alias={modelInfo.alias}
           documentListRef={documentListRef}
+          setActiveList={setActiveList}
         />
       ),
     },
@@ -198,11 +199,11 @@ const Module: FC<FolderDetailProps> = (props) => {
             level={2}
             style={{ margin: 0, width: '100%', insetInlineStart: 0 }}
             editable={
-              hasPermission(ButtonPermission['uns.editFolderName']) && systemInfo?.useAliasPathAsTopic
+              hasPermission(ButtonPermission['uns.folderDetail']) && systemInfo?.useAliasPathAsTopic
                 ? {
                     icon: (
                       <Icon
-                        data-button-auth={ButtonPermission['uns.editFolderName']}
+                        data-button-auth={ButtonPermission['uns.folderDetail']}
                         component={FileEdit}
                         style={{
                           fontSize: 25,

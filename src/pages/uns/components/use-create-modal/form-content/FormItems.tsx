@@ -8,7 +8,7 @@ import ModelFieldsForm from '@/pages/uns/components/use-create-modal/components/
 import ReverseGeneration from '@/pages/uns/components/use-create-modal/components/file/ReverseGeneration';
 import TopicToUnsFieldsList from '@/pages/uns/components/use-create-modal/components/file/TopicToUnsFieldsList';
 import FrequencyForm from '@/pages/uns/components/use-create-modal/components/file/FrequencyForm';
-import CalculationForm from '@/pages/uns/components/use-create-modal/components/file/timeSeries/CalculationForm';
+import ExpressionForm from '@/pages/uns/components/use-create-modal/components/file/timeSeries/ExpressionForm';
 import AggForm from '@/pages/uns/components/use-create-modal/components/file/timeSeries/AggForm';
 import AdvancedOptions from '@/pages/uns/components/use-create-modal/components/file/AdvancedOptions';
 import ExpandedKeyFormList from '@/pages/uns/components/ExpandedKeyFormList';
@@ -99,8 +99,8 @@ const FormItems: FC<FormItemsProps> = ({ formData }) => {
             return <ReverseGeneration {...childProps} key={key} />;
           case 'topicToUnsFieldsList':
             return <TopicToUnsFieldsList {...childProps} key={key} />;
-          case 'calculationForm':
-            return <CalculationForm key={key} />;
+          case 'expressionForm':
+            return <ExpressionForm key={key} {...childProps} />;
           case 'aggForm':
             return <AggForm key={key} />;
           case 'advancedOptions':

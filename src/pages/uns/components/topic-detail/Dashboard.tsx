@@ -2,13 +2,15 @@ import { FC, useEffect, useRef, useState } from 'react';
 import md5 from 'blueimp-md5';
 import { ResizableBox } from 'react-resizable';
 import '@/components/resizable-container/index.scss';
-import type { TimeRangePickerProps } from 'antd';
-import { Flex, DatePicker, Button } from 'antd';
+import { Result, TimeRangePickerProps } from 'antd';
+import { Flex, DatePicker, Button, Empty } from 'antd';
 import { Renew } from '@carbon/icons-react';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { useTranslate } from '@/hooks';
 import IframeMask from '@/components/iframe-mask';
+import { useBaseStore } from '@/stores/base';
+import { useSize } from 'ahooks';
 
 const { RangePicker } = DatePicker;
 
@@ -20,11 +22,12 @@ const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
   const { dataType, refers, alias } = instanceInfo;
 
   const formatMessage = useTranslate();
+  const hasDashboards = useBaseStore((state) => state.menuGroup?.some((f) => f.url === '/dashboards'));
   const observer = useRef<MutationObserver | null>(null);
-
   const newAlias = dataType === 7 ? refers?.[0]?.alias : alias;
   const aliasHash = md5(newAlias).slice(8, 24);
   const iframeName = `${newAlias?.replaceAll('_', '-')}`;
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [iframeUrl, setIframeUrl] = useState(
     `/grafana/home/d-solo/${aliasHash}/${iframeName}?orgId=1&panelId=1&__feature.dashboardSceneSolo`
@@ -41,6 +44,7 @@ const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
       `/grafana/home/d-solo/${aliasHash}/${iframeName}?orgId=1&panelId=1&__feature.dashboardSceneSolo${timeFrame}`
     );
   }, [dates]);
+  const containerSize = useSize(containerRef);
 
   useEffect(() => {
     const iframe = document.getElementById('dashboardIframe') as HTMLIFrameElement | null;
@@ -134,8 +138,10 @@ const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
   const onRangeChange = (dates: null | (Dayjs | null)[]) => {
     setDates(dates);
   };
-
-  return (
+  if (!instanceInfo?.withDashboard) {
+    return <Empty />;
+  }
+  return hasDashboards ? (
     <>
       <Flex gap={10} style={{ marginBottom: '10px' }}>
         <RangePicker
@@ -163,23 +169,34 @@ const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
           }}
         />
       </Flex>
-      <ResizableBox
-        className="resizable-container resizable-hover-handles"
-        width={900}
-        height={300}
-        minConstraints={[200, 200]}
-        maxConstraints={[1280, 500]}
-        axis="both"
-        resizeHandles={['se']} // 只允许右下角拖拽
-        onResizeStart={() => setIsResizing(true)}
-        onResizeStop={() => setIsResizing(false)}
-      >
-        <>
-          <iframe height="100%" width="100%" id="dashboardIframe" src={iframeUrl} />
-          <IframeMask style={{ display: isResizing ? 'block' : 'none' }} />
-        </>
-      </ResizableBox>
+
+      <div ref={containerRef}>
+        {containerSize?.width && (
+          <ResizableBox
+            className="resizable-container resizable-hover-handles"
+            width={containerSize?.width}
+            height={300}
+            minConstraints={[200, 200]}
+            maxConstraints={[containerSize?.width, 500]}
+            axis="both"
+            resizeHandles={['se']} // 只允许右下角拖拽
+            onResizeStart={() => setIsResizing(true)}
+            onResizeStop={() => setIsResizing(false)}
+          >
+            <>
+              <iframe height="100%" width="100%" id="dashboardIframe" src={iframeUrl} />
+              <IframeMask style={{ display: isResizing ? 'block' : 'none' }} />
+            </>
+          </ResizableBox>
+        )}
+      </div>
     </>
+  ) : (
+    <Result
+      status="403"
+      title={403}
+      subTitle={<span style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.pageNoPermission')}</span>}
+    />
   );
 };
 export default DetailDashboard;

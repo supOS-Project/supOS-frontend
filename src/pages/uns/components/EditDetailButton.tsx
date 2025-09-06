@@ -8,6 +8,7 @@ import { AuthButton } from '@/components/auth';
 import OperationForm from '@/components/operation-form';
 import ProModal from '@/components/pro-modal';
 import FileEdit from '@/components/svg-components/FileEdit';
+import SearchSelect from '@/pages/uns/components/use-create-modal/components/SearchSelect.tsx';
 
 const extendToArr = (extend: { [key: string]: string }) => {
   if (!extend) return undefined;
@@ -43,10 +44,17 @@ const EditDetailButton = ({ auth, type = 'file', modelInfo, getModel }: any) => 
 
   useEffect(() => {
     if (show) {
+      setLoading(false);
       form.setFieldsValue({
         ...modelInfo,
         extend: extendToArr(modelInfo?.extend),
         labelList: modelInfo?.labelList?.map((i: any) => ({ ...i, label: i.labelName, value: i.id })),
+        referId: !modelInfo?.refers?.length
+          ? undefined
+          : {
+              label: modelInfo?.refers?.[0]?.path,
+              value: modelInfo?.refers?.[0]?.id,
+            },
       });
     }
   }, [show]);
@@ -62,6 +70,7 @@ const EditDetailButton = ({ auth, type = 'file', modelInfo, getModel }: any) => 
       withSave2db: undefined,
       labelList: undefined,
       pathName: undefined,
+      refers: modelInfo.dataType == 7 ? (info?.referId?.value ? [{ id: info?.referId?.value }] : []) : undefined,
     })
       .then(() => {
         setShow(false);
@@ -141,6 +150,12 @@ const EditDetailButton = ({ auth, type = 'file', modelInfo, getModel }: any) => 
         rules: [{ max: 255 }],
       },
       {
+        component: <SearchSelect apiParams={{ type: 2, normal: true }} labelInValue />,
+        label: formatMessage('uns.referenceTarget'),
+        name: 'referId',
+        noShowKey: modelInfo.dataType === 7 ? undefined : 'hidden',
+      },
+      {
         type: 'Checkbox',
         name: 'withSave2db',
         properties: {
@@ -154,7 +169,7 @@ const EditDetailButton = ({ auth, type = 'file', modelInfo, getModel }: any) => 
         type: 'TagSelect',
         label: formatMessage('common.label'),
         name: 'labelList',
-        noShowKey: modelInfo.dataType === 7 ? 'hidden' : 'folder',
+        noShowKey: modelInfo.dataType === 6 ? 'hidden' : modelInfo.dataType === 7 ? undefined : 'folder',
         properties: {
           tagMaxLen: 63,
         },

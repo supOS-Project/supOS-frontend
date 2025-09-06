@@ -36,50 +36,12 @@ const CustomCopilotChat = forwardRef<CopilotRefProps | undefined, CustomCopilotC
     const [isWelt, setWelt] = useState(true);
     const [weltDirection, setWeltDirection] = useState<any>('right');
     const [maxDistance, setMaxDistance] = useState(0);
-    // const isFirstOpen = useRef(true);
     const divRef = useRef<HTMLDivElement>(null);
-    // const [title, setTitle] = useState<ReactNode | null>(null);
     const draggableRef = useRef<any>(null);
     const pathname = useLocation().pathname;
 
     useImperativeHandle(ref, () => ({ setOpen }));
     useEffect(() => {
-      // if (open && isFirstOpen.current) {
-      //   setTitle(
-      //     <div className={styles['custom-copilot-chat']}>
-      //       <div className="header">
-      //         <div className="icon">
-      //           <ChatBot size={16} color="var(--supos-theme-color)" />
-      //         </div>
-      //         <span>ChatBot</span>
-      //         <ComClickTrigger
-      //           triggerCount={5}
-      //           style={{ flex: 1, height: 24 }}
-      //           onTrigger={() => {
-      //             console.warn(useBaseStore.getState());
-      //           }}
-      //         />
-      //         <Close size={18} color="var(--supos-theme-color)" className="icon-close" onClick={() => setOpen(false)} />
-      //       </div>
-      //       <div
-      //         style={{
-      //           '--copilot-kit-primary-color': 'var(--supos-theme-color)',
-      //           '--copilot-kit-contrast-color': 'var(--supos-text-color)',
-      //         }}
-      //       >
-      //         <CopilotChat
-      //           {...props}
-      //           Input={ChatInput}
-      //           // RenderTextMessage={TextMessage}
-      //           // icons={{
-      //           //   activityIcon: <InlineLoading status="active" />,
-      //           // }}
-      //         />
-      //       </div>
-      //     </div>
-      //   );
-      //   isFirstOpen.current = false;
-      // }
       if (open) {
         handleScroll();
       }

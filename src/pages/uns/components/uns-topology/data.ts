@@ -79,12 +79,6 @@ export const data = {
       x: 640,
       y: 190,
     },
-    {
-      id: 'graphQL',
-      shape: 'graphQL',
-      x: 640,
-      y: 280,
-    },
     // {
     //   id: 'gui',
     //   shape: 'gui',
@@ -333,24 +327,6 @@ export const data = {
         },
       },
     },
-    {
-      shape: 'edge',
-      source: 'postgreSQL',
-      target: 'graphQL',
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: { name: 'circle', r: 2 },
-          targetMarker: { name: 'circle', r: 2 },
-
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {
-            animation: 'ant-line 60s infinite linear',
-          },
-        },
-      },
-    },
 
     // {
     //   shape: 'edge',
@@ -378,30 +354,6 @@ export const data = {
     //   },
     // },
     // {
-    //   shape: 'edge',
-    //   source: 'graphQL',
-    //   target: 'gui',
-    //   vertices: [
-    //     { x: 820, y: 300 },
-    //     { x: 820, y: 120 },
-    //   ],
-    //   attrs: {
-    //     // line 是选择器名称，选中的边的 path 元素
-    //     line: {
-    //       sourceMarker: {
-    //         name: 'circle',
-    //         r: 2,
-    //       },
-    //       targetMarker: { name: 'circle', r: 2 },
-    //
-    //       stroke: 'var(--supos-theme-color)',
-    //       strokeDasharray: 3,
-    //       style: {
-    //         animation: 'ant-line 60s infinite linear',
-    //       },
-    //     },
-    //   },
-    // },
     {
       shape: 'edge',
       source: 'tdEngine',
@@ -433,31 +385,6 @@ export const data = {
       target: 'grafana', //目标
       vertices: [
         { x: 820, y: 210 },
-        { x: 820, y: 180 },
-      ],
-      attrs: {
-        // line 是选择器名称，选中的边的 path 元素
-        line: {
-          sourceMarker: {
-            name: 'circle',
-            r: 2,
-          },
-          targetMarker: { name: 'circle', r: 2 },
-
-          stroke: 'var(--supos-theme-color)',
-          strokeDasharray: 3,
-          style: {
-            animation: 'ant-line 60s infinite linear',
-          },
-        },
-      },
-    },
-    {
-      shape: 'edge',
-      source: 'graphQL',
-      target: 'grafana',
-      vertices: [
-        { x: 820, y: 300 },
         { x: 820, y: 180 },
       ],
       attrs: {

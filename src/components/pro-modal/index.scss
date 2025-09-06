@@ -17,8 +17,9 @@
 
       .drag-handle {
         flex: 1 1 auto;
-        height: 32px;
         padding-right: 20px;
+        align-items: center;
+        height: 100%;
       }
 
       .header-controls {

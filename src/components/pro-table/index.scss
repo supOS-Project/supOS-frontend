@@ -98,3 +98,28 @@
     }
   }
 }
+
+.pro-table-container {
+  position: relative;
+  overflow: hidden;
+
+  .pro-table-expand-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    right: -40px;
+    width: 40px;
+    height: 100%;
+    border-radius: 0 3px 3px 0;
+    border: 1px solid #c6c6c6;
+    background: #f4f4f4;
+    cursor: pointer;
+    transition: right 0.2s;
+
+    &.pro-table-expanded {
+      right: 0;
+    }
+  }
+}

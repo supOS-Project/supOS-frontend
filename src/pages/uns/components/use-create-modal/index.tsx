@@ -108,7 +108,7 @@ const useOptionModal = ({
             withFlow,
             withSave2db,
             expression,
-            refers,
+            refers = [],
             dataPath,
             extend,
           } = detail || {};
@@ -136,29 +136,37 @@ const useOptionModal = ({
                 mainKey: fields.findIndex((item: FieldItem) => item.unique === true),
               });
               break;
-            case 3:
+            case 3: {
               type ReferType = {
                 id: string;
                 path: string;
                 field: string;
                 uts?: boolean;
               };
+              const refersRes = await Promise.all(refers?.map((e: ReferType) => getInstanceInfo({ id: e.id })) || []);
+              const _refers = refers?.map((refer: ReferType, i: number) => ({
+                ...refer,
+                refer: {
+                  label: refer.path,
+                  value: refer.id,
+                  option: {
+                    dataType: refersRes[i]?.dataType,
+                  },
+                },
+                fields: refersRes[i]?.fields?.filter?.(
+                  (t: FieldItem) => !t.systemField && ['INTEGER', 'LONG', 'FLOAT', 'DOUBLE', 'BOOLEAN'].includes(t.type)
+                ) || [{ name: refer.field }],
+              }));
               //实时计算
               Object.assign(backfillForm, {
                 dataType: 3,
                 calculationType: 3,
-                refers: refers.map((refer: ReferType) => ({
-                  ...refer,
-                  refer: {
-                    label: refer.path,
-                    value: refer.id,
-                  },
-                  fields: [{ name: refer.field }],
-                })),
+                refers: _refers,
                 expression: getExpression(refers, expression),
                 timeReference: refers?.find((item: ReferType) => item.uts)?.id,
               });
               break;
+            }
             case 4: {
               //历史计算
               const {
@@ -223,7 +231,10 @@ const useOptionModal = ({
               break;
             case 7:
               Object.assign(backfillForm, {
-                referId: refers?.[0].id,
+                referId: {
+                  label: refers?.[0].path,
+                  value: refers?.[0].id,
+                },
               });
               break;
             default:
@@ -301,7 +312,7 @@ const useOptionModal = ({
 
   const nameChange = (val?: string) => {
     form.setFieldsValue({
-      alias: `_${pinyin(val || '', { toneType: 'none' })
+      alias: `_${pinyin(val || '', { toneType: 'none', v: true })
         ?.replace(/\s+/g, '')
         ?.replace(/-/g, '_')
         .slice(0, 38)}_${uuid}`,
@@ -316,7 +327,9 @@ const useOptionModal = ({
   useEffect(() => {
     if (modelId && modelId !== 'custom') {
       getTemplateDetail({ id: modelId }).then((res: any) => {
-        form.setFieldValue('fields', res?.fields || []);
+        setTimeout(() => {
+          form.setFieldValue('fields', res?.fields || []);
+        });
       });
     }
   }, [modelId]);
@@ -344,6 +357,9 @@ const useOptionModal = ({
       maskClosable={false}
       destroyOnHidden={false}
       width={680}
+      classNames={{
+        body: 'newFolderOrFileModalBody',
+      }}
     >
       <div className="optionContent">
         <Form

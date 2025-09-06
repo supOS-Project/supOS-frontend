@@ -1,8 +1,8 @@
 import { FC, useEffect, useRef, useState } from 'react';
-import { Breadcrumb } from 'antd';
+import { Breadcrumb, Flex } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { App, Button, Dropdown, Form, message, Space } from 'antd';
-import { copyFlow, deployFlow, saveFlow } from '@/apis/inter-api/flow';
+import { copyFlow, deployFlow, getVersionFlow, saveFlow } from '@/apis/inter-api/flow';
 import { ChevronLeft, OverflowMenuVertical } from '@carbon/icons-react';
 import { useLocalStorage, useTranslate } from '@/hooks';
 import { useUpdateEffect } from 'ahooks';
@@ -55,27 +55,41 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
       const filterFlows = flows?.filter((item: any) => item.type !== 'tab');
       const api = type === 'save' ? saveFlow : deployFlow;
       setLoading(true);
-      api({
-        flows: filterFlows,
-        id: state?.id,
-      })
-        .then((flowId: any) => {
-          if (type === 'deploy') {
-            if (!state.flowId && flowId) {
-              navigate(`/collection-flow/flow-editor?${getSearchParamsString({ ...state, flowId: flowId })}`, {
-                replace: true,
-              });
-            }
-            setKey(Date.now());
-            // setDisabled(true);
-          } else {
-            setLoading(false);
+      if (type === 'deploy') {
+        getVersionFlow().then((version) => {
+          if (flowIframeRef.current) {
+            flowIframeRef.current.contentWindow!.postMessage({ data: version, type: 'updateVersion' }, '*');
           }
-          message.success(type === 'deploy' ? formatMessage('appGui.deployOk') : formatMessage('appGui.saveSuccess'));
-        })
-        .catch(() => {
-          setLoading(false);
+          api({
+            flows: filterFlows,
+            id: state?.id,
+          })
+            .then(({ flowId }: any = {}) => {
+              if (!state.flowId && flowId) {
+                navigate(`/collection-flow/flow-editor?${getSearchParamsString({ ...state, flowId: flowId })}`, {
+                  replace: true,
+                });
+              }
+              setKey(Date.now());
+              message.success(formatMessage('appGui.deployOk'));
+            })
+            .catch(() => {
+              setLoading(false);
+            });
         });
+      } else {
+        api({
+          flows: filterFlows,
+          id: state?.id,
+        })
+          .then(() => {
+            setLoading(false);
+            message.success(formatMessage('appGui.saveSuccess'));
+          })
+          .catch(() => {
+            setLoading(false);
+          });
+      }
     } catch (error) {
       console.error('Error saving flows:', error);
       setLoading(false);
@@ -208,35 +222,40 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
       try {
         // 获取iframe的document对象
         const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-        const targetElement = iframeDoc?.getElementById(targetId);
 
-        if (!targetElement) {
-          console.warn(`未找到ID为 ${targetId} 的元素`);
-          return;
-        }
-        // 创建观察者实例
-        observerRef.current = new MutationObserver((mutations) => {
-          mutations.forEach((mutation) => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-              const isVisible = targetElement.style.display !== 'none';
-              handleVisibilityChange(isVisible);
-            }
-          });
+        // 创建文档级观察器
+        const docObserver = new MutationObserver((_, observer) => {
+          const targetElement = iframeDoc?.getElementById(targetId);
+          if (targetElement) {
+            // 找到元素后立即断开文档观察器
+            observer.disconnect();
+            // 初始化样式观察器
+            const styleObserver = new MutationObserver((mutations) => {
+              mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'style') {
+                  handleVisibilityChange((mutation.target as HTMLElement).style.display !== 'none');
+                }
+              });
+            });
+
+            styleObserver.observe(targetElement, {
+              attributes: true,
+              attributeFilter: ['style'],
+            });
+
+            // 存储观察器引用
+            observerRef.current = styleObserver;
+
+            // 初始状态检查
+            handleVisibilityChange(targetElement.style.display !== 'none');
+          }
         });
-
-        // 配置观察选项
-        const observerOptions = {
-          attributes: true,
-          attributeFilter: ['style'], // 只观察style属性变化
-          subtree: false,
-        };
-
-        // 开始观察
-        observerRef.current.observe(targetElement, observerOptions);
-
-        // 初始状态检查
-        const initialVisibility = targetElement.style.display !== 'none';
-        handleVisibilityChange(initialVisibility);
+        // 监听整个文档的DOM变化
+        docObserver.observe(iframeDoc!, {
+          childList: true,
+          subtree: true,
+        });
+        handleVisibilityChange(true);
       } catch (error) {
         console.error('访问iframe内容出错:', error);
       }
@@ -291,12 +310,12 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
   const items: any = [
     {
       key: 'menu-item-import',
-      auth: ButtonPermission['collectionFlow.import'],
+      auth: ButtonPermission['SourceFlow.import'],
       label: formatMessage('common.import'),
     },
     {
       key: 'menu-item-export',
-      auth: ButtonPermission['collectionFlow.export'],
+      auth: ButtonPermission['SourceFlow.export'],
       label: formatMessage('uns.export'),
     },
     {
@@ -304,7 +323,7 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
     },
     {
       key: 'menu-item-search',
-      auth: ButtonPermission['collectionFlow.process'],
+      auth: ButtonPermission['SourceFlow.process'],
       label: formatMessage('flowEditor.process'),
     },
     {
@@ -319,7 +338,7 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
     // },
     {
       key: 'menu-item-edit-palette',
-      auth: ButtonPermission['collectionFlow.nodeManagement'],
+      auth: ButtonPermission['SourceFlow.nodeManagement'],
       label: formatMessage('flowEditor.nodeManagement'),
     },
     // {
@@ -361,11 +380,13 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
               <Button
                 variant="outlined"
                 color="default"
-                icon={<ChevronLeft size={16} />}
                 style={{ paddingLeft: '5.5px', gap: '3px' }}
                 onClick={handleBack}
               >
-                {formatMessage('common.back')}
+                <Flex align="center" gap={8}>
+                  <ChevronLeft size={16} />
+                  {formatMessage('common.back')}
+                </Flex>
               </Button>
               <Breadcrumb
                 separator=">"
@@ -387,7 +408,7 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
             </div>
             <Space>
               <AuthButton
-                auth={ButtonPermission['collectionFlow.copy']}
+                auth={ButtonPermission['SourceFlow.copy']}
                 loading={loading}
                 color="primary"
                 variant="outlined"
@@ -396,7 +417,7 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
                 {formatMessage('common.copy')}
               </AuthButton>
               <AuthButton
-                auth={ButtonPermission['collectionFlow.save']}
+                auth={ButtonPermission['SourceFlow.save']}
                 loading={loading}
                 type="primary"
                 onClick={onSaveFlows}
@@ -404,7 +425,7 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
                 {formatMessage('common.save')}
               </AuthButton>
               <AuthButton
-                auth={ButtonPermission['collectionFlow.deploy']}
+                auth={ButtonPermission['SourceFlow.deploy']}
                 loading={loading}
                 type="primary"
                 onClick={onDeployFlows}

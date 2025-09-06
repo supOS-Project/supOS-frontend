@@ -72,7 +72,7 @@ const Operation = () => {
     }>([
       {
         title: formatMessage('uns.newFile'),
-        auth: ButtonPermission['uns.addFile'],
+        auth: ButtonPermission['uns.fileAdd'],
         onClick: () => {
           operationFns?.setOptionOpen?.('addFile', selectedNode);
         },
@@ -82,7 +82,7 @@ const Operation = () => {
       },
       {
         title: formatMessage('uns.newFolder'),
-        auth: ButtonPermission['uns.addFolder'],
+        auth: ButtonPermission['uns.folderAdd'],
         onClick: () => {
           operationFns?.setOptionOpen?.('addFolder', selectedNode);
         },
@@ -92,7 +92,7 @@ const Operation = () => {
       },
       {
         title: formatMessage('uns.batchReverseGeneration'),
-        auth: ButtonPermission['uns.batchReverseGeneration'],
+        auth: ButtonPermission['uns.batchGeneration'],
         onClick: () => {
           setReverserOpen(true);
         },
@@ -377,7 +377,7 @@ const TreeNodeIcon = memo(({ dataNode }: { dataNode: UnsTreeNode }) => {
     expandedKeys: state.expandedKeys,
   }));
   if (dataNode.type === 0) {
-    return expandedKeys.includes(dataNode.key) && !dataNode.hasChildren ? (
+    return expandedKeys.includes(dataNode.key) ? (
       <FolderOpen style={{ flexShrink: 0, marginRight: '5px' }} />
     ) : (
       <Folder style={{ flexShrink: 0, marginRight: '5px' }} />
@@ -387,6 +387,22 @@ const TreeNodeIcon = memo(({ dataNode }: { dataNode: UnsTreeNode }) => {
   }
   return null;
 });
+
+const findNodeWithParent = (
+  tree: any[],
+  id: string,
+  parent: any | null = null
+): { node: any; parent: any | null; index: number } | null => {
+  for (let i = 0; i < tree.length; i++) {
+    const node = tree[i];
+    if (node.id === id) return { node, parent, index: i };
+    if (node.children) {
+      const result = findNodeWithParent(node.children, id, node);
+      if (result) return result;
+    }
+  }
+  return null;
+};
 
 const TopTreeCom = ({
   header,
@@ -425,6 +441,7 @@ const TopTreeCom = ({
     setScrollTreeNode,
     setTreeType,
     handleExpandNode,
+    setTreeData,
   } = useTreeStore((state) => ({
     lazyTree: state.lazyTree,
     loadData: state.loadData,
@@ -451,6 +468,7 @@ const TopTreeCom = ({
     setScrollTreeNode: state.setScrollTreeNode,
     setTreeType: state.setTreeType,
     handleExpandNode: state.handleExpandNode,
+    setTreeData: state.setTreeData,
   }));
 
   //滚动到目标树节点
@@ -483,33 +501,79 @@ const TopTreeCom = ({
   };
   const { ViewLabelModal, setLabelOpen } = useViewLabelModal({ toTargetNode: toTargetNode });
 
-  const handleRenderLoadMoreNode = useMemo(() => {
-    return _.debounce((moreNodeData: any) => {
-      const { parentKey: nodeKey, currentPage } = moreNodeData;
-      if (loadingKeys.has(nodeKey)) {
-        console.log(`正在loading ${nodeKey}`);
-        return;
+  const handleRenderLoadMoreNode = (moreNodeData: any) => {
+    const { parentKey: nodeKey, currentPage } = moreNodeData;
+    if (loadingKeys.has(nodeKey)) {
+      console.log(`正在loading ${nodeKey}`);
+      return;
+    }
+    const state = nodePaginationState[nodeKey];
+    if (state && state.hasMore && !state.isLoading) {
+      // 处理根节点和子节点的加载更多
+      if (currentPage === state.currentPage) {
+        // 以防重复请求2次
+        loadData({
+          key: nodeKey,
+          page: state.currentPage + 1,
+          parentInfo: moreNodeData?.parentInfo,
+        });
       }
-      const state = nodePaginationState[nodeKey];
-      if (state && state.hasMore && !state.isLoading) {
-        // 处理根节点和子节点的加载更多
-        if (currentPage === state.currentPage) {
-          // 以防重复请求2次
-          loadData({
-            key: nodeKey,
-            page: state.currentPage + 1,
-            parentInfo: moreNodeData?.parentInfo,
-          });
-        }
-      }
-    }, 300);
-  }, [nodePaginationState, loadingKeys]);
+    }
+  };
   const isUns = treeType === 'uns';
   const isShow = usePageIsShow();
   return (
     <>
       {ViewLabelModal}
       <ProTree
+        onDndDragStart={(info) => {
+          const { active } = info;
+          if (active.type == 0 && expandedKeys.includes(active?.id)) {
+            // 关闭文件夹
+            setExpandedKeys((expandedKeys) => {
+              return expandedKeys.filter((k) => active?.id !== k);
+            });
+          }
+        }}
+        onDndDragEnd={(info) => {
+          const { active, over, isInset } = info;
+          if (active?.id && over?.id && active.id !== over.id) {
+            let _isInset = isInset;
+            if (over?.type === 2) {
+              _isInset = false;
+            }
+            // active是我移动的节点，over是我放置的节点位置，_isInset是我放置在over这个节点里面还是over节点的下面
+            console.log(active, over, _isInset);
+            setTreeData((draft) => {
+              const activeInfo = findNodeWithParent(draft, active.id);
+              const overInfo = findNodeWithParent(draft, over.id);
+              if (activeInfo && overInfo) {
+                // 移除原节点
+                if (activeInfo.parent) {
+                  activeInfo.parent.children.splice(activeInfo.index, 1);
+                } else {
+                  draft.splice(activeInfo.index, 1);
+                }
+
+                // 处理插入位置
+                const isRootOperation = !overInfo.parent;
+                const targetArray = isRootOperation ? draft : overInfo.parent?.children || [];
+
+                let insertIndex = _isInset ? 0 : overInfo.index + 1;
+
+                // 边界检查
+                insertIndex = Math.min(insertIndex, targetArray.length);
+
+                if (_isInset) {
+                  overInfo.node.children = [activeInfo.node, ...(overInfo.node.children || [])];
+                } else {
+                  targetArray.splice(insertIndex, 0, activeInfo.node);
+                }
+              }
+            });
+          }
+        }}
+        // dndDraggable={isUns}
         isShow={isShow}
         ref={treeRef}
         rightClickMenuItems={
@@ -558,7 +622,7 @@ const TopTreeCom = ({
                       },
                     },
                     {
-                      auth: ButtonPermission['uns.rightKeyCopy'],
+                      auth: _node.type === 0 ? ButtonPermission['uns.folderCopy'] : ButtonPermission['uns.fileCopy'],
                       key: 'copy',
                       label: formatMessage('common.copy'),
                       onClick: () => {
@@ -567,7 +631,7 @@ const TopTreeCom = ({
                       },
                     },
                     {
-                      auth: ButtonPermission['uns.paste'],
+                      auth: _node.type === 0 ? ButtonPermission['uns.folderPaste'] : ButtonPermission['uns.filePaste'],
                       key: 'paste',
                       label: formatMessage('common.paste'),
                       onClick: () => {
@@ -580,7 +644,7 @@ const TopTreeCom = ({
                       },
                     },
                     {
-                      auth: ButtonPermission['uns.addFolder'],
+                      auth: ButtonPermission['uns.folderAdd'],
                       key: 'addFolder',
                       label: formatMessage('common.createNewFolder'),
                       onClick: () => {
@@ -588,7 +652,7 @@ const TopTreeCom = ({
                       },
                     },
                     {
-                      auth: ButtonPermission['uns.addFile'],
+                      auth: ButtonPermission['uns.fileAdd'],
                       key: 'addFile',
                       label: formatMessage('common.createNewFile'),
                       onClick: () => {
@@ -613,7 +677,8 @@ const TopTreeCom = ({
                       type: 'divider',
                     },
                     {
-                      auth: ButtonPermission['uns.delete'],
+                      auth:
+                        _node.type === 0 ? ButtonPermission['uns.folderDelete'] : ButtonPermission['uns.fileDelete'],
                       key: 'delete',
                       label: formatMessage('common.delete'),
                       onClick: () => {
@@ -674,6 +739,34 @@ const TopTreeCom = ({
           );
         }}
         treeNodeExtra={treeNodeExtra}
+        overlayChildren={(dataNode: any) => {
+          return (
+            <Flex
+              justify="flex-start"
+              align="center"
+              className="overlay-dom"
+              style={{
+                color: 'var(--supos-text-color)',
+              }}
+            >
+              {isUns ? <TreeNodeIcon dataNode={dataNode} /> : undefined}
+              <span style={{ fontWeight: 'bold', fontSize: 14 }}>{dataNode.title}</span>
+              {dataNode.type === 0 && (
+                <span style={{ fontSize: '12px', opacity: 0.5 }}>({dataNode.countChildren})</span>
+              )}
+            </Flex>
+          );
+        }}
+        drapOverChanges={(info) => {
+          const { node, classNames, isInset } = info;
+          if (node?.type === 2) {
+            return classNames.out;
+          } else if (node?.type === 0) {
+            return isInset ? classNames.in : classNames.out;
+          } else {
+            return '';
+          }
+        }}
       />
     </>
   );

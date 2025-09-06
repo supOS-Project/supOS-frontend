@@ -12,6 +12,13 @@ export interface DataNodeProps extends DataNode {
   [key: string]: any;
 }
 
+export interface FlatNode extends DataNodeProps {
+  _parentId: string | number | null;
+  _depth: number;
+  _index: number; // 在兄弟节点中的位置
+}
+
+// onDragStart onDragMove onDragOver onDragEnd onDragCancel
 // 组件属性类型
 export interface ProTreeProps extends TreeProps {
   // 基础属性
@@ -45,6 +52,17 @@ export interface ProTreeProps extends TreeProps {
   matchHighlightValue?: string;
   // 性能优化
   isShow?: MutableRefObject<boolean>;
+  // 自定义拖拽功能  ====
+  dndDraggable?: boolean;
+  onDndDragStart?: (info: { event: any; active: DataNodeProps }) => void;
+  onDndDragEnd?: (info: { event: any; active: DataNodeProps; over: DataNodeProps; isInset: boolean }) => void;
+  overlayChildren?: ((dataNode: DataNodeProps) => ReactNode) | ReactNode;
+  drapOverChanges?: (info: {
+    node: DataNodeProps;
+    isInset?: boolean;
+    classNames: { in: string; out: string };
+  }) => string;
+  // 自定义拖拽功能 结束 ====
 }
 
 // 组件引用类型

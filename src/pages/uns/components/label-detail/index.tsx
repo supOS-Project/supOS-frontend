@@ -97,7 +97,7 @@ const Module: FC<LabelDetailProps> = (props) => {
       style: panelStyle,
       extra: (
         <AuthButton
-          auth={ButtonPermission['uns.labelFileAdd']}
+          auth={ButtonPermission['uns.labelDetail']}
           onClick={handleAdd}
           style={{
             border: '1px solid #C6C6C6',
@@ -121,11 +121,11 @@ const Module: FC<LabelDetailProps> = (props) => {
             level={2}
             style={{ margin: 0, width: '100%', insetInlineStart: 0 }}
             editable={
-              hasPermission(ButtonPermission['uns.labelEditName'])
+              hasPermission(ButtonPermission['uns.labelDetail'])
                 ? {
                     icon: (
                       <Icon
-                        data-button-auth={ButtonPermission['uns.labelEditName']}
+                        data-button-auth={ButtonPermission['uns.labelDetail']}
                         component={FileEdit}
                         style={{
                           fontSize: 25,
@@ -137,9 +137,13 @@ const Module: FC<LabelDetailProps> = (props) => {
                     onChange: (val) => {
                       if (topicTitle === val || !val || val.trim() === '') return;
                       if (val.length > 63) {
-                        return message.warning(
+                        return message.error(
                           formatMessage('uns.labelMaxLength', { label: formatMessage('common.name'), length: 63 })
                         );
+                      }
+                      const reg = /^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/;
+                      if (!reg.test(val)) {
+                        return message.error(formatMessage('uns.nameFormat'));
                       }
                       updateLabel({
                         id,
@@ -176,7 +180,7 @@ const Module: FC<LabelDetailProps> = (props) => {
             style={{ background: token.colorBgContainer }}
           />
         </div>
-        <AuthWrapper auth={ButtonPermission['uns.labelDelete']}>
+        <AuthWrapper auth={ButtonPermission['uns.labelDetail']}>
           <div className="deleteBtnWrap" style={{ marginTop: 0 }}>
             <Button
               type="primary"
@@ -192,7 +196,7 @@ const Module: FC<LabelDetailProps> = (props) => {
         </AuthWrapper>
       </div>
       <ProModal
-        title={formatMessage('uns.newFile')}
+        title={formatMessage('uns.addFile')}
         className="labelModalWrap"
         open={isLabelVisible}
         onCancel={() => {

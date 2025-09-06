@@ -1,9 +1,12 @@
 import { ReactNode, useRef, useState } from 'react';
-import { useMatchRoute } from '@/hooks';
+import { useMatchRoute, useTranslate } from '@/hooks';
 import { Location } from 'react-router-dom';
-import { useLocationNavigate } from '@/routers';
+import { getRoutesDom, useLocationNavigate } from '@/routers';
 import { compareLocations } from '@/utils/compare';
-import { useDeepCompareEffect, useMemoizedFn } from 'ahooks';
+import { useCreation, useDeepCompareEffect, useMemoizedFn } from 'ahooks';
+import { useBaseStore } from '@/stores/base';
+import { useI18nStore } from '@/stores/i18n-store.ts';
+import { formatShowName } from '@/utils';
 
 export interface KeepAliveTab {
   title: ReactNode;
@@ -25,12 +28,19 @@ const initActive = {
 };
 export function useTabs() {
   const navigate = useLocationNavigate();
+  const { menuGroup, systemInfo, currentUserInfo } = useBaseStore((state) => ({
+    menuGroup: state.menuGroup,
+    systemInfo: state.systemInfo,
+    currentUserInfo: state.currentUserInfo,
+  }));
+  const lang = useI18nStore((state) => state.lang);
   // 存放页面记录
   const [keepAliveTabs, setKeepAliveTabs] = useState<KeepAliveTab[]>([]);
   // 当前激活的tab
   const [activeTabRoutePath, setActiveTabRoutePath] = useState<string>('');
   // 主动操作
   const isActiveOpt = useRef(initActive);
+  const formatMessage = useTranslate();
 
   const matchRoute = useMatchRoute();
 
@@ -132,9 +142,24 @@ export function useTabs() {
       pathName: location ? location.pathname : tab?.pathname || routePath,
     };
   });
-
+  const tabs = useCreation(() => {
+    const childrenRoutes = getRoutesDom({ menuGroup, systemInfo, currentUserInfo })?.[1]?.children || [];
+    return keepAliveTabs?.map((o) => {
+      const info = childrenRoutes?.find((f) => f.path === o.routePath);
+      return {
+        ...o,
+        title: info
+          ? formatShowName({
+              code: (info?.handle as any)?.code,
+              showName: (info?.handle as any)?.showName,
+              formatMessage,
+            })
+          : o.title,
+      };
+    });
+  }, [keepAliveTabs, lang, menuGroup, systemInfo, currentUserInfo]);
   return {
-    tabs: keepAliveTabs,
+    tabs,
     setTabs: setKeepAliveTabs,
     activeTabRoutePath,
     onCloseTab,

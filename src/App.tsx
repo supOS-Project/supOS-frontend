@@ -17,16 +17,18 @@ import { setThemeBySystem, ThemeType, useThemeStore } from '@/stores/theme-store
 import { cleanupI18nSubscriptions } from './stores/i18n-store.ts';
 import Cookies from 'js-cookie';
 import { useTranslate } from '@/hooks';
+import { useI18nStore } from '@/stores/i18n-store';
 
 function App() {
-  const { systemInfo, loading, routesStatus, currentUserInfo, pickedRoutesOptions } = useBaseStore((state) => ({
+  const { systemInfo, loading, routesStatus, currentUserInfo, menuGroup } = useBaseStore((state) => ({
     systemInfo: state.systemInfo,
     loading: state.loading,
     routesStatus: state.routesStatus,
-    pickedRoutesOptions: state.pickedRoutesOptions,
+    menuGroup: state.menuGroup,
     currentUserInfo: state.currentUserInfo,
   }));
   const _theme = useThemeStore((state) => state._theme);
+  const lang = useI18nStore((state) => state.lang);
 
   const formatMessage = useTranslate();
 
@@ -93,7 +95,7 @@ function App() {
     };
 
     loadFavicon();
-  }, [systemInfo]);
+  }, [systemInfo, lang]);
 
   useEffect(() => {
     if (_theme === ThemeType.System) {
@@ -109,8 +111,8 @@ function App() {
   }, [_theme]);
 
   const routeDom = useMemo(() => {
-    return getRoutesDom({ pickedRoutesOptions, systemInfo, currentUserInfo });
-  }, [pickedRoutesOptions, systemInfo, currentUserInfo]);
+    return getRoutesDom({ menuGroup, systemInfo, currentUserInfo });
+  }, [menuGroup, systemInfo, currentUserInfo]);
 
   if (loading) {
     return <div>Loading...</div>;

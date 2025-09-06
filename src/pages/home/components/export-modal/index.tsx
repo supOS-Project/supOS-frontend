@@ -1,5 +1,5 @@
 import { FC, useState, useImperativeHandle, useMemo, useEffect } from 'react';
-import { Button, Form, App, Dropdown, Input, TreeSelect, Divider, ConfigProvider, Space, Badge } from 'antd';
+import { Button, Form, App, Dropdown, Input, TreeSelect, Divider, ConfigProvider, Space, Badge, Modal } from 'antd';
 import { getDashboardList, getTreeData, getUnsLazyTree } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 
@@ -43,6 +43,7 @@ const Module: FC<ExportModalProps> = (props) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { message } = App.useApp();
+  const [modal, contextHolder] = Modal.useModal();
   const [exportRecords, setExportRecords] = useState([]);
 
   const formatMessage = useTranslate();
@@ -87,10 +88,22 @@ const Module: FC<ExportModalProps> = (props) => {
         }),
       },
     })
-      .then((data) => {
-        console.log(data);
-        message.success(formatMessage('home.exportSuccess'));
-        close();
+      .then(() => {
+        let secondsToGo = 5;
+        const instance = modal.success({
+          title: formatMessage('home.exportSuccess'),
+          okText: `${formatMessage('common.ok')}(${secondsToGo})`,
+        });
+        const timer = setInterval(() => {
+          secondsToGo -= 1;
+          instance.update({ okText: `${formatMessage('common.ok')}(${secondsToGo})` });
+        }, 1000);
+        setTimeout(() => {
+          clearInterval(timer);
+          instance.destroy();
+        }, 5 * 1000);
+        form.resetFields();
+        // close();
       })
       .finally(() => {
         setLoading(false);
@@ -312,7 +325,7 @@ const Module: FC<ExportModalProps> = (props) => {
       open={open}
       onCancel={close}
       title={
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>{formatMessage('common.export')}</span>
           <Dropdown
             onOpenChange={(open) => {
@@ -407,6 +420,7 @@ const Module: FC<ExportModalProps> = (props) => {
       destroyOnHidden
       forceRender={true}
     >
+      {contextHolder}
       {formDom}
       <Button
         className="exportConfirm"

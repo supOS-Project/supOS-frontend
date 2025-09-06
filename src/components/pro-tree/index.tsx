@@ -1,11 +1,27 @@
-import { forwardRef, Key, ReactNode, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, Key, ReactNode, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Empty, Flex, Spin, Tree, TreeProps } from 'antd';
 import { useSize } from 'ahooks';
 import cx from 'classnames';
 import type { DataNodeProps, ProTreeProps, ProTreeRef } from './types';
-import './index.scss';
 import HighlightText from '@/components/pro-tree/HighlightText.tsx';
 import ControlledDropdown, { ControlledDropdownRef } from '../controlled-dropdown';
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  pointerWithin,
+} from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import './index.scss';
+import { flattenTree } from './utils.ts';
+import SortableTreeNode from './SortableTreeNode.tsx';
+import { OverlayItem } from './OverlayItem.tsx';
+import { createPortal } from 'react-dom';
 
 const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
   const {
@@ -31,6 +47,12 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
     showSwitcherIcon = true,
     matchHighlightValue,
     isShow,
+    onDndDragStart,
+    onDndDragEnd,
+    overlayChildren,
+    drapOverChanges,
+    /** 自己实现，不使用antd Tree方案（默认false） */
+    dndDraggable,
     ...restProps
   } = props;
   const treeContentRef = useRef<HTMLDivElement | null>(null);
@@ -38,6 +60,8 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
   const treeRef = useRef<any>(null);
   const [treeHeight, setTreeHeight] = useState(height);
   const [rightClickNode, setRightClickNode] = useState<Key>();
+  const [activeItem, setActiveItem] = useState<DataNodeProps | null>(null);
+  const [isInset, setIsInset] = useState(false);
 
   useImperativeHandle(ref, () => ({
     scrollTo: treeRef.current?.scrollTo,
@@ -46,6 +70,7 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
   const treeContentSize = useSize(treeContentRef);
 
   useEffect(() => {
+    if (treeContentSize?.width === 0) return;
     if (height !== undefined && treeContentSize?.height !== undefined && [true, undefined].includes(isShow?.current)) {
       // 虚拟滚动设置自适应高度
       setTreeHeight(treeContentSize?.height);
@@ -89,33 +114,66 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
     );
     if (specialStyle) {
       return (
-        <Flex className={cx('treeNodeClassName', 'custom-tree-node')} align="center" gap={8}>
-          {Icon && <div className="custom-tree-node-icon">{Icon}</div>}
-          <Flex style={{ flex: 1, overflow: 'hidden' }} align="center" gap={8}>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div className="custom-tree-node-title">
-                {Dom}
-                {Count}
+        <SortableTreeNode
+          node={node}
+          isActive={activeItem?.id === node.id}
+          isInset={isInset}
+          drapOverChanges={drapOverChanges}
+          draggable={dndDraggable}
+        >
+          <Flex className={cx('treeNodeClassName', 'custom-tree-node')} align="center" gap={8}>
+            {Icon && <div className="custom-tree-node-icon">{Icon}</div>}
+            <Flex style={{ flex: 1, overflow: 'hidden' }} align="center" gap={8}>
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                <div className="custom-tree-node-title">
+                  {Dom}
+                  {Count}
+                </div>
               </div>
-            </div>
-            {Extra && (
-              <div className="custom-tree-node-extra" style={{ flexShrink: 0 }}>
-                {Extra}
-              </div>
-            )}
+              {Extra && (
+                <div className="custom-tree-node-extra" style={{ flexShrink: 0 }}>
+                  {Extra}
+                </div>
+              )}
+            </Flex>
           </Flex>
-        </Flex>
+        </SortableTreeNode>
       );
     }
     return (
-      <div className={treeNodeClassName}>
-        {Icon}
-        {Dom}
-        {Count}
-        {Extra}
-      </div>
+      <SortableTreeNode
+        node={node}
+        isActive={activeItem?.id === node.id}
+        isInset={isInset}
+        drapOverChanges={drapOverChanges}
+        draggable={dndDraggable}
+      >
+        <div className={treeNodeClassName}>
+          {Icon}
+          {Dom}
+          {Count}
+          {Extra}
+        </div>
+      </SortableTreeNode>
     );
   };
+
+  const flattenedItems = useMemo(() => {
+    return flattenTree(treeData as DataNodeProps[]);
+  }, [treeData]);
+
+  const sortedIds = useMemo(() => flattenedItems.map(({ id }) => id), [flattenedItems]);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor),
+    useSensor(KeyboardSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
 
   return (
     <Spin wrapperClassName="pro-tree-loading" spinning={!!loading}>
@@ -132,6 +190,61 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
             <Flex justify="center" align="center" style={{ height: '100%' }}>
               {_Empty}
             </Flex>
+          ) : dndDraggable ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={pointerWithin}
+              onDragEnd={(event) => {
+                const { active, activatorEvent, over } = event;
+                onDndDragEnd?.({
+                  event: activatorEvent,
+                  active: active?.data?.current?.node as DataNodeProps,
+                  over: over?.data?.current?.node as DataNodeProps,
+                  isInset: isInset,
+                });
+              }}
+              onDragStart={(event) => {
+                const { active, activatorEvent } = event;
+                // console.log(event);
+                setActiveItem(active?.data?.current?.node as unknown as DataNodeProps);
+                onDndDragStart?.({ event: activatorEvent, active: active?.data?.current?.node as DataNodeProps });
+              }}
+              onDragMove={(event) => {
+                const { over, activatorEvent, delta } = event;
+                if (!over?.rect) return;
+                const { left } = over.rect;
+                const { x } = delta;
+                const mouseX = (activatorEvent as MouseEvent).clientX;
+                setIsInset(left + 30 - (mouseX + x) < 0);
+              }}
+            >
+              <SortableContext items={sortedIds} strategy={verticalListSortingStrategy}>
+                <Tree
+                  ref={treeRef}
+                  blockNode
+                  {...restProps}
+                  onRightClick={onRightClickHandle}
+                  titleRender={_titleRender}
+                  treeData={treeData}
+                  height={treeHeight}
+                  loadData={lazy ? loadData : undefined}
+                  draggable={false}
+                />
+              </SortableContext>
+              {/*取消掉落动画*/}
+              {createPortal(
+                <DragOverlay dropAnimation={null}>
+                  {activeItem?.id ? (
+                    <OverlayItem
+                      overlayChildren={
+                        typeof overlayChildren === 'function' ? overlayChildren?.(activeItem) : overlayChildren
+                      }
+                    />
+                  ) : null}
+                </DragOverlay>,
+                document.body
+              )}
+            </DndContext>
           ) : (
             <Tree
               ref={treeRef}

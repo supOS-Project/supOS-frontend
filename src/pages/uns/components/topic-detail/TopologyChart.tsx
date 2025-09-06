@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, FC } from 'react';
 import { Graph, Markup } from '@antv/x6';
 import { register } from '@antv/x6-react-shape';
-import { Add, ApplicationWeb, Launch, InformationFilled, CautionInverted } from '@carbon/icons-react';
+import { Add, ApplicationWeb, Launch, InformationFilled } from '@carbon/icons-react';
 import tdengine from '@/assets/home-icons/tdengine.png';
 import postgresql from '@/assets/home-icons/postgresql.svg';
 import nodeRed from '@/assets/home-icons/node-red.svg';
@@ -82,7 +82,7 @@ const NodeRed: FC<any> = (data) => {
             <img src={nodeRed} alt="" width="28px" />
             <div className={styles['common-node-content']}>
               <span className={styles['common-node-subtitle']}>{formatMessage('common.nodeRed', 'Node-Red')}</span>
-              <span className={styles['common-node-title']}>{formatMessage('uns.autoFlow', 'Source Flow')}</span>
+              <span className={styles['common-node-title']}>{formatMessage('home.sourceFlow')}</span>
             </div>
             {configured ? (
               <div className={styles['common-node-btn']} data-action="navigate">
@@ -189,8 +189,8 @@ const NodeRedTable: FC<any> = ({ flowList }) => {
       {flowList && (
         <div style={{ width: '100%' }}>
           <div style={{ width: '100%', marginBottom: 12 }} className={styles['name']}>
-            <CautionInverted style={{ marginRight: 8, width: 10, height: 10 }} />
-            {formatMessage('uns.autoFlow', 'Source Flow')}
+            {/*<CautionInverted style={{ marginRight: 8, width: 10, height: 10 }} />*/}
+            {formatMessage('home.sourceFlow')}
           </div>
           <ProTable
             bordered
@@ -198,7 +198,7 @@ const NodeRedTable: FC<any> = ({ flowList }) => {
             className={styles.customTable}
             columns={[
               {
-                title: formatMessage('uns.collectionFlowDetail'),
+                title: formatMessage('common.detail'),
                 dataIndex: 'label',
                 key: 'label',
                 width: '30%',
@@ -273,6 +273,9 @@ const TdEngine1: FC<any> = ({ payload, dt = {}, instanceInfo }) => {
     : [];
   return (
     <>
+      <div style={{ width: '100%', marginBottom: 12 }} className={styles['name']}>
+        Database
+      </div>
       <ProTable
         className={styles.customTable}
         columns={columns}
@@ -321,17 +324,18 @@ const TdEngine1: FC<any> = ({ payload, dt = {}, instanceInfo }) => {
 };
 const Mqtt1: FC<any> = () => {
   const formatMessage = useTranslate();
+  const systemInfo = useBaseStore((state) => state.systemInfo);
 
   const dataSource = [
     {
       key: 'front',
       detail: formatMessage('uns.front'),
-      content: `ws://${window.location.hostname}:8083/mqtt`,
+      content: `mqtt://${window.location.hostname}:${systemInfo?.mqttTcpPort}/mqtt`,
     },
     {
       key: 'backend',
       detail: formatMessage('uns.backend'),
-      content: `tcp://${window.location.hostname}:1883/mqtt`,
+      content: `tcp://${window.location.hostname}:${systemInfo?.mqttTcpPort}/mqtt`,
     },
   ];
 
@@ -352,17 +356,22 @@ const Mqtt1: FC<any> = () => {
   ];
 
   return (
-    <ProTable
-      className={styles.customTable}
-      columns={columns}
-      dataSource={dataSource}
-      pagination={false}
-      showHeader={true}
-      rowKey="key"
-      rowHoverable={false}
-      bordered
-      hiddenEmpty
-    />
+    <>
+      <div style={{ width: '100%', marginBottom: 12 }} className={styles['name']}>
+        MQTT Broker
+      </div>
+      <ProTable
+        className={styles.customTable}
+        columns={columns}
+        dataSource={dataSource}
+        pagination={false}
+        showHeader={true}
+        rowKey="key"
+        rowHoverable={false}
+        bordered
+        hiddenEmpty
+      />
+    </>
   );
 };
 
@@ -890,6 +899,7 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
 
   // 初始化图表
   const initGraph = () => {
+    if (graphRef.current) return graphRef.current;
     if (!containerRef.current) return;
     const graphInstance: any = new Graph({
       container: containerRef.current,
@@ -938,10 +948,21 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
   }, []);
 
   useDeepCompareEffect(() => {
-    graphRef.current?.clearCells();
+    // 彻底销毁旧的 Graph 实例
+    if (graphRef.current) {
+      graphRef.current.dispose?.();
+      graphRef.current = null;
+      // setTimeout(() => {
+      //   graphRef.current.dispose?.();
+      //   graphRef.current = null;
+      // }, 0);
+    }
+
+    // 重新初始化 Graph
+    initGraph();
     setActive('');
     fetchTopologyData(instanceInfo?.alias);
-    if (!graphRef.current || !instanceInfo) return;
+
     // 设置轮询
     interls.current = setInterval(() => {
       getTopologyStateData();

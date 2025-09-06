@@ -116,3 +116,59 @@ export const cancelLabel = async (id: string, data: any) => api.delete(`/cancelL
 
 export const makeSingleLabel = async (unsId: string, labelId: string) =>
   api.post(`/makeSingleLabel?unsId=${unsId}&labelId=${labelId}`); // 增加标签关联的文件
+
+// ====================== 国际化相关 - start ==============
+// 设置国际化语言
+export const updatePersonConfigApi = async (data: { userId: string; mainLanguage: string }) =>
+  api.post('/person/config', data);
+// 获取国际化语言
+export const getPersonConfigApi = async (userId: string) =>
+  api.get('/person/config', {
+    params: {
+      userId,
+    },
+  });
+// 获取系统语言
+export const getSystemI18Api = async (lang: string) =>
+  api.get('/i18n/messages', {
+    params: {
+      lang,
+    },
+    [CustomAxiosConfigEnum.NoCode]: true,
+  });
+
+// 获取插件语言
+export const getPlugI18Api = async (lang: string, pluginId: string[]) =>
+  api.get('/i18n/messages/plugin', {
+    params: {
+      lang,
+      pluginId,
+    },
+    [CustomAxiosConfigEnum.NoCode]: true,
+  });
+
+// ====================== 国际化相关 - end ================
+
+export const createDashboard = async (alias: string) => await api.post(`/dashboard/createGrafanaByUns/${alias}`);
+
+// 获取导出结果
+export const getUnsExportRecordsApi = async (params?: Record<string, unknown>) =>
+  api.get('/excel/data/getExportRecords', params);
+
+// 确认导出记录
+export const unsExportRecordConfirmApi = async (params?: Record<string, unknown>) =>
+  api.post('/excel/data/exportRecordConfirm', params);
+
+// 文件下载
+export const downloadUnsFile = async (params?: Record<string, unknown>) =>
+  api.get('/excel/download', { params, responseType: 'blob', [CustomAxiosConfigEnum.NoCode]: true });
+
+export const detectIfRemoveApi = (params: { id: any }) => api.get('/detectIfRemove', { params });
+
+// schema 获取接口
+export const getFileSchema = async () => api.get('/file/schema', { [CustomAxiosConfigEnum.NoCode]: true });
+export const getFolderSchema = async () => api.get('/folder/schema', { [CustomAxiosConfigEnum.NoCode]: true });
+export const getTemplateSchema = async () => api.get('/template/schema', { [CustomAxiosConfigEnum.NoCode]: true });
+export const getLabelSchema = async () => api.get('/label/schema', { [CustomAxiosConfigEnum.NoCode]: true });
+export const checkDashboardIsExist = async (params?: Record<string, unknown>) =>
+  api.get('/dashboard/isExist', { params, [CustomAxiosConfigEnum.NoCode]: true });

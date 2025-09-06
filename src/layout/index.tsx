@@ -16,8 +16,10 @@ import { MenuTypeEnum, PrimaryColorType, useThemeStore } from '@/stores/theme-st
 import homeFlow from '@/assets/guide/home-flow.gif';
 import homeFlowChartreuse from '@/assets/guide/home-flow-chartreuse.gif';
 import ImagePreview from './components/ImagePreview';
+import { useI18nStore } from '@/stores/i18n-store.ts';
 
 const Module = () => {
+  const lang = useI18nStore((state) => state.lang);
   const { menuType, primaryColor } = useThemeStore((state) => ({
     menuType: state.menuType,
     primaryColor: state.primaryColor,
@@ -49,7 +51,7 @@ const Module = () => {
             () => ({
               initial: `<img src="${primaryColor === PrimaryColorType.Chartreuse ? homeFlowChartreuse : homeFlow}" /><span>${formatMessage('common.chatbot')}</span>`,
             }),
-            [primaryColor]
+            [primaryColor, lang]
           )}
           markdownTagRenderers={useMemo(
             () => ({

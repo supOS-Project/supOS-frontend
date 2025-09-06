@@ -6,23 +6,18 @@ import { getRoleList } from '@/apis/inter-api/user-manage.ts';
 import { Add, Close, UserAvatar } from '@carbon/icons-react';
 import { produce } from 'immer';
 import Permission from '@/pages/account-management/components/Permission.tsx';
-import { getRoutes } from '@/apis/inter-api/kong.ts';
 import { addRole, deleteRole, putRole } from '@/apis/inter-api/role.ts';
 import { childrenRoutes } from '@/routers';
-import { buttonLocal, ButtonPermission, getLatestCode } from '@/common-types/button-permission.ts';
-import { getGroupedData, getTags } from '@/stores/utils.ts';
 import { validSpecialCharacter } from '@/utils/pattern';
 import Loading from '@/components/loading';
 import ProModal from '@/components/pro-modal';
-import { useI18nStore } from '@/stores/i18n-store.ts';
+import { getRoutesResourceApi } from '@/apis/inter-api/resource.ts';
+import { useBaseStore } from '@/stores/base';
+import { ResourceProps } from '@/stores/types.ts';
 
 export const AdminRoleId = '7ca9f922-0d35-44cf-8747-8dcfd5e66f8e';
 const generalRoleId = '71dd6dc2-6b12-4273-9ec0-b44b86e5b500';
 const disabledRoleList = [AdminRoleId, generalRoleId];
-const parentOrderMap = (routes: any) => {
-  const info = routes?.find((f: any) => getTags(f?.service?.tags || [])?.root);
-  return getTags(info?.service?.tags || []) || {};
-};
 
 const AddRoleContent = ({ successBack, disabled }: { successBack: (data: any) => void; disabled?: boolean }) => {
   const formatMessage = useTranslate();
@@ -101,15 +96,6 @@ const AddRoleContent = ({ successBack, disabled }: { successBack: (data: any) =>
             }}
           />
           <Flex justify="flex-end" align="center" style={{ padding: '0 12px' }}>
-            {/*<Button*/}
-            {/*  type="text"*/}
-            {/*  size="small"*/}
-            {/*  color="default"*/}
-            {/*  style={{ width: 50, color: 'var(--supos-t-text-disabled-color)' }}*/}
-            {/*  onClick={() => form.resetFields()}*/}
-            {/*>*/}
-            {/*  {formatMessage('common.reset')}*/}
-            {/*</Button>*/}
             <Button loading={loading} type="primary" size="small" style={{ width: 60 }} onClick={onSave}>
               {formatMessage('common.save')}
             </Button>
@@ -135,9 +121,9 @@ const AddRoleContent = ({ successBack, disabled }: { successBack: (data: any) =>
 };
 export interface PermissionNode {
   id: string;
-  name: string;
-  menuNameKey?: string;
-  type: string;
+  showName: string;
+  code?: string;
+  type: number;
   checked: boolean;
   pagePermissionChecked?: boolean;
   actionPermissionChecked?: boolean;
@@ -151,8 +137,64 @@ export interface PermissionRefProps {
   setValue: (value: PermissionNode[]) => void;
 }
 
+const getButtonGroup = (allButtonGroup: ResourceProps[], menuGroup: ResourceProps[]) => {
+  const result: ResourceProps[] = [];
+  allButtonGroup.forEach((item) => {
+    if (item.parentId) {
+      let parent = result.find((p) => p.id === item.parentId);
+      if (!parent) {
+        const menuParent = menuGroup.find((p) => p.id === item.parentId)!;
+        // 如果父项不存在，创建并添加到结果
+        parent = {
+          ...menuParent,
+          children: [],
+        };
+        result.push(parent);
+      }
+      parent.children?.push({ ...item, checked: false, id: 'button:' + item.code });
+    }
+  });
+  return result;
+};
+
+const getAllMenuTree = (originMenu: ResourceProps[] = []) => {
+  // 创建一个映射表，用于快速查找节点
+  const map: { [key: string]: ResourceProps } = {};
+  const tree: ResourceProps[] = [];
+  const menu: ResourceProps[] = [];
+
+  // 首先将所有节点存入映射表，以id为键
+  originMenu.forEach((item) => {
+    const parent = originMenu?.find((f) => f.id === item.parentId);
+    if (!parent || parent?.type === 1) {
+      map[item.id] = { ...item, children: [] };
+      menu.push(item);
+    }
+  });
+  // 遍历所有节点，根据parentId构建树
+  menu.forEach((item) => {
+    const node = map[item.id];
+
+    if (!item.parentId) {
+      // 如果没有parentId或parentId为0/null/undefined，则认为是根节点
+      tree.push(node);
+    } else {
+      // 否则找到父节点，将当前节点添加到父节点的children中
+      const parent = map[item.parentId];
+      if (parent) {
+        parent.children!.push(node);
+        parent.children!.sort((a, b) => a.sort - b.sort);
+      }
+    }
+  });
+  return tree.filter((f) => f.type === 2 || (f.type === 1 && f?.children?.length)).sort((a, b) => a.sort - b.sort);
+};
 const useRoleSetting = ({ onSaveBack }: any) => {
   const formatMessage = useTranslate();
+  const { originMenu, allButtonGroup } = useBaseStore((state) => ({
+    allButtonGroup: state.allButtonGroup,
+    originMenu: state.originMenu,
+  }));
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<any[]>([]);
   const { message } = App.useApp();
@@ -192,14 +234,14 @@ const useRoleSetting = ({ onSaveBack }: any) => {
       setOpen(false);
     }
   };
-
   useEffect(() => {
     if (open) {
-      Promise.all([getRoutes(), getRoleList()]).then((values) => {
-        const [menu, role] = values;
-        const _parentOrderMap = parentOrderMap(menu);
-        initialRolePermissionData.current = mapInitialRolePermissionData(getGroupedData(menu, _parentOrderMap));
-        allButtonData.current = extractButtonIds(initialRolePermissionData.current);
+      const menuGroup = originMenu?.filter((i) => i.type !== 3 && i.enable);
+      const menuTree = getAllMenuTree(menuGroup);
+      getRoleList().then((role) => {
+        const buttons = getButtonGroup(allButtonGroup, menuGroup);
+        initialRolePermissionData.current = mapInitialRolePermissionData(menuTree, buttons);
+        allButtonData.current = extractButtonIds(buttons);
         const info =
           role?.map?.((i: any) => {
             const denyResourceButtonList = i.denyResourceList?.filter((f: any) => f.uri?.includes('button:'));
@@ -214,13 +256,16 @@ const useRoleSetting = ({ onSaveBack }: any) => {
                 i.roleId === AdminRoleId
               ),
             };
-          }) ?? [];
+          }) || [];
         setItems(info);
         initItems.current = info;
         setActiveKey(role?.[0]?.roleId);
+        getRoutesResourceApi?.({
+          groupType: 1,
+        });
       });
     }
-  }, [open]);
+  }, [open, originMenu]);
 
   const onSave = () => {
     setLoading(true);
@@ -414,23 +459,6 @@ const useRoleSetting = ({ onSaveBack }: any) => {
   };
 };
 
-// 获取前端维护的button权限
-const getPermission = (page: string) => {
-  return Object.keys(ButtonPermission)
-    .filter((key) => key.startsWith(getLatestCode(page) + '.'))
-    .map((key: string) => {
-      const id = ButtonPermission[key as keyof typeof ButtonPermission];
-      const localKey: string = key.split('.')[1];
-      const name = buttonLocal?.[localKey]?.[useI18nStore.getState().lang] ?? id;
-      return {
-        id,
-        name,
-        type: 'button',
-        checked: false,
-      };
-    });
-};
-
 // 根据前端维护的路由
 const getOtherRoutes = () => {
   return childrenRoutes
@@ -440,67 +468,55 @@ const getOtherRoutes = () => {
     ?.map((route) => {
       const children = [
         {
-          key: route?.path,
-          showName: route?.handle?.name,
-          menuNameKey: route?.handle?.menuNameKey,
-          menu: {
-            url: route?.path,
-          },
+          showName: route?.handle?.showName,
+          code: route?.handle?.code,
+          url: route?.path,
           isFrontend: true,
+          isRemote: false,
+          type: 2,
+          urlType: 1,
         },
       ];
       return {
         ...children[0],
         children,
-        hasChildren: false,
       };
     });
 };
 
 // 根据前端维护的button、路由以及kong维护的路由进行初始化数据整合
-const mapInitialRolePermissionData = (routes: any) => {
+const mapInitialRolePermissionData = (routes: any, buttonGroup: ResourceProps[]) => {
   return [...routes, ...getOtherRoutes()]?.map((group: any) => {
+    // id就是路由 keycloke配置的路由
     return {
-      id: 'group' + group?.key,
-      name: group?.name ?? group?.showName,
-      menuNameKey: group?.menuNameKey,
-      type: 'group',
+      ...group,
+      id: 'group' + group?.code,
+      type: 1,
       checked: false,
       pagePermissionChecked: false,
       actionPermissionChecked: false,
-      children: group?.children?.map((menu: any) => {
-        const id = menu?.isFrontend ? menu?.menu?.url : '/' + menu?.key;
-        return {
-          id,
-          name: menu?.showName ?? menu?.name,
-          menuNameKey: menu?.menuNameKey,
-          type: 'menu',
-          checked: false,
-          children: getPermission(id),
-        };
-      }),
+      children:
+        group?.children?.length > 0
+          ? group?.children?.map((menu: any) => {
+              const buttonList = buttonGroup?.find((f) => f.id === menu.id)?.children;
+              return {
+                ...menu,
+                id: menu?.urlType === 1 ? menu?.url : '/' + menu?.code,
+                checked: false,
+                children: buttonList,
+              };
+            })
+          : [
+              {
+                ...group,
+                id: group?.urlType === 1 ? group?.url : '/' + group?.code,
+                checked: false,
+                children: buttonGroup?.find((f) => f.id === group.id)?.children,
+              },
+            ],
     };
   });
 };
-
-// 过滤所有buttons的id
-function extractButtonIds(data: PermissionNode[]): string[] {
-  const buttonIds: string[] = [];
-
-  function traverse(nodes: PermissionNode[]) {
-    nodes.forEach((node) => {
-      if (node.type === 'button') {
-        buttonIds.push(node.id);
-      }
-      if (node.children && node.children.length) {
-        traverse(node.children);
-      }
-    });
-  }
-
-  traverse(data);
-  return buttonIds;
-}
 
 // 过滤出未选中的button和选中的menu
 function filterMenuAndButtonItems(data: PermissionNode[] = []) {
@@ -512,9 +528,9 @@ function filterMenuAndButtonItems(data: PermissionNode[] = []) {
   function traverse(items: PermissionNode[]) {
     items.forEach((item: PermissionNode) => {
       // 处理当前项
-      if (item.type === 'menu' && item.checked) {
+      if (item.type === 2 && item.checked) {
         result.checkedTrueMenus.push(item.id);
-      } else if (item.type === 'button' && !item.checked) {
+      } else if (item.type === 3 && !item.checked) {
         result.checkedFalseButtons.push(item.id);
       }
 
@@ -527,6 +543,25 @@ function filterMenuAndButtonItems(data: PermissionNode[] = []) {
 
   traverse(data);
   return result;
+}
+
+// 过滤所有buttons的id
+function extractButtonIds(data: any[]): string[] {
+  const buttonIds: string[] = [];
+
+  function traverse(nodes: PermissionNode[]) {
+    nodes.forEach((node) => {
+      if (node.type === 3) {
+        buttonIds.push(node.id);
+      }
+      if (node.children && node.children.length) {
+        traverse(node.children);
+      }
+    });
+  }
+
+  traverse(data);
+  return buttonIds;
 }
 
 // 回显值
@@ -551,12 +586,10 @@ function updatePermissionData(data: any, idArray: string[], isAdmin: boolean = f
 
     items.forEach((item: any) => {
       // 如果是group类型，检查并更新其状态
-      if (item.type === 'group') {
-        const menuNodes = item.children?.filter((child: any) => child.type === 'menu') || [];
+      if (item.type === 1) {
+        const menuNodes = item.children?.filter((child: any) => child.type === 2) || [];
         const buttonNodes =
-          item.children
-            ?.flatMap((child: any) => child.children || [])
-            .filter((child: any) => child.type === 'button') || [];
+          item.children?.flatMap((child: any) => child.children || []).filter((child: any) => child.type === 3) || [];
 
         // 检查并更新pagePermissionChecked - 只受menu类型节点影响
         const allMenuChecked = menuNodes.length > 0 && menuNodes.every((menu: any) => menu.checked === true);

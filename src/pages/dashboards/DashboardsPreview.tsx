@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useRef } from 'react';
-import { Button, Space, Breadcrumb } from 'antd';
+import { Button, Space, Breadcrumb, Flex } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { PageProps } from '@/common-types';
 import { getDashboardDetail } from '@/apis/inter-api/uns';
@@ -137,13 +137,15 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
               <Button
                 variant="outlined"
                 color="default"
-                icon={<ChevronLeft size={16} />}
                 style={{ paddingLeft: '5.5px', gap: '3px' }}
                 onClick={() => {
                   navigate('/dashboards');
                 }}
               >
-                {formatMessage('common.back')}
+                <Flex align="center" gap={8}>
+                  <ChevronLeft size={16} />
+                  {formatMessage('common.back')}
+                </Flex>
               </Button>
               <Breadcrumb
                 separator=">"
@@ -168,13 +170,13 @@ const FlowPreview: FC<PageProps> = ({ location }) => {
                 <Space>
                   {status === 'design' && (
                     <>
-                      <AuthButton auth={ButtonPermission['dashboards.save']} onClick={() => handleClick('save')}>
+                      <AuthButton auth={ButtonPermission['Dashboards.save']} onClick={() => handleClick('save')}>
                         {formatMessage('common.save')}
                       </AuthButton>
-                      <AuthButton auth={ButtonPermission['dashboards.export']} onClick={() => handleClick('export')}>
+                      <AuthButton auth={ButtonPermission['Dashboards.export']} onClick={() => handleClick('export')}>
                         {formatMessage('uns.export')}
                       </AuthButton>
-                      <AuthButton auth={ButtonPermission['dashboards.import']} onClick={() => handleClick('import')}>
+                      <AuthButton auth={ButtonPermission['Dashboards.import']} onClick={() => handleClick('import')}>
                         {formatMessage('common.import')}
                       </AuthButton>
                     </>

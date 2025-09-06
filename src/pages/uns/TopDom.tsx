@@ -1,14 +1,16 @@
-import { Flex } from 'antd';
-import { Copy, Rss } from '@carbon/icons-react';
+import { Badge, Button, Flex } from 'antd';
+import { Copy, DocumentView, Rss } from '@carbon/icons-react';
 import { ButtonPermission } from '@/common-types/button-permission';
 import { getTreeStoreSnapshot, useTreeStore, useTreeStoreRef } from './store/treeStore';
 import { useClipboard, useTranslate } from '@/hooks';
-import { FC, ReactNode, useCallback, useRef, useState } from 'react';
+import { FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { ExportModal, ImportModal } from '@/pages/uns/components';
-import { AuthButton } from '@/components/auth';
+import { AuthButton, AuthWrapper } from '@/components/auth';
 import ComBreadcrumb from '@/components/com-breadcrumb';
 import ComText from '@/components/com-text';
 import { useBaseStore } from '@/stores/base';
+import SchemaModal, { SchemaModalRef } from '@/pages/uns/components/schema-modal';
+import { getUnsExportRecordsApi } from '@/apis/inter-api/uns';
 
 interface TopDomProps {
   setCurrentUnusedTopicNode: any;
@@ -20,6 +22,7 @@ const TopDom: FC<TopDomProps> = ({ setCurrentUnusedTopicNode, unusedTopicBreadcr
   const formatMessage = useTranslate();
   const [importModal, setImportModal] = useState(false);
   const exportRef = useRef<any>(null);
+  const schemaRef = useRef<SchemaModalRef>(null);
   const copyPathRef = useRef(null);
   const { treeType, currentTreeMapType, breadcrumbList, selectedNode, setSelectedNode } = useTreeStore((state) => ({
     treeType: state.treeType,
@@ -28,17 +31,21 @@ const TopDom: FC<TopDomProps> = ({ setCurrentUnusedTopicNode, unusedTopicBreadcr
     selectedNode: state.selectedNode,
     setSelectedNode: state.setSelectedNode,
   }));
+  const [exportRecords, setExportRecords] = useState([]);
 
   useClipboard(
     copyPathRef,
     currentTreeMapType === 'all' ? breadcrumbList.slice(-1)?.[0]?.path : currentUnusedTopicNode.path
   );
 
+  useEffect(() => {
+    getRecords?.();
+  }, []);
+
   const getTopicBreadcrumb = useCallback(
     (pArr: any[], addonAfter?: ReactNode | false) => (
       <ComBreadcrumb
         style={{ fontWeight: 700 }}
-        // separator=">"
         items={pArr?.map((e: any, idx: number) => {
           const name = currentTreeMapType === 'all' ? e.name : e.pathName || e.name;
           if (idx + 1 === pArr?.length) {
@@ -75,6 +82,12 @@ const TopDom: FC<TopDomProps> = ({ setCurrentUnusedTopicNode, unusedTopicBreadcr
   const { loadData } = getTreeStoreSnapshot(stateRef, (state) => ({
     loadData: state.loadData,
   }));
+
+  const getRecords = () => {
+    return getUnsExportRecordsApi().then((data) => {
+      setExportRecords(data);
+    });
+  };
 
   return (
     <div className="chartTop">
@@ -118,23 +131,33 @@ const TopDom: FC<TopDomProps> = ({ setCurrentUnusedTopicNode, unusedTopicBreadcr
         <span />
       )}
       <div className="chartTopR">
-        <AuthButton auth={ButtonPermission['uns.importNamespace']} type="primary" onClick={() => setImportModal(true)}>
+        <AuthButton onClick={() => schemaRef?.current?.onOpen?.({})}>
+          <Flex align="center" gap={8}>
+            <DocumentView />
+            Schema
+          </Flex>
+        </AuthButton>
+        <AuthButton auth={ButtonPermission['uns.unsImport']} type="primary" onClick={() => setImportModal(true)}>
           {formatMessage('common.import')}
         </AuthButton>
-        <AuthButton
-          auth={ButtonPermission['uns.export']}
-          color="default"
-          variant="filled"
-          style={{ background: '#c6c6c6', color: '#161616' }}
-          onClick={() => {
-            exportRef.current?.setOpen(true);
-          }}
-        >
-          {formatMessage('uns.export')}
-        </AuthButton>
+        <AuthWrapper auth={ButtonPermission['uns.unsExport']}>
+          <Badge dot={exportRecords?.some((s: any) => !s.confirm)}>
+            <Button
+              color="default"
+              variant="filled"
+              style={{ background: '#c6c6c6', color: '#161616' }}
+              onClick={() => {
+                exportRef.current?.setOpen(true);
+              }}
+            >
+              {formatMessage('uns.export')}
+            </Button>
+          </Badge>
+        </AuthWrapper>
       </div>
       <ImportModal importModal={importModal} setImportModal={setImportModal} initTreeData={loadData} />
-      <ExportModal exportRef={exportRef} />
+      <ExportModal setButtonExportRecords={setExportRecords} exportRef={exportRef} />
+      <SchemaModal ref={schemaRef} />
     </div>
   );
 };

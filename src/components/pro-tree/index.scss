@@ -88,7 +88,11 @@
       .ant-tree-node-content-wrapper {
         padding: 0;
         flex: 1;
-        overflow: hidden;
+        min-width: 0;
+        //position: static;
+        .ant-tree-drop-indicator {
+          bottom: 3px !important;
+        }
       }
 
       .ant-tree-node-content-wrapper:hover {
@@ -117,7 +121,6 @@
 
     .ant-tree-treenode-selected {
       background-color: var(--supos-t-card-hover-bg);
-      //background-color: var(--supos-t-card-select-bg);
       position: relative;
 
       &::before {

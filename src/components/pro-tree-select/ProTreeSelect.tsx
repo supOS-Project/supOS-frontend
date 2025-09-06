@@ -328,6 +328,7 @@ const ProTreeSelect = forwardRef<TreeSelectRefType, ProTreeSelectProps>(
 
     return (
       <TreeSelect
+        maxCount={allChecked ? 0 : undefined}
         classNames={{
           ...classNames,
           popup: {

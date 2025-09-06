@@ -4,7 +4,6 @@ import { register } from '@antv/x6-react-shape';
 import { ApplicationWeb } from '@carbon/icons-react';
 import { useNavigate } from 'react-router-dom';
 import nodeRed from '@/assets/home-icons/node-red.svg';
-import hasuraio from '@/assets/home-icons/hasuraio.svg';
 import postgresql from '@/assets/home-icons/postgresql.svg';
 import tdengine from '@/assets/home-icons/tdengine.png';
 import timescaleDB from '@/assets/home-icons/timescaleDB.svg';
@@ -15,7 +14,6 @@ import { data } from '@/pages/uns/components/uns-topology/data.ts';
 import classNames from 'classnames';
 import { useSize } from 'ahooks';
 import { useBaseStore } from '@/stores/base';
-import { getIntl } from '@/stores/i18n-store.ts';
 
 const Modbus = (nodes: any) => {
   return (
@@ -145,10 +143,12 @@ const Unknown = (nodes: any) => {
   );
 };
 const NodeRed = () => {
+  // const formatMessage = useTranslate();
   return (
     <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
       <img src={nodeRed} alt="" width="28px" />
-      {getIntl('common.nodeRed', 'Node-Red')}
+      {/*{formatMessage('common.nodeRed')}*/}
+      Node-Red
     </div>
   );
 };
@@ -175,19 +175,13 @@ const PostgreSQL = () => {
     </div>
   );
 };
-const GraphQL = () => {
-  return (
-    <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
-      <img src={hasuraio} alt="" width="28px" height="28px" />
-      GraphQL
-    </div>
-  );
-};
+
 const Grafana = () => {
+  const formatMessage = useTranslate();
   return (
     <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
       <ApplicationWeb size={28} />
-      {getIntl('uns.autoDashboard', 'Dashboard')}
+      {formatMessage('dashboards.dashboard')}
     </div>
   );
 };
@@ -287,12 +281,6 @@ register({
   component: PostgreSQL,
 });
 register({
-  shape: 'graphQL',
-  width: 150,
-  height: 40,
-  component: GraphQL,
-});
-register({
   shape: 'grafana',
   width: 150,
   height: 40,
@@ -379,9 +367,6 @@ const TopologyChart = (datas: any) => {
       switch (cell.id) {
         case 'nodeRed':
           navigate('/collection-flow');
-          break;
-        case 'graphQL':
-          window.open('/hasura/home/');
           break;
         case 'grafana':
           window.open('/grafana/home/dashboards/');

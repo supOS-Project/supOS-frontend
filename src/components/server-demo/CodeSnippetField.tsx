@@ -9,6 +9,7 @@ interface PropsTypes {
   className?: string;
   labelClassName?: string;
   label?: string;
+  subTitle?: string;
   value: string;
   minCollapsedNumberOfRows?: number;
   maxCollapsedNumberOfRows?: number;
@@ -21,6 +22,7 @@ const CodeSnippetField = (props: PropsTypes) => {
     className,
     labelClassName,
     label,
+    subTitle,
     value,
     minCollapsedNumberOfRows,
     maxCollapsedNumberOfRows,
@@ -61,8 +63,13 @@ const CodeSnippetField = (props: PropsTypes) => {
   if (isJSON && !value) return null;
 
   return (
-    <Flex vertical ref={ref} className={classNames('com-copy-content', styles.container, className)}>
+    <Flex
+      vertical
+      ref={ref}
+      className={classNames('com-copy-content', styles.container, { [styles.hasLabel]: !!label }, className)}
+    >
       {label && <div className={classNames('label', labelClassName)}>{label}</div>}
+      {subTitle && <div className={classNames('subTitle', labelClassName)}>{subTitle}</div>}
       <Flex className={classNames('content', styles.content)} justify="space-between">
         <ComCodeSnippet
           style={style}

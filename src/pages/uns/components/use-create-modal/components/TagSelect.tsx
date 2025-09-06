@@ -38,6 +38,12 @@ const TagSelect: FC<TagSelectProps> = ({ value, onChange, tagMaxLen, ...rest }) 
       message.error(formatMessage('common.prohibitSpacesTip'));
     }
 
+    const reg = /^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/;
+    if (newValues.some((item: any) => !reg.test(item.label || item.value))) {
+      filteredValues = filteredValues.filter((item: any) => reg.test(item.label || item.value));
+      message.error(formatMessage('uns.nameFormat'));
+    }
+
     setVal(filteredValues);
     onChange?.(filteredValues);
   };
@@ -61,6 +67,7 @@ const TagSelect: FC<TagSelectProps> = ({ value, onChange, tagMaxLen, ...rest }) 
         value: 'id',
       }}
       labelInValue
+      optionFilterProp="labelName"
     />
   );
 };

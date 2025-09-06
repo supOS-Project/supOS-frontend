@@ -1,10 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo, FC, useMemo } from 'react';
 import { Table, TableProps } from 'antd';
 import type { TableColumnsType } from 'antd';
+import expandIcon from '@/assets/icons/expand.svg';
+import collapseIcon from '@/assets/icons/collapse.svg';
 import classNames from 'classnames';
 import './index.scss';
 import { useTranslate } from '@/hooks';
 import { useThemeStore } from '@/stores/theme-store.ts';
+import { useI18nStore } from '@/stores/i18n-store.ts';
 
 interface TitlePropsType {
   width?: number;
@@ -12,12 +15,14 @@ interface TitlePropsType {
   changeWidth: (width: number) => void;
 }
 
-export interface ATableProps extends TableProps {
-  columns: TableColumnsType;
+export interface ATableProps extends Omit<TableProps, 'columns'> {
+  // titleIntlId 国际化key
+  columns: TableColumnsType & { titleIntlId?: string; [key: string]: any };
   resizeable?: boolean;
   // 是否隐藏空白
   hiddenEmpty?: boolean;
   fixedPosition?: boolean; // 是否固定页码在底部
+  showExpand?: boolean; // 是否显示展开按钮
 }
 // 查找所有可滚动祖先元素（包括window）
 const findScrollParents = (element: HTMLElement | null): (HTMLElement | Window)[] => {
@@ -188,6 +193,7 @@ const ProTable: React.FC<ATableProps> = ({
   hiddenEmpty,
   pagination,
   fixedPosition,
+  showExpand,
   ...restProps
 }) => {
   const formatMessage = useTranslate();
@@ -200,6 +206,9 @@ const ProTable: React.FC<ATableProps> = ({
   const [resizeColumns, setResizeColumns] = useState<TableColumnsType>(columns);
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const containerWidthRef = useRef(0);
+
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [showAllColumns, setShowAllColumns] = useState<boolean>(false);
 
   const newPagination = pagination
     ? {
@@ -309,6 +318,10 @@ const ProTable: React.FC<ATableProps> = ({
   }, []);
 
   useEffect(() => {
+    if (resizeable) setResizeColumns(columns);
+  }, [columns]);
+
+  useEffect(() => {
     if (tableWrapRef.current) {
       const tableElementWidth = (tableWrapRef?.current?.querySelector('.ant-table') as HTMLElement)?.clientWidth;
       const newColumns = resizeColumns.map((col) => {
@@ -336,40 +349,102 @@ const ProTable: React.FC<ATableProps> = ({
     'hidden-empty': hiddenEmpty && restProps?.dataSource?.length === 0,
     'fixed-pagination-bottom': fixedPosition,
   });
-  return resizeable ? (
+
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleExpandClick = () => {
+    setShowAllColumns(!showAllColumns);
+  };
+
+  const changeShowColumns = (oldColumns: TableColumnsType) => {
+    return !showExpand
+      ? oldColumns
+      : oldColumns.map((col) => {
+          if ([true, false].includes(col?.hidden as boolean)) {
+            col.hidden = showAllColumns;
+          }
+          return col;
+        });
+  };
+
+  return (
     <div
       ref={tableWrapRef}
       style={{
         '--supos-table-select-bg-color': selectBgColor,
+        width: '100%',
       }}
+      onMouseEnter={toggleExpanded}
+      onMouseLeave={toggleExpanded}
     >
-      <Table
-        rowKey="id"
-        size={'small'}
-        {...restProps}
-        className={_classNames}
-        columns={mergedColumns}
-        pagination={newPagination}
-        scroll={{
-          x: 'max-content',
-          ...scroll,
-        }}
-        components={{ ...components, header: { cell: ResizableTitle } }}
-        tableLayout="fixed"
-      />
+      {resizeable ? (
+        <Table
+          rowKey="id"
+          size={'small'}
+          {...restProps}
+          className={_classNames}
+          columns={changeShowColumns(mergedColumns)}
+          pagination={newPagination}
+          scroll={{
+            x: 'max-content',
+            ...scroll,
+          }}
+          components={{ ...components, header: { cell: ResizableTitle } }}
+          tableLayout="fixed"
+        />
+      ) : (
+        <Table
+          rowKey="id"
+          size={'small'}
+          {...restProps}
+          className={_classNames}
+          components={components}
+          scroll={scroll}
+          columns={changeShowColumns(columns)}
+          pagination={newPagination}
+        />
+      )}
+      {showExpand && (
+        <div
+          className={`pro-table-expand-button ${isExpanded ? 'pro-table-expanded' : ''}`}
+          onClick={handleExpandClick}
+        >
+          <img src={showAllColumns ? expandIcon : collapseIcon} alt="" />
+        </div>
+      )}
     </div>
-  ) : (
-    <Table
-      rowKey="id"
-      size={'small'}
-      {...restProps}
-      className={_classNames}
-      components={components}
-      scroll={scroll}
-      columns={columns}
-      pagination={newPagination}
-    />
   );
 };
 
-export default ProTable;
+const withIntlTable = (WrappedTable: FC<ATableProps>) => {
+  const IntlTableWrapper = memo(({ columns, ...restProps }: ATableProps) => {
+    const lang = useI18nStore((state) => state.lang);
+    const formatMessage = useTranslate();
+
+    const _columns = useMemo(() => {
+      return columns.map((i: any) => {
+        const type = typeof i.title;
+        if (i.titleIntlId) {
+          return {
+            ...i,
+            title: () => formatMessage(i.titleIntlId),
+          };
+        } else if (type === 'function') {
+          const originalTitleFn: any = i.title;
+          return {
+            ...i,
+            title: (params: any) => originalTitleFn({ ...params, formatMessage }),
+          };
+        } else {
+          return i;
+        }
+      });
+    }, [lang, columns]);
+    return <WrappedTable {...restProps} columns={_columns} />;
+  });
+  return IntlTableWrapper;
+};
+
+export default withIntlTable(ProTable);

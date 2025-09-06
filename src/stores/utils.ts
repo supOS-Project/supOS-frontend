@@ -1,4 +1,13 @@
-import { ContainerItemProps, RoutesProps } from './types.ts';
+import { ContainerItemProps, ResourceProps } from './types.ts';
+import { frontendPathList } from '@/routers';
+import { getToken, storageOpt } from '@/utils';
+import {
+  SUPOS_USER_GUIDE_ROUTES,
+  SUPOS_USER_LAST_LOGIN_ENABLE,
+  SUPOS_USER_TIPS_ENABLE,
+} from '@/common-types/constans.ts';
+import { filter, includes, isBoolean, isEmpty, map } from 'lodash';
+import { setUserTipsEnable } from '@/stores/base';
 
 /**
  * 通用多分组方法
@@ -42,20 +51,6 @@ export function multiGroupByCondition<T>(data: T[], criteria: Criteria<T>): Reco
   return groups;
 }
 
-export function filterByMatch(source: any[] = [], target: any[] = [], authEnable?: boolean) {
-  if (authEnable)
-    return source.filter((sourceItem) =>
-      target.some((targetItem) => {
-        if (sourceItem?.service?.name !== 'frontend') {
-          return '/' + sourceItem?.name?.toLowerCase?.() === targetItem.uri?.toLowerCase?.();
-        } else {
-          return sourceItem?.menu?.url?.toLowerCase?.() === targetItem.uri?.toLowerCase?.();
-        }
-      })
-    );
-  return source;
-}
-
 // 拒绝优先
 export function filterArrays(arr1: string[] = [], arr2: string[] = []) {
   return arr2?.filter?.((item) => !arr1?.includes?.(item));
@@ -74,17 +69,17 @@ export function matchUriWithPattern(uri: string, pattern: string) {
 }
 
 // 处理接口返回的模式数组
-export function handleButtonPermissions(patterns: string[] = [], permissions: object) {
+export function handleButtonPermissions(patterns: string[] = [], allButtonGroup: any[]) {
   const matchedButtons: string[] = [];
-
+  const permissions = allButtonGroup?.map((i: any) => `button:${i.code}`);
   // 如果模式包含 'button:*'，返回所有按钮权限
   if (patterns?.includes?.('button:*')) {
-    return [...new Set(Object.values(permissions))];
+    return [...new Set(permissions)];
   }
 
   // 遍历所有的模式
   patterns.forEach((pattern) => {
-    Object.values(permissions).forEach((uri) => {
+    permissions.forEach((uri) => {
       if (matchUriWithPattern(uri, pattern)) {
         matchedButtons.push(uri); // 匹配成功的按钮加入到结果数组
       }
@@ -92,220 +87,6 @@ export function handleButtonPermissions(patterns: string[] = [], permissions: ob
   });
   return [...new Set(matchedButtons)];
 }
-/**
- * @description
- * {key: 国际化的key（既是tag的值），没有国际话的话是''，value是国际化的内容,如果key是空的，value就是tag的值} =》 {key: '', value: menu} {key: 'parentName:DevTools', value: 'DevTools'}
- * */
-export const getTagsByObj = (
-  tags: {
-    key: string;
-    value: string;
-  }[]
-) => {
-  return tags.reduce(
-    (
-      acc: {
-        [key: string]: string;
-      },
-      tag
-    ) => {
-      if (tag.key) {
-        // 检查是否包含冒号，并且将符合条件的转化为 key:value 对象
-        const [tagKey, TagValue] = tag.key.split(':');
-        if (TagValue !== undefined) {
-          acc[tagKey] = TagValue;
-          acc[tagKey + 'I18'] = tag.value;
-        }
-        return acc;
-      } else if (tag.value) {
-        const [tagKey, TagValue] = tag.value.split(':');
-        if (TagValue !== undefined) {
-          acc[tagKey] = TagValue;
-          acc[tagKey + 'I18'] = '';
-        } else if (tagKey === 'remote') {
-          acc[tagKey] = '1';
-        }
-        return acc;
-      }
-      return acc;
-    },
-    {}
-  );
-};
-
-/**
- * @description frontend:abc
- * */
-export const getTags = (tags: string[]) => {
-  return tags.reduce(
-    (
-      acc: {
-        [key: string]: string;
-      },
-      tag
-    ) => {
-      // 检查是否包含冒号，并且将符合条件的转化为 key:value 对象
-      const [key, value] = tag.split(':');
-      if (value !== undefined) {
-        acc[key] = value;
-      }
-      return acc;
-    },
-    {}
-  );
-};
-
-export const getGroupedOptions = (data: RoutesProps[]) => {
-  const newData =
-    data.map((item: RoutesProps) => {
-      const tags = getTagsByObj(item?.tags || []);
-      const serviceTags = getTags(item?.service?.tags || []);
-      const name = item.showName || item.name;
-      const groupKey = tags?.parentName || name; // 使用 parentName 或 name 作为分组键
-      return {
-        ...item,
-        isFrontend: serviceTags?.root === 'frontend' && tags.remote !== '1',
-        isRemote: tags.remote,
-        remoteSubPageList: tags?.moduleName?.split('.') || [],
-        name,
-        key: item?.name,
-        hasChildren: false,
-        children: [],
-        iconUrl: tags?.iconUrl,
-        description: tags?.description,
-        label: name,
-        value: item?.name,
-        hasParent: !!tags?.parentName,
-        parentName: tags?.parentNameI18,
-        parentKey: groupKey,
-        menuPort: tags?.menuPort,
-        openType: tags?.openType,
-        indexUrl: tags?.indexUrl,
-        menuProtocol: tags?.menuProtocol,
-        menuHost: tags?.menuHost,
-        selectKeyPath: tags?.parentName ? [item?.name, tags?.parentName] : [item?.name],
-        selectKey: [item?.name],
-      };
-    }) || [];
-  const _remoteSubPageList: RoutesProps[] = [];
-  newData
-    .filter((f) => f.remoteSubPageList?.length > 0)
-    ?.forEach((f) => {
-      f.remoteSubPageList?.forEach((s) => {
-        const key = f.key + '/' + s;
-        _remoteSubPageList.push({
-          ...f,
-          remoteSubPageList: [],
-          key,
-          value: key,
-          // selectKey: [key],
-          parentKey: f.key,
-          // selectKeyPath: [key, ...f.selectKeyPath],
-          isRemoteChildMenu: true,
-          childrenMenuKey: s,
-        });
-      });
-    });
-  return [...newData, ..._remoteSubPageList];
-};
-
-export const getGroupedData = (data: RoutesProps[], parentOrderMap: any, fatherKey: string = 'parentName') => {
-  return data
-    .reduce((acc: RoutesProps[], item: RoutesProps) => {
-      const tags = getTagsByObj(item?.tags || []);
-      const serviceTags = getTags(item?.service?.tags || []);
-      const name = item.showName || item.name; // menu的展示名
-      const groupKey = tags?.[fatherKey] || tags?.parentName || item.name; // 使用 parentName 或 name 作为分组键
-      // 查找是否已经存在该分组
-      let group = acc.find((g) => g.key === groupKey);
-      if (!group) {
-        // 如果不存在该分组，则创建一个新的分组
-        group = {
-          ...item,
-          isFrontend: serviceTags?.root === 'frontend' && tags.remote !== '1',
-          isRemote: tags.remote,
-          remoteSubPageList: tags?.moduleName?.split('.') || [],
-          name: tags?.[fatherKey + 'I18'] || tags?.parentNameI18 || name,
-          key: groupKey,
-          hasChildren: false,
-          children: [],
-          iconUrl: tags?.[fatherKey] || tags?.parentName,
-          description: serviceTags?.description,
-          menuPort: tags?.menuPort,
-          menuProtocol: tags?.menuProtocol,
-          menuHost: tags?.menuHost,
-          openType: tags?.openType,
-          indexUrl: tags?.indexUrl,
-        };
-        acc.push(group);
-      }
-      const iconUrl =
-        fatherKey === 'parentName' ? tags?.iconUrl || item.name : tags?.homeIconUrl || tags?.iconUrl || item.name;
-      if (tags?.[fatherKey] ?? tags?.parentName) {
-        group.hasChildren = true;
-        group.menu = undefined;
-        group.service = undefined;
-        group.tags = undefined;
-        group.isFrontend = undefined;
-        group.menuPort = undefined;
-        group.menuProtocol = undefined;
-        group.menuHost = undefined;
-        group?.children?.push({
-          ...item,
-          isFrontend: serviceTags?.root === 'frontend' && tags.remote !== '1',
-          isRemote: tags.remote,
-          remoteSubPageList: tags?.moduleName?.split('.') || [],
-          parentName: group.name,
-          parentKey: group.key,
-          key: item?.name,
-          name,
-          iconUrl,
-          description: tags?.descriptionI18 || tags?.description,
-          sort: tags?.sort,
-          menuPort: tags?.menuPort,
-          menuProtocol: tags?.menuProtocol,
-          menuHost: tags?.menuHost,
-          openType: tags?.openType,
-          indexUrl: tags?.indexUrl,
-        });
-      } else {
-        group.key = item.name;
-        group.iconUrl = tags?.iconUrl || item.name;
-        group.description = tags?.descriptionI18 || tags?.description;
-        group?.children?.push({
-          ...group,
-          children: undefined,
-          key: item?.name,
-          name,
-          iconUrl,
-          description: tags?.descriptionI18 || tags?.description,
-          sort: tags?.sort,
-          menuPort: tags?.menuPort,
-          menuProtocol: tags?.menuProtocol,
-          menuHost: tags?.menuHost,
-          openType: tags?.openType,
-          indexUrl: tags?.indexUrl,
-        });
-      }
-      return acc;
-    }, [])
-    .map((item) => {
-      // Sort children if they exist
-      if (item.children && Array.isArray(item.children)) {
-        item.children.sort((a, b) => {
-          const sortA = Number(a.sort) || Infinity;
-          const sortB = Number(b.sort) || Infinity;
-          return sortA - sortB;
-        });
-      }
-      return item;
-    })
-    .sort((a, b) => {
-      const orderA = Number(parentOrderMap[a.key!]) || Infinity; // 如果没有对应的值，放在最后
-      const orderB = Number(parentOrderMap[b.key!]) || Infinity;
-      return orderA - orderB;
-    });
-};
 
 // 拆分关于我们和高阶使用
 export const filterContainerList = (containerMap: { [key: string]: ContainerItemProps } = {}) => {
@@ -316,3 +97,183 @@ export const filterContainerList = (containerMap: { [key: string]: ContainerItem
     aboutUs: _containerList || [],
   };
 };
+
+export function buildResourceTrees(resources: ResourceProps[]) {
+  const map = new Map<string, ResourceProps>();
+  const menuGroup: ResourceProps[] = [];
+  const homeGroup: ResourceProps[] = [];
+  const homeTabGroup: ResourceProps[] = [];
+
+  // 分类并创建节点（已排序）
+  resources
+    // .sort((a, b) => a.sort - b.sort)
+    .forEach((resource) => {
+      const node: ResourceProps = { ...resource, children: [] };
+      map.set(node.id, node);
+
+      switch (node.groupType) {
+        case 1:
+          menuGroup.push(node);
+          break;
+        case 2:
+          homeGroup.push(node);
+          break;
+        case 3:
+          homeTabGroup.push(node);
+          break;
+      }
+    });
+
+  // 构建带排序的树结构
+  const buildSortedTree = (nodes: ResourceProps[]) => {
+    const localRoots: ResourceProps[] = [];
+
+    nodes.forEach((node) => {
+      if (!node.parentId || !map.has(node.parentId)) {
+        localRoots.push(node);
+        return;
+      }
+
+      const parent = map.get(node.parentId)!;
+      parent.children!.push(node);
+      parent.children!.sort((a, b) => a.sort - b.sort);
+    });
+
+    return localRoots.sort((a, b) => a.sort - b.sort);
+  };
+
+  return {
+    // 菜单分组 过滤掉子菜单，过滤掉只有目录
+    menuTree: buildSortedTree(menuGroup?.filter((f) => !f.subMenu))?.filter(
+      (f) => f.type === 2 || (f.type === 1 && f?.children?.length)
+    ),
+    // home页分组
+    homeTree: buildSortedTree(homeGroup?.filter((f) => !f.subMenu))?.filter(
+      (f) => f.type === 2 || (f.type === 1 && f?.children?.length)
+    ),
+    // options
+    menuGroup: menuGroup?.filter((r) => r.type === 2),
+    homeGroup: homeGroup?.filter((r) => r.type === 2),
+    homeTabGroup: homeTabGroup?.filter((r) => r.type === 2),
+  };
+}
+
+// 重组菜单，比如是三级菜单进行重组
+export function mapResource(source: ResourceProps[] = []) {
+  return source.map((item) => {
+    const parent = source?.find((f) => f.id === item.parentId);
+    // 菜单下面还挂着菜单特殊处理，比如 /collect 下面挂在/collect/detail
+    if (parent?.type === 2) {
+      const isFrontend = frontendPathList?.includes(parent.url! + item.url!);
+      const isRemote = !isFrontend && item.urlType === 1;
+      // 特殊处理subMen
+      return {
+        ...item,
+        subMenu: true,
+        parentCode: parent?.code,
+        url: parent.url! + item.url!,
+        isFrontend,
+        isRemote,
+        remoteModelName: isRemote ? item.url?.slice(1) : undefined,
+      };
+    } else {
+      const isFrontend = frontendPathList?.includes(item.url!);
+      return {
+        ...item,
+        parentCode: parent?.code,
+        isFrontend,
+        isRemote: !isFrontend && item.urlType === 1,
+      };
+    }
+  });
+}
+
+// 根据用户路由资源组 匹配出 路由 - 如果免登或者超级管理员，不进行过滤; type为1既是目录不进行过滤
+export function filterRouteByUserResource(source: any[] = [], target: any[] = [], authEnable?: boolean) {
+  if (authEnable)
+    return source.filter(
+      (sourceItem) =>
+        sourceItem.type === 1 ||
+        sourceItem.subMenu === true ||
+        target.some((targetItem) => {
+          if (sourceItem?.urlType !== 1) {
+            return '/' + sourceItem?.code?.toLowerCase?.() === targetItem.uri?.toLowerCase?.();
+          } else {
+            return sourceItem?.url?.toLowerCase?.() === targetItem.uri?.toLowerCase?.();
+          }
+        })
+    );
+  return source;
+}
+
+// 包含新手导航的页面路由集合，新增页面导航时务必在这里添加url
+const GuidePagePaths = ['/home', '/uns'];
+// 新手指引设置
+export function guideConfig({ systemInfo, menuGroup, info }: { systemInfo: any; menuGroup: any; info: any }) {
+  // 1.新手导航：根据authenable和token区分是否为免登录
+  //      a.先获取上次免登录状态和当前比较，如果发生改变，则说明用户登录发生变化（比如由需要登陆变为免登或者免登变为需要），需要清除之前的SUPOS_USER_GUIDE_ROUTES状态，并设置新的免登状态
+  //      b.然后判断当前是否为免登
+  //          如果是免登录，先判断SUPOS_USER_GUIDE_ROUTES是否存在，不存在，则添加，存在则不做处理
+  //          如果需要登陆，再按原有逻辑（用户第一次登录）进行引导
+  // 2.tips: 用户访问时进入系统则展示tips，且可勾选不再展示（每次登录或者每次免登状态都需考虑）
+  //         1).判断是否免登 2).是否为刚登录 3).判断用户是否支持展示
+  const lastLoginEnable = storageOpt.getOrigin(SUPOS_USER_LAST_LOGIN_ENABLE);
+
+  const token = getToken();
+  const isLoginEnable = isBoolean(systemInfo?.authEnable) && !isEmpty(token);
+
+  // 获取上次免登录状态和当前比较，如果发生改变，则说明用户登录发生变化,或者systemInfo?.authEnable获取失败则清除缓存
+  if (!isBoolean(systemInfo?.authEnable) || lastLoginEnable !== `${isLoginEnable}`) {
+    storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
+    storageOpt.setOrigin(
+      SUPOS_USER_LAST_LOGIN_ENABLE,
+      `${isBoolean(systemInfo?.authEnable) ? isLoginEnable : systemInfo?.authEnable}`
+    );
+    storageOpt.remove(SUPOS_USER_TIPS_ENABLE);
+  }
+
+  // 是否为免登录：authEnable===false并且不存在token时
+  const notLogin = systemInfo?.authEnable === false && !token;
+  // 如果为免登录，则判断是否存在新手导航数据，存在则继续触发，不存在则添加
+  if (notLogin) {
+    if (!storageOpt.getOrigin(SUPOS_USER_TIPS_ENABLE)) {
+      setUserTipsEnable('1');
+    }
+    if (!storageOpt.get(SUPOS_USER_GUIDE_ROUTES)) {
+      storageOpt.set(
+        SUPOS_USER_GUIDE_ROUTES,
+        map(
+          filter(menuGroup, (r) => includes(GuidePagePaths, r?.url)),
+          (route) => ({ ...route, isVisited: false })
+        )
+      );
+    }
+  }
+  // 如果是登录状态
+  if (isLoginEnable) {
+    // 判断用户是否手动禁用tips展示
+    const tipsEnable = info?.tipsEnable;
+    if (tipsEnable && !storageOpt.getOrigin(SUPOS_USER_TIPS_ENABLE)) {
+      setUserTipsEnable('1');
+    }
+    if (!tipsEnable) {
+      setUserTipsEnable('0');
+    }
+    const isFirstLogin = info?.firstTimeLogin;
+    // 首次登录且未初始化用户引导路由信息，则需初始化该信息；已经初始化则继续使用缓存的状态
+    if (isFirstLogin === 1 && !storageOpt.get(SUPOS_USER_GUIDE_ROUTES)) {
+      storageOpt.set(
+        SUPOS_USER_GUIDE_ROUTES,
+        map(
+          filter(menuGroup, (r) => includes(GuidePagePaths, r?.url)),
+          (route) => ({ ...route, isVisited: false })
+        )
+      );
+    }
+    // 由于存在手动启用新手导航功能，先取消清除的逻辑
+    // if (isFirstLogin !== 1) {
+    //   // 非首次登录直接清除用户引导路由信息
+    //   storageOpt.remove(SUPOS_USER_GUIDE_ROUTES);
+    // }
+  }
+}
