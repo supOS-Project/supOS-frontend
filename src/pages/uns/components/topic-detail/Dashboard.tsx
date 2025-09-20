@@ -121,14 +121,38 @@ const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
   const [isResizing, setIsResizing] = useState(false);
 
   const rangePresets: TimeRangePickerProps['presets'] = [
-    { label: formatMessage('uns.last5minutes'), value: [dayjs().add(-5, 'm'), dayjs()] },
-    { label: formatMessage('uns.last30minutes'), value: [dayjs().add(-30, 'm'), dayjs()] },
-    { label: formatMessage('uns.last1hour'), value: [dayjs().add(-1, 'h'), dayjs()] },
-    { label: formatMessage('uns.last6hours'), value: [dayjs().add(-6, 'h'), dayjs()] },
-    { label: formatMessage('uns.last24hours'), value: [dayjs().add(-24, 'h'), dayjs()] },
-    { label: formatMessage('uns.last1week'), value: [dayjs().add(-1, 'w'), dayjs()] },
-    { label: formatMessage('uns.last6weeks'), value: [dayjs().add(-6, 'w'), dayjs()] },
-    { label: formatMessage('uns.last1year'), value: [dayjs().add(-1, 'y'), dayjs()] },
+    {
+      label: <span title={formatMessage('uns.last5minutes')}>{formatMessage('uns.last5minutes')}</span>,
+      value: [dayjs().add(-5, 'm'), dayjs()],
+    },
+    {
+      label: <span title={formatMessage('uns.last30minutes')}>{formatMessage('uns.last30minutes')}</span>,
+      value: [dayjs().add(-30, 'm'), dayjs()],
+    },
+    {
+      label: <span title={formatMessage('uns.last1hour')}>{formatMessage('uns.last1hour')}</span>,
+      value: [dayjs().add(-1, 'h'), dayjs()],
+    },
+    {
+      label: <span title={formatMessage('uns.last6hours')}>{formatMessage('uns.last6hours')}</span>,
+      value: [dayjs().add(-6, 'h'), dayjs()],
+    },
+    {
+      label: <span title={formatMessage('uns.last24hours')}>{formatMessage('uns.last24hours')}</span>,
+      value: [dayjs().add(-24, 'h'), dayjs()],
+    },
+    {
+      label: <span title={formatMessage('uns.last1week')}>{formatMessage('uns.last1week')}</span>,
+      value: [dayjs().add(-1, 'w'), dayjs()],
+    },
+    {
+      label: <span title={formatMessage('uns.last6weeks')}>{formatMessage('uns.last6weeks')}</span>,
+      value: [dayjs().add(-6, 'w'), dayjs()],
+    },
+    {
+      label: <span title={formatMessage('uns.last1year')}>{formatMessage('uns.last1year')}</span>,
+      value: [dayjs().add(-1, 'y'), dayjs()],
+    },
   ];
 
   const handleDefaultTime = () => {

@@ -99,22 +99,40 @@ export interface SystemInfoProps {
 }
 
 /**
- * @description 资源：目录、菜单、按钮
+ * @description 资源：目录、菜单、按钮、home_tab
+ *  type 1 ； 无url；=== 分组
+ *  type 2 ；urlType 1 ；routes定义的路由 ；有url；=== 前端内部路由
+ *  type 5 ；urlType 1 ；routes定义的路由 ；有url； === 前端内部子路由
+ *  type 2 ；urlType 1 ；routes没有定义的路由 ；有url；=== 插件路由
+ *  type 5 ；urlType 1 ；routes没有定义的路由 ；有url； === 插件子路由
+ *  type 2 ；urlType 2 ；有url； === iframe 路由
+ *  type 4 ；urlType 2 ；有url； === home_tab里面的iframe 路由
+ *  type 4 ；urlType 1 ；无url； === home_tab里面的前端tab
+ *  type 3 ；无url； === 按钮
  * */
 export interface ResourceProps {
   // 父级ID
   parentId?: string;
   // 主键ID
   id: string;
+  /**
+   * @deprecated
+   * */
   // 菜单分组 1-导航 2-菜单 home    属于哪组  3-tab home页tab
-  groupType?: number;
-  // 菜单类型（1-目录 2-菜单 3-按钮）
+  // groupType?: number;
+  // 菜单类型（1、目录 2、菜单 3、按钮 4、home_tab 5、子菜单 ）
   type: number;
   // icon 不写类型默认svg, 不传默认使用code
+  /**
+   * 历史icon 为 xxx.svg
+   * 最终路由为 `/inter-api/supos/uns/attachment/preview?objectName=${encodeURI(icon)}`
+   * 上传icon 为 /uns/xxxx.svg
+   * 最终路由为 `/files/system/resource/supos/${encodeURI(selectNode.icon)}`
+   * */
   icon?: string;
-  // konga的name既唯一键
+  // konga的name既唯一键 用来作为前端路由
   code: string;
-  // 用code转成的国际化name
+  // 国际化name
   showName?: string;
   // 国际化的描述key
   description?: string;
@@ -126,7 +144,7 @@ export interface ResourceProps {
   createAt?: number;
   // 更新时间
   updateAt?: number;
-  // 地址
+  // 实际访问地址
   url?: string;
   // 类型 1-内部地址（前端地址） 2-外部链接（iframe地址）
   urlType?: number;
@@ -136,7 +154,13 @@ export interface ResourceProps {
   remark?: string;
   // 启用状态
   enable?: boolean;
-  // ============
+  // 是否在首页显示
+  homeEnable?: boolean;
+  // 是否固定不可换位置
+  fixed?: boolean;
+  // 是否可编辑
+  editEnable?: boolean;
+  // =======前端代码使用=====
   children?: ResourceProps[];
   // 是否是子菜单，比如 /EvenFlow/Edit，那就是子菜单
   subMenu?: boolean;

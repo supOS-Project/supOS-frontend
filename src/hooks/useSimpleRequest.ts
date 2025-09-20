@@ -8,6 +8,7 @@ interface UsePaginationParams {
   onSuccessCallback?: (data: any) => void;
   autoRefresh?: boolean; // 是否自动刷新
   refreshInterval?: number; // 自动刷新间隔，单位毫秒
+  onOnceSuccessCallback?: (data: any) => void;
 }
 
 const useSimpleRequest = <T>({
@@ -17,8 +18,10 @@ const useSimpleRequest = <T>({
   onSuccessCallback,
   autoRefresh = false,
   refreshInterval = 5000, // 默认5秒
+  onOnceSuccessCallback,
 }: UsePaginationParams) => {
   const firstUpdate = useRef(firstNotGetData === true);
+  const isOnceRef = useRef(true);
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,6 +68,10 @@ const useSimpleRequest = <T>({
         if (onSuccessCallback) {
           onSuccessCallback?.(data);
         }
+        if (isOnceRef.current && onOnceSuccessCallback) {
+          isOnceRef.current = false;
+          onOnceSuccessCallback?.(data);
+        }
       })
       .catch((error: any) => {
         if (error.name === 'AbortError') {
@@ -108,13 +115,16 @@ const useSimpleRequest = <T>({
   }, []);
 
   // 参数请求
-  const setSearchParams = useCallback((value: any) => {
+  const setSearchParams = useCallback((value: any, reset: boolean = true) => {
     clearTime();
     cancelRequest();
-    setParamsData((o) => ({
-      ...o,
-      searchFormData: value || {},
-    }));
+    setParamsData((o) => {
+      const searchParams = reset ? value : Object.assign(o.searchFormData || {}, value || {});
+      return {
+        ...o,
+        searchFormData: searchParams || {},
+      };
+    });
   }, []);
 
   const clearData = () => {

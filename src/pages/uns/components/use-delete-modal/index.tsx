@@ -160,6 +160,7 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
           style={{ width: '48%', marginRight: '4%' }}
           size="large"
           disabled={loading}
+          title={formatMessage('common.cancel')}
         >
           {formatMessage('common.cancel')}
         </Button>
@@ -173,6 +174,7 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
           style={{ width: '48%' }}
           size="large"
           loading={loading}
+          title={formatMessage('common.confirm')}
         >
           {formatMessage('common.confirm')}
         </Button>

@@ -8,7 +8,7 @@ import useTranslate from '@/hooks/useTranslate.ts';
 
 export interface TagFilterProps {
   value?: Key[];
-  onChange?: (value: Key[]) => void;
+  onChange?: (value: Key[], options?: any[]) => void;
   options?: CheckboxOptionType[];
   defaultValue?: Key[];
   style?: CSSProperties;
@@ -27,9 +27,16 @@ const Index: FC<TagFilterProps> = ({
   const formatMessage = useTranslate();
   const [v, setV] = usePropsValue<Key[]>({
     value,
-    onChange,
     defaultValue,
   });
+
+  const onValueChange = (values: any[]) => {
+    setV(values);
+    onChange?.(
+      values,
+      values.map((v) => options?.find((f) => f.value === v))
+    );
+  };
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -59,6 +66,17 @@ const Index: FC<TagFilterProps> = ({
     }
   }, [v, checkArrows, showTag]);
 
+  useEffect(() => {
+    // 处理options变化，过滤掉v中不在options里的值
+    if (v && v.length > 0) {
+      const validValues = v.filter((value: string) => options.some((option) => option.value === value));
+      console.log(validValues);
+      if (validValues.length !== v.length) {
+        onValueChange?.(validValues);
+      }
+    }
+  }, [options]);
+
   const handleScroll = (direction: 'left' | 'right') => {
     const element = scrollContainerRef.current;
     if (element) {
@@ -77,7 +95,7 @@ const Index: FC<TagFilterProps> = ({
       <Checkbox
         indeterminate={isIndeterminate}
         onChange={(e) => {
-          setV(e.target.checked ? allOptionsValues : []);
+          onValueChange(e.target.checked ? allOptionsValues : []);
         }}
         checked={!!isAllSelected}
       >
@@ -91,7 +109,7 @@ const Index: FC<TagFilterProps> = ({
           flexDirection: 'column',
           gap: 8,
         }}
-        onChange={setV}
+        onChange={onValueChange}
         options={options}
       />
     </div>
@@ -146,7 +164,9 @@ const Index: FC<TagFilterProps> = ({
                 closable
                 style={{ backgroundColor: 'var(--supos-bg-color)', flexShrink: 0 }}
                 key={id}
-                onClose={() => setV((pre: Key[]) => pre.filter((value: Key) => value !== id))}
+                onClose={() => {
+                  onValueChange(v.filter((value: Key) => value !== id));
+                }}
               >
                 {item?.label}
               </Tag>

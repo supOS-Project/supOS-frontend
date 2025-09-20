@@ -8,6 +8,7 @@ import ProTable from '../pro-table';
 interface PropsTypes {
   tableConfig: ATableProps;
   onDragEnd: (arg0: any, arg1: any) => void;
+  disabled?: boolean;
 }
 
 const Row: React.FC<Readonly<any>> = (props) => {
@@ -19,7 +20,7 @@ const Row: React.FC<Readonly<any>> = (props) => {
     ...props.style,
     transform: CSS.Translate.toString(transform),
     transition,
-    cursor: 'move',
+    cursor: !props?.disabled ? 'move' : 'inherit',
     ...(isDragging ? { position: 'relative' } : {}),
   };
 
@@ -27,7 +28,7 @@ const Row: React.FC<Readonly<any>> = (props) => {
 };
 
 const DndTable = (props: PropsTypes) => {
-  const { tableConfig, onDragEnd } = props;
+  const { tableConfig, onDragEnd, disabled } = props;
   const { dataSource = [] } = tableConfig;
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -36,14 +37,15 @@ const DndTable = (props: PropsTypes) => {
       },
     })
   );
+  const unitKey = typeof tableConfig?.rowKey === 'string' ? tableConfig?.rowKey : 'code';
 
   // 拖拽
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (active.id === over?.id) return;
 
     const newDataSource = [...dataSource];
-    const activeIndex = newDataSource.findIndex((i) => i.code === active.id);
-    const overIndex = newDataSource.findIndex((i) => i.code === over?.id);
+    const activeIndex = newDataSource.findIndex((i) => i[unitKey] === active.id);
+    const overIndex = newDataSource.findIndex((i) => i[unitKey] === over?.id);
     const currentId = newDataSource[activeIndex]?.id;
 
     let prevId, nextId;
@@ -64,15 +66,18 @@ const DndTable = (props: PropsTypes) => {
       currentId,
     });
   };
-
   return (
     <DndContext sensors={sensors} modifiers={[restrictToVerticalAxis]} onDragEnd={handleDragEnd}>
-      <SortableContext items={dataSource.map((i) => i.code)} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        disabled={disabled}
+        items={dataSource.map((i) => i?.[unitKey])}
+        strategy={verticalListSortingStrategy}
+      >
         <ProTable
           {...tableConfig}
           columns={tableConfig.columns || []}
           components={{
-            body: { row: Row },
+            body: { row: (props: any) => <Row {...props} disabled={disabled} /> },
           }}
         />
       </SortableContext>

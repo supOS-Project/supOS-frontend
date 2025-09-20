@@ -9,9 +9,10 @@ import { AuthButton } from '@/components/auth';
 import ComCopy from '@/components/com-copy';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
-import ComMenuList from '@/components/com-menu-list';
 import ProModal from '@/components/pro-modal';
 import { useBaseStore } from '@/stores/base';
+import ProCardContainer from '@/components/pro-card/ProCardContainer.tsx';
+import { ProCard } from '@/components';
 
 const { Title, Paragraph } = Typography;
 
@@ -32,24 +33,36 @@ const Index = () => {
           <Paragraph style={{ marginBottom: 0 }}>{formatMessage('advancedUse.overview')}</Paragraph>
         </div>
         <div className={styles['content-section']}>
-          <ComMenuList
-            list={containerList?.advancedUse || []}
-            clickable
-            onItemClick={(item) => {
-              if (item.envMap.service_password) {
-                const _item = {
-                  ...item,
-                  account: item.envMap.service_account,
-                  password: item.envMap.service_password,
-                };
-                form.setFieldsValue(_item);
-                setOpenInfo(_item);
-                setOpen(true);
-              } else {
-                window.open(`http://${window.location.host}${item.envMap.service_redirect_url}`);
-              }
-            }}
-          />
+          <ProCardContainer>
+            {(containerList?.advancedUse || []).map((item, index) => {
+              return (
+                <ProCard
+                  key={index}
+                  header={{
+                    iconSrc: `${STORAGE_PATH}${Original_TARGET_PATH}/${item?.envMap?.service_logo}`,
+                    title: item?.name,
+                    titleDescription: `${formatMessage('common.version')} ${item.version || ''}`,
+                  }}
+                  item={item}
+                  onClick={(item) => {
+                    if (item.envMap.service_password) {
+                      const _item = {
+                        ...item,
+                        account: item.envMap.service_account,
+                        password: item.envMap.service_password,
+                      };
+                      form.setFieldsValue(_item);
+                      setOpenInfo(_item);
+                      setOpen(true);
+                    } else {
+                      window.open(`http://${window.location.host}${item.envMap.service_redirect_url}`);
+                    }
+                  }}
+                  description={item?.description || ' '}
+                />
+              );
+            })}
+          </ProCardContainer>
         </div>
       </ComContent>
       <ProModal

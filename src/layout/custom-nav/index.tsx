@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Flex } from 'antd';
-import { ChevronDown, Edit, User, Task } from '@carbon/icons-react';
+import { ChevronDown, User, Task } from '@carbon/icons-react';
 import { useNavigate } from 'react-router-dom';
 import logoBlack from '@/assets/custom-nav/logo-black.png';
 import logoBlackWhite from '@/assets/custom-nav/logo-white.png';
-import RoutesList from '@/layout/custom-nav/RoutesList';
 import SideNavList from './components/SideNavList';
 import SideMenuList from './components/SideMenuList';
 import menuChange from '@/assets/icons/menu-change.svg';
@@ -13,12 +12,10 @@ import menuDown from '@/assets/icons/menu-down.svg';
 import menuLightUp from '@/assets/icons/menu-light-up.svg';
 import upDark from '@/assets/icons/up-dark.svg';
 import downDark from '@/assets/icons/down-dark.svg';
-import { useTranslate } from '@/hooks';
 import HelpNav from '../components/HelpNav';
 import './index.scss';
 import UserPopover from '@/components/com-group-button/UserPopover';
 import DraggableContainer from '@/components/draggable-container';
-import ProModal from '@/components/pro-modal';
 import SearchSelect from '@/components/search-select';
 import { useBaseStore } from '@/stores/base';
 import { MenuTypeEnum, setMenuType, ThemeType, useThemeStore } from '@/stores/theme-store';
@@ -31,18 +28,9 @@ const Module = () => {
   }));
   const theme = useThemeStore((state) => state.theme);
   const isDark = theme === ThemeType.Dark;
-  const formatMessage = useTranslate();
-
-  const [openEdit, setEditOpen] = useState(false);
   const [openHoverNav, setOpenHoverNav] = useState(false);
-
-  // const navigate = useNavigate();
   const [showAllNav, setShowAllNav] = useState(false);
-
   const [searchOpen, setSearchOpen] = useState(true);
-  // const goPath = (path: string) => {
-  //   navigate(path);
-  // };
 
   return (
     <DraggableContainer>
@@ -133,12 +121,6 @@ const Module = () => {
                   <User size={18} />
                 </div>
               </UserPopover>
-
-              {/*<AuthWrapper auth={ButtonPermission['common.routerEdit']}>*/}
-              <div className="iconWrapper" onClick={() => setEditOpen(true)}>
-                <Edit size={18} />
-              </div>
-              {/*</AuthWrapper>*/}
             </div>
           </div>
         </div>
@@ -153,16 +135,6 @@ const Module = () => {
           </div>
         )}
       </div>
-      {/*menuList弹框*/}
-      <ProModal
-        size="xs"
-        open={openEdit}
-        maskClosable={false}
-        onCancel={() => setEditOpen(false)}
-        title={formatMessage('common.menuList')}
-      >
-        <RoutesList open={openEdit} setOpen={setEditOpen} />
-      </ProModal>
     </DraggableContainer>
   );
 };

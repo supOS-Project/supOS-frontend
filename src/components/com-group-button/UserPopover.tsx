@@ -14,7 +14,8 @@ import { passwordRegex, phoneRegex, validSpecialCharacter } from '@/utils/patter
 import { fetchBaseStore, updateForUserInfo, useBaseStore } from '@/stores/base';
 import { PrimaryColorType, setPrimaryColor, setTheme, ThemeType, useThemeStore } from '@/stores/theme-store.ts';
 import Cookies from 'js-cookie';
-import { logoutApi, updatePersonConfigApi } from '@/apis/inter-api';
+import { updatePersonConfigApi } from '@/apis/inter-api/uns';
+import { logoutApi } from '@/apis/inter-api/auth';
 import { initI18n, useI18nStore } from '@/stores/i18n-store.ts';
 import { preloadPluginLang } from '@/utils/plugin.ts';
 import { queryDeadline } from '@/apis/inter-api/license';
@@ -94,8 +95,11 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
     _theme: state._theme,
     primaryColor: state.primaryColor,
   }));
-  const { lang } = useI18nStore((state) => ({
+  const { lang, langList } = useI18nStore((state) => ({
     lang: state.lang,
+    langList: state.langList
+      ?.filter((f) => f.hasUsed)
+      ?.map((m: any) => ({ ...m, value: m?.value?.replace?.('_', '-') })),
   }));
   const [expirationDate, setExpirationDate] = useState();
   const [open, setOpen] = useState(false);
@@ -235,16 +239,7 @@ const UserPopover: FC<PopoverProps> = ({ children, ...restProps }) => {
                 }}
                 value={lang}
                 style={{ height: 28, width: 94, backgroundColor: 'var(--supos-bg-color) !important' }}
-                options={[
-                  {
-                    label: 'English',
-                    value: 'en-US',
-                  },
-                  {
-                    label: '中文',
-                    value: 'zh-CN',
-                  },
-                ]}
+                options={langList}
               />
             ),
           },

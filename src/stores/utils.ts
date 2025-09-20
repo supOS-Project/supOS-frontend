@@ -98,63 +98,49 @@ export const filterContainerList = (containerMap: { [key: string]: ContainerItem
   };
 };
 
-export function buildResourceTrees(resources: ResourceProps[]) {
-  const map = new Map<string, ResourceProps>();
-  const menuGroup: ResourceProps[] = [];
-  const homeGroup: ResourceProps[] = [];
-  const homeTabGroup: ResourceProps[] = [];
-
-  // 分类并创建节点（已排序）
-  resources
-    // .sort((a, b) => a.sort - b.sort)
-    .forEach((resource) => {
-      const node: ResourceProps = { ...resource, children: [] };
-      map.set(node.id, node);
-
-      switch (node.groupType) {
-        case 1:
-          menuGroup.push(node);
-          break;
-        case 2:
-          homeGroup.push(node);
-          break;
-        case 3:
-          homeTabGroup.push(node);
-          break;
-      }
-    });
-
-  // 构建带排序的树结构
-  const buildSortedTree = (nodes: ResourceProps[]) => {
-    const localRoots: ResourceProps[] = [];
-
+function buildSortedTree(data: ResourceProps[]) {
+  const map: Record<string, ResourceProps> = {};
+  data.forEach((item: ResourceProps) => {
+    map[item.id] = { ...item, children: [] };
+  });
+  const tree: ResourceProps[] = [];
+  data.forEach((item) => {
+    const node = map[item.id];
+    const parentId = item.parentId;
+    if (parentId && map[parentId]) {
+      map[parentId].children!.push(node);
+    } else {
+      // 根节点直接加入树
+      tree.push(node);
+    }
+  });
+  const sortTree = (nodes: ResourceProps[]): ResourceProps[] => {
+    nodes.sort((a, b) => a.sort - b.sort); // 按 sort 升序排序
     nodes.forEach((node) => {
-      if (!node.parentId || !map.has(node.parentId)) {
-        localRoots.push(node);
-        return;
-      }
-
-      const parent = map.get(node.parentId)!;
-      parent.children!.push(node);
-      parent.children!.sort((a, b) => a.sort - b.sort);
+      if (node.children && node.children.length) sortTree(node.children);
     });
-
-    return localRoots.sort((a, b) => a.sort - b.sort);
+    return nodes;
   };
 
+  return sortTree(tree);
+}
+
+export function buildResourceTrees(resources: ResourceProps[]) {
+  const menuGroup = resources.filter((r) => r.type === 2 || r.type === 5);
+  const homeGroup = menuGroup?.filter((r) => r.homeEnable);
+  const homeTabGroup = resources?.filter((r) => r.type === 4 && r.homeEnable);
+  const treeResources = resources.filter((r) => r.type !== 5 && r.type !== 4);
   return {
-    // 菜单分组 过滤掉子菜单，过滤掉只有目录
-    menuTree: buildSortedTree(menuGroup?.filter((f) => !f.subMenu))?.filter(
-      (f) => f.type === 2 || (f.type === 1 && f?.children?.length)
-    ),
-    // home页分组
-    homeTree: buildSortedTree(homeGroup?.filter((f) => !f.subMenu))?.filter(
+    // 菜单分组 不带子菜单，过滤掉空目录
+    menuTree: buildSortedTree(treeResources)?.filter((f) => f.type === 2 || (f.type === 1 && f?.children?.length)),
+    // home页分组 不带子菜单，过滤掉空目录
+    homeTree: buildSortedTree(treeResources?.filter((r) => r.homeEnable))?.filter(
       (f) => f.type === 2 || (f.type === 1 && f?.children?.length)
     ),
     // options
-    menuGroup: menuGroup?.filter((r) => r.type === 2),
-    homeGroup: homeGroup?.filter((r) => r.type === 2),
-    homeTabGroup: homeTabGroup?.filter((r) => r.type === 2),
+    menuGroup,
+    homeGroup,
+    homeTabGroup,
   };
 }
 
@@ -163,7 +149,7 @@ export function mapResource(source: ResourceProps[] = []) {
   return source.map((item) => {
     const parent = source?.find((f) => f.id === item.parentId);
     // 菜单下面还挂着菜单特殊处理，比如 /collect 下面挂在/collect/detail
-    if (parent?.type === 2) {
+    if (parent && item?.type === 5) {
       const isFrontend = frontendPathList?.includes(parent.url! + item.url!);
       const isRemote = !isFrontend && item.urlType === 1;
       // 特殊处理subMen

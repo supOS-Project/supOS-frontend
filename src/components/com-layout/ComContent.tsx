@@ -51,7 +51,12 @@ const ComContent: FC<ComContentProps> = ({
           style={{ paddingLeft: hasPadding && !isTop ? 300 : 25, ...(border ? {} : { border: 'none' }), ...titleStyle }}
           className="title"
         >
-          <div style={{ flex: 1, overflow: 'hidden' }}>{title}</div>
+          <div
+            style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}
+            title={typeof title === 'string' ? title : undefined}
+          >
+            {title}
+          </div>
           {extra}
           {noBack && hasBack && (
             <Tooltip placement="bottom" title={formatMessage('common.back')}>

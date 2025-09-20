@@ -81,8 +81,12 @@ const NodeRed: FC<any> = (data) => {
           >
             <img src={nodeRed} alt="" width="28px" />
             <div className={styles['common-node-content']}>
-              <span className={styles['common-node-subtitle']}>{formatMessage('common.nodeRed', 'Node-Red')}</span>
-              <span className={styles['common-node-title']}>{formatMessage('home.sourceFlow')}</span>
+              <span className={styles['common-node-subtitle']} title={formatMessage('common.nodeRed', 'Node-Red')}>
+                {formatMessage('common.nodeRed', 'Node-Red')}
+              </span>
+              <span className={styles['common-node-title']} title={formatMessage('home.sourceFlow')}>
+                {formatMessage('home.sourceFlow')}
+              </span>
             </div>
             {configured ? (
               <div className={styles['common-node-btn']} data-action="navigate">
@@ -95,7 +99,12 @@ const NodeRed: FC<any> = (data) => {
             )}
             <div className={styles['status-indicator']}>
               <span className={styles['status-dot']} style={{ background: statusColor }} />
-              {formatMessage(configured ? 'common.configured' : 'common.unconfigured')}
+              <span
+                className={styles['status-content']}
+                title={formatMessage(configured ? 'common.configured' : 'common.unconfigured')}
+              >
+                {formatMessage(configured ? 'common.configured' : 'common.unconfigured')}
+              </span>
             </div>
           </div>
         </Tooltip>

@@ -96,7 +96,7 @@ const ControlPanel: FC<ControlPanel> = ({
         </Flex>
       </div>
       <div className="functionBox">
-        <div className="operationTitle">Function</div>
+        <div className="operationTitle">{formatMessage('common.function')}</div>
         <div className="functionContent">
           <div className="functionSelect">
             <Input

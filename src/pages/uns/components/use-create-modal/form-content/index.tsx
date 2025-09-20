@@ -6,7 +6,6 @@ import FormItems from './FormItems';
 import { uniqBy } from 'lodash';
 
 import type { FieldItem } from '@/pages/uns/types';
-import ComPopupGuide from '@/components/com-popup-guide';
 import { useBaseStore } from '@/stores/base';
 import { useI18nStore } from '@/stores/i18n-store';
 
@@ -137,22 +136,7 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
           formType: 'input',
           formProps: {
             name: 'name',
-            label: (
-              <ComPopupGuide
-                stepName={isCreateFolder ? 'namespace' : 'name'}
-                steps={addNamespaceForAi?.steps}
-                currentStep={addNamespaceForAi?.currentStep}
-                placement="left"
-                onBegin={(_, __, info) => {
-                  form.setFieldsValue(info?.value);
-                }}
-                onFinish={(_, nextStepName) => {
-                  setAddNamespaceForAi({ ...addNamespaceForAi, currentStep: nextStepName });
-                }}
-              >
-                <div style={{ color: 'var(--supos-text-color)' }}>{formatMessage('common.name')}</div>
-              </ComPopupGuide>
-            ),
+            label: formatMessage('common.name'),
             rules: [
               { required: true, message: formatMessage('uns.pleaseInputName') },
               { pattern: /^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/, message: formatMessage('uns.nameFormat') },
@@ -178,22 +162,7 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
           formType: 'textArea',
           formProps: {
             name: 'description',
-            label: (
-              <ComPopupGuide
-                stepName="description"
-                steps={addNamespaceForAi?.steps}
-                currentStep={addNamespaceForAi?.currentStep}
-                placement="left"
-                onBegin={(_, __, info) => {
-                  form.setFieldsValue(info?.value);
-                }}
-                onFinish={(_, nextStepName) => {
-                  setAddNamespaceForAi({ ...addNamespaceForAi, currentStep: nextStepName });
-                }}
-              >
-                {formatMessage(isCreateFolder ? 'uns.folderDescription' : 'uns.fileDescription')}
-              </ComPopupGuide>
-            ),
+            label: formatMessage(isCreateFolder ? 'uns.folderDescription' : 'uns.fileDescription'),
             rules: [
               {
                 max: 255,
@@ -262,22 +231,7 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
           formType: 'radioGroup',
           formProps: {
             name: 'dataType',
-            label: (
-              <ComPopupGuide
-                stepName="dataType"
-                steps={addNamespaceForAi?.steps}
-                currentStep={addNamespaceForAi?.currentStep}
-                placement="left"
-                onBegin={(_, __, info) => {
-                  form.setFieldsValue(info?.value);
-                }}
-                onFinish={(_, nextStepName) => {
-                  setAddNamespaceForAi({ ...addNamespaceForAi, currentStep: nextStepName });
-                }}
-              >
-                <span style={{ color: 'var(--supos-text-color)' }}>{formatMessage('uns.databaseType')}</span>
-              </ComPopupGuide>
-            ),
+            label: formatMessage('uns.databaseType'),
             initialValue: 1,
             tooltip: {
               title: (
@@ -373,7 +327,7 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
                       </div>
                     ),
                   },
-                  className: lang === 'zh-CN' ? '' : 'customLabelStyle',
+                  className: lang === 'en-US' ? 'customLabelStyle' : '',
                 },
                 childProps: {
                   options: [
@@ -636,7 +590,7 @@ const FormContent: FC<FormContentProps> = ({ step, addNamespaceForAi, setAddName
             tooltip: {
               title: formatMessage('uns.autoDashboardTooltip'),
             },
-            className: lang === 'zh-CN' ? '' : 'customLabelStyle',
+            className: lang === 'en-US' ? 'customLabelStyle' : '',
           },
         });
       }

@@ -1,5 +1,17 @@
 .pro-table,
 .resizable-table {
+  .ant-table-row {
+    &:hover {
+      .custom-operation {
+        display: block;
+      }
+    }
+
+    .custom-operation {
+      display: none;
+    }
+  }
+
   .ant-table-thead {
     .ant-table-cell {
       white-space: nowrap;

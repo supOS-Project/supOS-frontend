@@ -208,6 +208,7 @@ const usePagination = <T>({
     loading,
     data,
     reload,
+    setData,
     refreshRequest: getData,
     pagination: {
       // 总共多少个操作数字

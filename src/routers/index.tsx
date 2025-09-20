@@ -14,8 +14,8 @@ import CollectionFlow from '@/pages/collection-flow';
 import FlowPreview from '@/pages/collection-flow/FlowPreview';
 import Dashboards from '@/pages/dashboards';
 import DashboardsPreview from '@/pages/dashboards/DashboardsPreview';
-// import Localization from '@/pages/localization';
-// import MenuConfiguration from '@/pages/menu-configuration';
+import Localization from '@/pages/localization';
+import MenuConfiguration from '@/pages/menu-configuration';
 import Home from '@/pages/home';
 import AccountManagement from '@/pages/account-management';
 import AboutUs from '@/pages/aboutus';
@@ -103,6 +103,7 @@ export const childrenRoutes = [
     handle: {
       parentPath: '/_common',
       code: 'common.grafanaDesign',
+      type: 'all',
     },
   },
   // {
@@ -182,6 +183,14 @@ export const childrenRoutes = [
     Component: AboutUs,
   },
   {
+    path: '/Localization',
+    Component: Localization,
+  },
+  {
+    path: '/MenuConfiguration',
+    Component: MenuConfiguration,
+  },
+  {
     path: '/advanced-use',
     Component: AdvancedUse,
   },
@@ -215,24 +224,6 @@ export const childrenRoutes = [
       type: 'all',
     },
   },
-  // {
-  //   path: '/Localization',
-  //   element: <Localization />,
-  //   handle: {
-  //     parentPath: '/_common',
-  //     showName: '国际化管理',
-  //     type: 'all',
-  //   },
-  // },
-  // {
-  //   path: '/MenuConfiguration',
-  //   element: <MenuConfiguration />,
-  //   handle: {
-  //     parentPath: '/_common',
-  //     showName: '菜单配置',
-  //     type: 'all',
-  //   },
-  // },
 ];
 
 // 前端路由路径
@@ -369,7 +360,7 @@ export const getRoutesDom = ({
               }
               return {
                 path: '/' + d?.code,
-                element: <DynamicIframe url={d?.url} name={d?.showName} />,
+                element: <DynamicIframe url={d?.url} name={d?.showName} code={d?.code} />,
                 handle: {
                   openType: d?.openType,
                   key: d?.code,

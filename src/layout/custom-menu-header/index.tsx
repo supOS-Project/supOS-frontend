@@ -1,23 +1,16 @@
-// import { MenuTypeEnum } from '@/stores/theme-store';
 import { User, Menu as MenuIcon, Close, Task, TreeView as TreeViewIcon, Notification } from '@carbon/icons-react';
-// import menuChangeDark from '@/assets/icons/menu-change-dark.svg';
 import { useState, useEffect } from 'react';
-import RoutesList from '@/layout/custom-nav/RoutesList';
 import { useMenuNavigate, useTranslate, useMediaSize, useLocalStorage } from '@/hooks';
 import { Divider, Menu, Splitter, Drawer, Badge } from 'antd';
-import HMenuLabel from './components/HMenuLabel';
 import { useNavigate, useLocation } from 'react-router-dom';
-// import menuChange from '@/assets/icons/menu-change.svg';
 import { SUPOS_STORAGE_MENU_WIDTH } from '@/common-types/constans.ts';
 import HelpNav from '../components/HelpNav';
 import './index.scss';
-// import { ButtonPermission } from '@/common-types/button-permission.ts';
 import LogoImg from '@/layout/custom-menu-header/components/LogoImg.tsx';
 import { useUnsTreeMapContext } from '@/UnsTreeMapContext';
 import { queryNoticeList } from '@/apis/inter-api/notify';
 import IconImage from '@/components/icon-image';
 import ComGroupButton from '@/components/com-group-button';
-import ProModal from '@/components/pro-modal';
 import SearchSelect from '@/components/search-select';
 import { storageOpt } from '@/utils/storage';
 import { useBaseStore } from '@/stores/base';
@@ -39,7 +32,6 @@ const CustomMenuHeader = () => {
   const isUnsPath = location.pathname.includes('/uns');
   const { isTreeMapVisible, setTreeMapVisible } = useUnsTreeMapContext();
   const handleNavigate = useMenuNavigate();
-  const [openEdit, setEditOpen] = useState(false);
   const [hasNoticePlugin, setHasNoticePlugin] = useState(false);
   const [noticeDot, setNoticeDot] = useState(false);
 
@@ -85,7 +77,7 @@ const CustomMenuHeader = () => {
         ),
         popupClassName: 'custom-menu-popover',
         key: parent.code!,
-        label: <HMenuLabel label={parent.showName} iconUrl={parent.icon} />,
+        label: <span className="menu-label">{parent.showName}</span>,
         children: parent?.children?.map((child) => ({
           key: child.code!,
           icon: (
@@ -100,7 +92,7 @@ const CustomMenuHeader = () => {
           onClick: () => {
             handleNavigate(child);
           },
-          label: <HMenuLabel label={child.showName} iconUrl={child.icon} />,
+          label: <span className="menu-label">{child.showName}</span>,
         })),
       };
     } else {
@@ -116,7 +108,7 @@ const CustomMenuHeader = () => {
         ),
         popupClassName: 'custom-menu-popover',
         key: parent.code!,
-        label: <HMenuLabel label={parent.showName} iconUrl={parent.icon} />,
+        label: <span className="menu-label">{parent.showName}</span>,
         onClick: () => {
           handleNavigate(parent);
         },
@@ -152,7 +144,7 @@ const CustomMenuHeader = () => {
               }}
             />
           </div>
-          <span className="title" title={currentMenuInfo?.code}>
+          <span className="title" title={currentMenuInfo?.showName}>
             {currentMenuInfo?.showName}
           </span>
           <Divider style={{ height: 24 }} type="vertical" />
@@ -308,16 +300,6 @@ const CustomMenuHeader = () => {
       >
         <Menu mode="inline" items={items} selectedKeys={currentMenuInfo?.code ? [currentMenuInfo?.code] : []} />
       </Drawer>
-      <ProModal
-        destroyOnHidden
-        size="xs"
-        open={openEdit}
-        maskClosable={false}
-        onCancel={() => setEditOpen(false)}
-        title={formatMessage('common.menuList', 'Menu List')}
-      >
-        <RoutesList open={openEdit} setOpen={setEditOpen} />
-      </ProModal>
     </div>
   );
 };

@@ -93,7 +93,14 @@ const useResetPassword = ({ onSaveBack }: any) => {
         >
           <Input.Password className="password" placeholder={formatMessage('appGui.password')} />
         </Form.Item>
-        <Button onClick={onSave} style={{ height: 32 }} block type="primary" loading={loading}>
+        <Button
+          onClick={onSave}
+          style={{ height: 32 }}
+          block
+          type="primary"
+          loading={loading}
+          title={formatMessage('common.save')}
+        >
           {formatMessage('common.save')}
         </Button>
       </Form>

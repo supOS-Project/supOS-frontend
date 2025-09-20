@@ -3,9 +3,11 @@ import styles from './index.module.scss';
 import { Collapse, theme, Typography } from 'antd';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
-import ComMenuList from '@/components/com-menu-list';
 import { useBaseStore } from '@/stores/base';
 import { CaretRightOutlined } from '@ant-design/icons';
+import ProCardContainer from '../../components/pro-card/ProCardContainer.tsx';
+import { ProCard } from '@/components';
+import { Original_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans.ts';
 const { Title, Paragraph } = Typography;
 
 const Index = () => {
@@ -67,7 +69,21 @@ const Index = () => {
           {/*<Paragraph style={{ marginBottom: 0 }}>{formatMessage('aboutus.openSourceLicense')}</Paragraph>*/}
         </div>
         <div className={styles['content-section']}>
-          <ComMenuList list={containerList?.aboutUs || []} showDescription={false} height="auto" />
+          <ProCardContainer>
+            {(containerList?.aboutUs || []).map((item, index) => {
+              return (
+                <ProCard
+                  allowHover={false}
+                  key={index}
+                  header={{
+                    iconSrc: `${STORAGE_PATH}${Original_TARGET_PATH}/${item?.envMap?.service_logo}`,
+                    title: item?.name,
+                    titleDescription: `${formatMessage('common.version')} ${item.version || ''}`,
+                  }}
+                />
+              );
+            })}
+          </ProCardContainer>
         </div>
       </ComContent>
     </ComLayout>

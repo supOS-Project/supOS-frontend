@@ -8,10 +8,11 @@ interface ComSelectProps extends SelectProps {
   api?: any;
   debounceTimeout?: number;
   isRequest?: boolean;
+  onBlurRequest?: boolean;
 }
 
 const ComSelect = forwardRef<any, ComSelectProps>(
-  ({ options, api, debounceTimeout = 500, isRequest, ...restProps }, ref) => {
+  ({ onBlurRequest = true, options, api, debounceTimeout = 500, isRequest, ...restProps }, ref) => {
     const formatMessage = useTranslate();
     const [apiOptions, setOptions] = useState([]);
 
@@ -44,7 +45,9 @@ const ComSelect = forwardRef<any, ComSelectProps>(
           api
             ? (e) => {
                 restProps?.onBlur?.(e);
-                searchData();
+                if (onBlurRequest) {
+                  searchData();
+                }
               }
             : restProps?.onBlur
         }

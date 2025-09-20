@@ -4,3 +4,4 @@
 /server/node_modules
 /src/theme/*.scss
 /src/index.scss
+/src/App.css

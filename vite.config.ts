@@ -86,11 +86,11 @@ export default defineConfig({
         },
         antd: {
           singleton: true,
-          requiredVersion: '^5.25.2',
+          requiredVersion: '5.27.1',
         },
         '@ant-design/icons': {
           singleton: true,
-          requiredVersion: '^5.5.2',
+          requiredVersion: '6.0.0',
         },
         ahooks: {
           singleton: true,

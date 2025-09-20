@@ -129,6 +129,7 @@ const Module: FC<FolderDetailProps> = (props) => {
           auth={ButtonPermission['uns.folderDetail']}
           modelInfo={modelInfo}
           getModel={() => getModel(id as string)}
+          editType="folder"
         />
       ),
       children: (

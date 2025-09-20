@@ -1,15 +1,11 @@
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import { PageProps } from '@/common-types';
 import { SoftwareResourceCluster as _App, InformationFilled, Grid, List, FolderAdd } from '@carbon/icons-react';
 import { useTranslate } from '@/hooks';
-import { Flex, Space, Tag, Typography, App, Popover, Empty, Segmented, Spin, Upload, Button } from 'antd';
-const { Paragraph } = Typography;
+import { Flex, Tag, App, Popover, Empty, Segmented, Upload, Button } from 'antd';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
-import { AuthButton } from '@/components/auth';
-import ComCard from '@/components/com-card';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
-import InlineLoading from '@/components/inline-loading';
 import { getPluginListApi, installPluginApi, unInstallPluginApi, upgradePluginApi } from '@/apis/inter-api/plugin.ts';
 import useSimpleRequest from '../../hooks/useSimpleRequest.ts';
 import IconImage from '../../components/icon-image';
@@ -24,6 +20,9 @@ import { useLocalStorageState } from 'ahooks';
 import styles from './index.module.scss';
 import ProTable from '@/components/pro-table';
 import ProModal from '@/components/pro-modal/index.tsx';
+import ProCard from '@/components/pro-card/ProCard.tsx';
+import SecondaryList from '@/components/pro-card/SecondaryList.tsx';
+import ProCardContainer from '@/components/pro-card/ProCardContainer.tsx';
 const { Dragger } = Upload;
 
 const StatusOptions = [
@@ -44,55 +43,6 @@ const StatusOptions = [
   },
 ];
 
-const CardSecondaryTitle = ({
-  version,
-  vendorName,
-  name,
-}: {
-  latestFailMsg?: string;
-  version?: string;
-  vendorName?: string;
-  name?: string;
-}) => {
-  const commonFormatMessage = useTranslate();
-  return (
-    <div style={{ overflow: 'hidden', margin: '4px 0' }}>
-      <Flex justify="space-between">
-        <Flex style={{ flex: 1, overflow: 'hidden' }} gap={4} title={vendorName}>
-          <span>{commonFormatMessage('common.dev')}:</span>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <Paragraph
-              ellipsis={{
-                rows: 1,
-              }}
-              style={{ margin: 0, wordBreak: 'break-all', opacity: 0.6, lineHeight: '18px' }}
-            >
-              {vendorName}
-            </Paragraph>
-          </div>
-        </Flex>
-        <Flex style={{ flexShrink: 0 }} align="center" gap={4} title={version}>
-          <span>{commonFormatMessage('common.version')}:</span>
-          <div>{version}</div>
-        </Flex>
-      </Flex>
-      <Flex style={{ flex: 1, overflow: 'hidden' }} gap={4} title={vendorName}>
-        <span>{commonFormatMessage('common.name')}:</span>
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          <Paragraph
-            ellipsis={{
-              rows: 1,
-            }}
-            style={{ margin: 0, wordBreak: 'break-all', opacity: 0.6, lineHeight: '18px' }}
-          >
-            {name}
-          </Paragraph>
-        </div>
-      </Flex>
-    </div>
-  );
-};
-
 const CardTag = ({ status, latestFailMsg }: any) => {
   const formatMessage = useTranslate();
   const info = StatusOptions?.find((f) => f.value === status) ?? {
@@ -110,202 +60,32 @@ const CardTag = ({ status, latestFailMsg }: any) => {
           <InformationFilled color="red" />
         </Popover>
       )}
-      <Tag bordered={false} color={info?.color} style={{ borderRadius: 9, height: 16, lineHeight: '16px' }}>
+      <Tag
+        bordered={false}
+        color={info?.color}
+        title={formatMessage(info?.label)}
+        style={{
+          borderRadius: 9,
+          height: 16,
+          lineHeight: '16px',
+          maxWidth: 120,
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
+        }}
+      >
         {formatMessage(info?.label)}
       </Tag>
     </Flex>
   );
 };
 
-const CardOperation = ({
-  info,
-  status,
-  appId,
-  routeName,
-  appProperties,
-  refreshRequest,
-  setLoading,
-  openModal,
-}: any) => {
-  const formatMessage = useTranslate();
-  const lang = useI18nStore((state) => state.lang);
-  const { TabsContext } = useTabsContext();
-  const { message, modal } = App.useApp();
-  const onOptHandle = (apiStr: string) => {
-    setLoading(true);
-    const api: any = {
-      installPluginApi,
-      unInstallPluginApi,
-    };
-    setLoading(true);
-    api?.[apiStr]?.({ name: appId })
-      .then(async () => {
-        if (apiStr === 'installPluginApi') {
-          // 安装成功，预先加载国际化
-          try {
-            const langMessages = await preloadPluginLang([{ name: `/${routeName}`, backendName: info?.name }], lang);
-            connectI18nMessage(langMessages);
-          } catch (e) {
-            console.error('插件国际化', e);
-          }
-        } else {
-          // 移除多页签
-          TabsContext?.current?.onCloseTab?.(`/${routeName}`);
-        }
-        refreshRequest?.();
-        // 成功后刷新下菜单
-        fetchBaseStore?.();
-        message.success(formatMessage('common.optsuccess'));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-  const getDom = useCallback(
-    (status: string, info?: any) => {
-      switch (status) {
-        case 'notInstall':
-          return (
-            <Space>
-              <AuthButton
-                auth={ButtonPermission['PluginManagement.install']}
-                size="small"
-                type="primary"
-                onClick={() => onOptHandle('installPluginApi')}
-              >
-                {formatMessage('plugin.install')}
-              </AuthButton>
-              <AuthButton
-                auth={ButtonPermission['PluginManagement.update']}
-                size="small"
-                type="primary"
-                onClick={() => openModal(info)}
-              >
-                {formatMessage('plugin.update')}
-              </AuthButton>
-            </Space>
-          );
-        case 'installFail':
-          return (
-            <Space>
-              <AuthButton
-                auth={ButtonPermission['PluginManagement.install']}
-                size="small"
-                type="primary"
-                onClick={() => onOptHandle('installPluginApi')}
-              >
-                {formatMessage('plugin.reInstall')}
-              </AuthButton>
-              <AuthButton
-                auth={ButtonPermission['PluginManagement.update']}
-                size="small"
-                type="primary"
-                onClick={() => openModal(info)}
-              >
-                {formatMessage('plugin.update')}
-              </AuthButton>
-            </Space>
-          );
-        case 'installed':
-          return (
-            <Space>
-              <AuthButton
-                disabled={info?.plugInfoYml?.removable === false}
-                auth={ButtonPermission['PluginManagement.unInstall']}
-                size="small"
-                style={{ color: 'var(--supos-text-color)' }}
-                onClick={() => {
-                  modal.confirm({
-                    title: formatMessage('common.uninstallConfirm'),
-                    content: formatMessage('common.clearData'),
-                    onOk: () => {
-                      setLoading(true);
-                      onOptHandle('unInstallPluginApi');
-                    },
-                    cancelButtonProps: {},
-                    okText: formatMessage('common.confirm'),
-                  });
-                }}
-              >
-                {formatMessage('common.unInstall')}
-              </AuthButton>
-              <AuthButton
-                auth={ButtonPermission['PluginManagement.update']}
-                size="small"
-                type="primary"
-                onClick={() => openModal(info)}
-              >
-                {formatMessage('plugin.update')}
-              </AuthButton>
-            </Space>
-          );
-        default:
-          return <InlineLoading status="active" description={formatMessage('plugin.' + status)} />;
-      }
-    },
-    [status, appId, appProperties]
-  );
-
-  return <>{getDom(status, info)}</>;
-};
-const LoadingOperation = ({ d, refreshRequest, openModal }: any) => {
-  const { plugInfoYml = {} } = d;
-  const [loading, setLoading] = useState(false);
-  return (
-    <Spin spinning={loading}>
-      <CardOperation
-        status={d?.installStatus}
-        appId={d?.name}
-        routeName={plugInfoYml?.route?.name}
-        refreshRequest={refreshRequest}
-        setLoading={setLoading}
-        openModal={openModal}
-        info={d}
-      />
-    </Spin>
-  );
-};
-const LoadingCard = ({ d, refreshRequest, openModal }: any) => {
-  const primaryColor = useThemeStore((state) => state.primaryColor);
-  const [loading, setLoading] = useState(false);
-  const { plugInfoYml = {}, name } = d;
-  const icon = plugInfoYml?.resources?.find((f: any) => f.groupType === 2)?.icon || plugInfoYml?.route?.name;
-  return (
-    <ComCard
-      key={plugInfoYml.name}
-      updateTime={formatTimestamp(d?.installTime)}
-      style={{ width: 350, height: 285 }}
-      title={plugInfoYml.showName}
-      secondaryTitle={
-        <CardSecondaryTitle name={name} version={plugInfoYml?.version} vendorName={plugInfoYml?.vendorName} />
-      }
-      description={plugInfoYml?.description || ' '}
-      tag={
-        <Flex align="center" style={{ marginBottom: 6, marginTop: 2 }}>
-          <CardTag status={d.installStatus} latestFailMsg={d.latestFailMsg} />
-        </Flex>
-      }
-      customImage={<IconImage theme={primaryColor} iconName={icon} />}
-      loading={loading}
-      operation={
-        <CardOperation
-          status={d?.installStatus}
-          appId={d?.name}
-          routeName={plugInfoYml?.route?.name}
-          refreshRequest={refreshRequest}
-          setLoading={setLoading}
-          openModal={openModal}
-          info={d}
-        />
-      }
-    />
-  );
-};
-
 const IconImageWrapper = ({ record }: any) => {
   const primaryColor = useThemeStore((state) => state.primaryColor);
   const icon =
-    record?.plugInfoYml?.resources?.find((f: any) => f.groupType === 2)?.icon || record?.plugInfoYml?.route?.name;
+    record?.plugInfoYml?.resources?.find((f: any) => f.type === 2)?.icon ||
+    record?.plugInfoYml?.route?.name ||
+    record?.plugInfoYml?.name;
 
   return (
     <>
@@ -325,10 +105,12 @@ const Index: FC<PageProps> = ({ title }) => {
   const selectName = useRef('');
   const [uploadTitle, setUploadTitle] = useState('save');
   const isFirstRender = useRef(true);
+  const primaryColor = useThemeStore((state) => state.primaryColor);
 
   const [mode, setMode] = useLocalStorageState<string>('SUPOS_PLUGIN_MODE', {
     defaultValue: 'card',
   });
+  const { modal } = App.useApp();
   const { loading, data, refreshRequest } = useSimpleRequest({
     fetchApi: getPluginListApi,
     onSuccessCallback,
@@ -417,16 +199,6 @@ const Index: FC<PageProps> = ({ title }) => {
         );
       },
     },
-    {
-      dataIndex: 'operation',
-      ellipsis: true,
-      fixed: 'right',
-      title: () => commonFormatMessage('common.operation'),
-      width: '10%',
-      render: (_: any, record: any) => {
-        return <LoadingOperation openModal={openModal} d={record} refreshRequest={refreshRequest} />;
-      },
-    },
   ];
   const onClose = () => {
     setFileList([]);
@@ -439,6 +211,7 @@ const Index: FC<PageProps> = ({ title }) => {
     setOpen(true);
   };
   const { message } = App.useApp();
+
   const [buttonLoading, setButtonLoading] = useState(false);
   const onSave = () => {
     if (fileList.length) {
@@ -479,6 +252,93 @@ const Index: FC<PageProps> = ({ title }) => {
       message.warning(commonFormatMessage('common.theFileSizeMax', { size: '2GB' }));
     }
     return false;
+  };
+  const { TabsContext } = useTabsContext();
+  const onOptHandle = (apiStr: string, d: any) => {
+    const api: any = {
+      installPluginApi,
+      unInstallPluginApi,
+    };
+    return api?.[apiStr]?.({ name: d?.name })
+      .then(async () => {
+        if (apiStr === 'installPluginApi') {
+          // 安装成功，预先加载国际化
+          try {
+            const langMessages = await preloadPluginLang(
+              [{ name: `/${d?.plugInfoYml?.route?.name}`, backendName: d?.name }],
+              lang
+            );
+            connectI18nMessage(langMessages);
+          } catch (e) {
+            console.error('插件国际化', e);
+          }
+        } else {
+          // 移除多页签
+          TabsContext?.current?.onCloseTab?.(`/${d?.plugInfoYml?.route?.name}`);
+        }
+        refreshRequest?.();
+        // 成功后刷新下菜单
+        fetchBaseStore?.();
+        message.success(commonFormatMessage('common.optsuccess'));
+      })
+      .finally(() => {});
+  };
+  const actions = (record: any) => {
+    const btns = [
+      {
+        type: 'Loading',
+        key: 'loading',
+        label: commonFormatMessage('plugin.' + record.installStatus),
+      },
+      {
+        key: 'install',
+        label: commonFormatMessage('plugin.install'),
+        auth: ButtonPermission['PluginManagement.install'],
+        button: {
+          type: 'primary',
+        },
+        onClick: () => onOptHandle('installPluginApi', record),
+      },
+      {
+        key: 'unInstall',
+        label: commonFormatMessage('common.unInstall'),
+        auth: ButtonPermission['PluginManagement.unInstall'],
+        disabled: record?.plugInfoYml?.removable === false,
+        button: {},
+        onClick: () => {
+          modal.confirm({
+            title: commonFormatMessage('common.uninstallConfirm'),
+            content: commonFormatMessage('common.clearData'),
+            onOk: () => {
+              return onOptHandle('unInstallPluginApi', record);
+            },
+            okButtonProps: {
+              title: commonFormatMessage('common.confirm'),
+            },
+            cancelButtonProps: {
+              title: commonFormatMessage('common.cancel'),
+            },
+          });
+        },
+      },
+      {
+        key: 'update',
+        label: commonFormatMessage('plugin.update'),
+        auth: ButtonPermission['PluginManagement.update'],
+        button: {
+          type: 'primary',
+        },
+        onClick: () => openModal(record),
+      },
+    ];
+    const obj: any = {
+      notInstall: ['install', 'update'],
+      installFail: ['install', 'update'],
+      installed: ['unInstall', 'update'],
+    };
+    return obj?.[record.installStatus]
+      ? obj?.[record.installStatus]?.map((i: string) => btns?.find((f) => f.key === i))
+      : [btns[0]];
   };
   return (
     <ComLayout loading={loading}>
@@ -522,17 +382,68 @@ const Index: FC<PageProps> = ({ title }) => {
             ]}
           />
         </Flex>
-        <div style={{ flex: 1, padding: '0 16px 16px', overflow: 'auto' }}>
+        <div style={{ flex: 1, padding: '0 16px 16px', overflow: 'auto', alignItems: 'center' }}>
           {mode === 'card' ? (
-            <Flex gap={18} wrap align="flex-start" justify="flex-start">
-              {data.length > 0 ? (
-                data?.map((d: any) => {
-                  return <LoadingCard key={d.name} openModal={openModal} d={d} refreshRequest={refreshRequest} />;
-                })
-              ) : (
-                <Empty style={{ width: '100%' }} />
-              )}
-            </Flex>
+            data.length > 0 ? (
+              <ProCardContainer>
+                {data?.map((d: any) => {
+                  const { plugInfoYml = {}, name } = d || {};
+                  const icon =
+                    plugInfoYml?.resources?.find((f: any) => f.type === 2)?.icon ||
+                    plugInfoYml?.route?.name ||
+                    plugInfoYml?.name;
+                  return (
+                    <ProCard
+                      key={plugInfoYml?.name}
+                      statusHeader={{
+                        statusTag: <CardTag status={d?.installStatus} latestFailMsg={d.latestFailMsg} />,
+                      }}
+                      styles={{
+                        card: { height: 275 },
+                      }}
+                      header={{
+                        customIcon: <IconImage theme={primaryColor} iconName={icon} />,
+                        title: plugInfoYml.showName,
+                        titleDescription: formatTimestamp(d?.installTime),
+                      }}
+                      description={plugInfoYml?.description || ' '}
+                      secondaryDescription={
+                        <SecondaryList
+                          options={[
+                            {
+                              label: commonFormatMessage('common.dev'),
+                              content: plugInfoYml?.vendorName,
+                              span: 8,
+                              key: 'dev',
+                            },
+                            {
+                              label: commonFormatMessage('common.version'),
+                              content: plugInfoYml?.version,
+                              span: 16,
+                              contentStyle: { maxWidth: 'calc(100% - 55px)' },
+                              labelStyle: { maxWidth: '50%' },
+                              wrapperStyle: { justifyContent: 'flex-end' },
+                              key: 'version',
+                            },
+                            {
+                              label: commonFormatMessage('common.name'),
+                              content: name,
+                              span: 24,
+                              key: 'name',
+                            },
+                          ]}
+                        />
+                      }
+                      actions={actions}
+                      item={d}
+                    />
+                  );
+                  // return <LoadingCard key={d.name} openModal={openModal} d={d} refreshRequest={refreshRequest} />;
+                })}
+              </ProCardContainer>
+            ) : (
+              <Empty style={{ width: '100%' }} />
+            )
           ) : (
             <ProTable
               resizeable
@@ -541,6 +452,9 @@ const Index: FC<PageProps> = ({ title }) => {
               dataSource={data as any}
               columns={columns}
               pagination={false}
+              operationOptions={{
+                render: actions,
+              }}
             />
           )}
         </div>

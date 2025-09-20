@@ -1,5 +1,6 @@
 import { useWebSocket } from 'ahooks';
 import { useState } from 'react';
+import { getToken } from '@/utils/auth';
 
 export type IcmpStatesType = { topic: string; status: 0 | 1 }[];
 interface WsResponseDataProps {
@@ -11,7 +12,7 @@ const useUnsGlobalWs = () => {
   const [data, setData] = useState<WsResponseDataProps>({});
 
   useWebSocket(
-    `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?globalTopology=true`,
+    `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?globalTopology=true&token=${getToken()}`,
     {
       reconnectLimit: 0,
       onMessage: (event) => {

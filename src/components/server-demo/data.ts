@@ -18,7 +18,7 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
             {
               key: 'restApiUrl',
               label: getIntl('restApiUrl'),
-              value: `${window.location.origin}/open-api/supos`,
+              value: `${window.location.origin}/open-api`,
             },
             {
               key: 'appSceretKey',
@@ -36,7 +36,7 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
       ],
     };
   },
-  websocket: {
+  websocket: () => ({
     title: getIntl('websocketAccessMethod'),
     tabItems: [
       {
@@ -101,7 +101,7 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
                   {
                     key: 'websocketUrl',
                     label: getIntl('websocketUrl'),
-                    value: `ws://${window.location.host}/open-api/supos/uns/ws`,
+                    value: `ws://${window.location.host}/open-api/uns/ws`,
                   },
                   {
                     key: 'request',
@@ -168,7 +168,7 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
                   {
                     key: 'websocketUrl',
                     label: getIntl('websocketUrl'),
-                    value: `ws://${window.location.host}/open-api/supos/uns/event/ws`,
+                    value: `ws://${window.location.host}/open-api/uns/event/ws`,
                   },
                   {
                     key: 'request',
@@ -235,7 +235,7 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
         ],
       },
     ],
-  },
+  }),
   mqtt: (params: any): ConfigTypes => {
     const { dataType, hostName, topic, jsObj, tcpPort, fieldExampleList } = params;
     return {
@@ -442,7 +442,7 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
       ],
     };
   },
-  dbInfo: {
+  dbInfo: () => ({
     title: getIntl('restConnect'),
     tabItems: [
       {
@@ -580,8 +580,8 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
         ],
       },
     ],
-  },
-  mcpServer: {
+  }),
+  mcpServer: () => ({
     title: getIntl('mcpServerAccessMethod'),
     tabItems: [
       {
@@ -699,7 +699,7 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
         ],
       },
     ],
-  },
+  }),
 };
 
 export default data;

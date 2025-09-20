@@ -18,6 +18,8 @@ export const LOGIN_URL = '/supos-login';
 export const APP_TITLE = 'supOS';
 // 存储的固定位置 /minio/inter  /files/system/resource
 export const STORAGE_PATH = '/files/system/resource';
+export const CUSTOM_MENU_ICON = '/inter-api/supos/uns/attachment/preview'; // 自定义上传icon位置
+export const CUSTOM_MENU_ICON_PRE = '/uns/'; // 自定义上传icon位置
 // 菜单放的路径
 export const MENU_TARGET_PATH = '/supos';
 // 高阶使用等放的路径

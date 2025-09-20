@@ -1,5 +1,5 @@
 import defaultIconUrl from '@/assets/home-icons/default.svg';
-import { MENU_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans.ts';
+import { CUSTOM_MENU_ICON, CUSTOM_MENU_ICON_PRE, MENU_TARGET_PATH, STORAGE_PATH } from '@/common-types/constans.ts';
 
 export function getOpenAiUrl() {
   if (import.meta.env.MODE !== 'production') {
@@ -55,12 +55,20 @@ export const getImageSrcByTheme = (theme: string, iconName?: string) => {
   if (!iconName) {
     return { themeImageUrl: '', defaultImageUrl: '', fallbackImageUrl };
   }
+  if (iconName.includes(CUSTOM_MENU_ICON_PRE)) {
+    // 自定义上传图片地址
+    return {
+      themeImageUrl: `${CUSTOM_MENU_ICON}?objectName=${encodeURI(iconName)}`,
+      defaultImageUrl: `${CUSTOM_MENU_ICON}?objectName=${encodeURI(iconName)}`,
+      fallbackImageUrl,
+    };
+  }
   const baseUrl = `${getBaseUrl()}${STORAGE_PATH}${MENU_TARGET_PATH}/`;
   const themeSuffix = theme.includes('chartreuse') ? '-chartreuse' : ''; // 根据主题添加后缀
 
   // 检查iconName是否已经包含有效的文件后缀
   // 常见的图片扩展名列表
-  const validExtensions = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
+  const validExtensions = ['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico'];
   let iconNameWithoutExt = iconName;
   let extension = '.svg';
   let hasExtension = false;

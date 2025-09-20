@@ -25,5 +25,17 @@ export default tsEslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/no-explicit-any': 'off',
     },
+  },
+  // 在现有配置基础上添加
+  {
+    files: ['.docker-node/**/*.{js,ts}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.node, // 使用Node.js全局变量
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      'no-undef': 'off',
+    },
   }
 );

@@ -68,7 +68,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
       name: 'flowName',
       rules: [
         { required: true, message: formatMessage('rule.required') },
-        { pattern: validInputPattern, message: formatMessage('rule.illegality') },
+        { pattern: validInputPattern, message: formatMessage('rule.flowNameIllegal') },
       ],
     },
     {
@@ -278,7 +278,12 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                         modal.confirm({
                           title: formatMessage('common.deleteConfirm'),
                           onOk: () => onDeleteHandle(item),
-                          okText: formatMessage('common.confirm'),
+                          okButtonProps: {
+                            title: formatMessage('common.confirm'),
+                          },
+                          cancelButtonProps: {
+                            title: formatMessage('common.cancel'),
+                          },
                         }),
                       type: 'link',
                       btnProps: {

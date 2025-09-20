@@ -21,7 +21,7 @@ import { useMediaSize } from '@/hooks';
 import EditDetailButton from '@/pages/uns/components/EditDetailButton';
 import { InitTreeDataFnType, UnsTreeNode } from '@/pages/uns/types';
 import FileEdit from '@/components/svg-components/FileEdit';
-import { hasPermission } from '@/utils/auth';
+import { hasPermission, getToken } from '@/utils/auth';
 import { isJsonString } from '@/utils/common';
 import { useBaseStore } from '@/stores/base';
 
@@ -59,6 +59,7 @@ const Module: FC<FileDetailProps> = (props) => {
   ]);
   const [showPayloadTable, setShowPayloadTable] = useState<boolean>(true);
   const [websocketData, setWebsocketData] = useState<any>({});
+  const [wsTimeStamp, setWsTimeStamp] = useState<number>(0);
   const { token } = theme.useToken();
 
   const panelStyle: CSSProperties = {
@@ -85,8 +86,8 @@ const Module: FC<FileDetailProps> = (props) => {
   };
 
   useWebSocket(
-    instanceInfo.id
-      ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?id=${instanceInfo.id}`
+    instanceInfo.id && wsTimeStamp
+      ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?id=${instanceInfo.id}&t=${wsTimeStamp}&token=${getToken()}`
       : '',
     {
       onMessage: (event) => {
@@ -115,6 +116,9 @@ const Module: FC<FileDetailProps> = (props) => {
     setWebsocketData({});
     if (id) {
       getFileDetail(id as string);
+    } else {
+      setInstanceInfo({});
+      setWsTimeStamp(0);
     }
   }, [id]);
 
@@ -125,6 +129,9 @@ const Module: FC<FileDetailProps> = (props) => {
           if (data.withDashboard) {
             const { code } = await checkDashboardIsExist({ alias: data.alias });
             data.dashboardIsExist = code === 200;
+          }
+          if (JSON.stringify(data.fields) !== JSON.stringify(instanceInfo.fields)) {
+            setWsTimeStamp(Date.now());
           }
           setInstanceInfo(data);
         }

@@ -71,6 +71,7 @@ const EditDetailButton = ({ auth, type = 'file', modelInfo, getModel }: any) => 
       labelList: undefined,
       pathName: undefined,
       refers: modelInfo.dataType == 7 ? (info?.referId?.value ? [{ id: info?.referId?.value }] : []) : undefined,
+      fields: modelInfo.dataType === 7 ? undefined : info?.fields,
     })
       .then(() => {
         setShow(false);

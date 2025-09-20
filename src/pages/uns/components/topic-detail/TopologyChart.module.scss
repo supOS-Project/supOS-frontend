@@ -30,15 +30,24 @@
         flex: 1;
         align-items: flex-start;
         gap: 4px;
+        width: 90px;
 
         .common-node-subtitle {
           font-size: 10px;
           color: #c6c6c6;
+          width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .common-node-title {
           font-size: 14px;
           letter-spacing: 0.16px;
+          width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
       }
 
@@ -84,6 +93,13 @@
       width: 8px;
       height: 8px;
       margin-right: 4px;
+    }
+
+    .status-content {
+      max-width: calc(190px - 12px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 

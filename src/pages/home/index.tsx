@@ -57,7 +57,7 @@ const Index = () => {
     homeTabGroup: state.homeTabGroup,
   }));
   const lang = useI18nStore((state) => state.lang);
-  const [tabKey, setTabKey] = useState('overview');
+  const [tabKey, setTabKey] = useState('common.overview');
   const formatMessage = useTranslate();
   const navigate = useNavigate();
   const [pathname, setPathname] = useState('');
@@ -170,6 +170,12 @@ const Index = () => {
             setLoadingViews(loadingViews);
           });
       },
+      okButtonProps: {
+        title: formatMessage('common.confirm'),
+      },
+      cancelButtonProps: {
+        title: formatMessage('common.cancel'),
+      },
     });
   };
 
@@ -191,6 +197,12 @@ const Index = () => {
             setLoadingViews(loadingViews);
           });
       },
+      okButtonProps: {
+        title: formatMessage('common.confirm'),
+      },
+      cancelButtonProps: {
+        title: formatMessage('common.cancel'),
+      },
     });
   };
 
@@ -208,15 +220,24 @@ const Index = () => {
   );
 
   const renderExampleOpt = (params: ExampleProps) => {
-    return params.status === 1 ? (
-      <Button size="small" type="primary" onClick={() => handleInstall(params)}>
-        {formatMessage('common.install')}
-      </Button>
-    ) : (
-      <Button size="small" onClick={() => handleUnInstall(params)}>
-        {formatMessage('common.unInstall')}
-      </Button>
-    );
+    return params.status === 1
+      ? {
+          type: 'button',
+          key: 'install',
+          button: { type: 'primary' },
+          label: formatMessage('common.install'),
+          onClick: () => {
+            handleInstall(params);
+          },
+        }
+      : {
+          type: 'button',
+          key: 'unInstall',
+          label: formatMessage('common.unInstall'),
+          onClick: () => {
+            handleUnInstall(params);
+          },
+        };
   };
 
   const getRecords = () => {
@@ -224,7 +245,7 @@ const Index = () => {
       setExportRecords(data);
     });
   };
-  const isHidden = !['overview', 'example'].includes(tabKey);
+  const isHidden = !['common.overview', 'common.example'].includes(tabKey);
   return (
     <ComLayout>
       <ComContent title={<div></div>} hasBack={false} mustShowTitle={false}>
@@ -238,7 +259,7 @@ const Index = () => {
         <div className={styles['home-tabs']} style={{ height: isHidden ? '100%' : undefined }}>
           <Tabs
             renderTabBar={renderTabBar}
-            defaultActiveKey="overview"
+            defaultActiveKey="common.overview"
             activeKey={tabKey}
             onChange={handleChangeTab}
             tabBarExtraContent={
@@ -305,32 +326,35 @@ const Index = () => {
               </Space>
             }
             items={[
-              {
-                label: formatMessage('common.overview'),
-                key: 'overview',
-                children: (
-                  <OverviewList
-                    list={homeTree}
-                    style={{
-                      '--supos-line-height': 2,
-                      '--supos-card-height': '125px',
-                    }}
-                  />
-                ),
-              },
-              {
-                label: formatMessage('common.example'),
-                key: 'example',
-                children: (
-                  <OverviewList
-                    list={exampleDataSource}
-                    loadingViews={loadingViews}
-                    type="example"
-                    customOptRender={renderExampleOpt}
-                  />
-                ),
-              },
               ...(homeTabGroup?.map((item) => {
+                if (item.code === 'common.overview') {
+                  return {
+                    label: formatMessage('common.overview'),
+                    key: 'common.overview',
+                    children: (
+                      <OverviewList
+                        list={homeTree}
+                        style={{
+                          '--supos-line-height': 2,
+                          '--supos-card-height': '125px',
+                        }}
+                      />
+                    ),
+                  };
+                } else if (item.code === 'common.example') {
+                  return {
+                    label: formatMessage('common.example'),
+                    key: 'common.example',
+                    children: (
+                      <OverviewList
+                        list={exampleDataSource}
+                        loadingViews={loadingViews}
+                        type="example"
+                        customOptRender={renderExampleOpt}
+                      />
+                    ),
+                  };
+                }
                 return {
                   label: item.showName || item.code,
                   key: item.code + '_tab',
@@ -339,7 +363,7 @@ const Index = () => {
                   ),
                 };
               }) || []),
-            ]?.filter((f) => f.key !== 'example')}
+            ]?.filter((f) => f.key !== 'common.example')}
           />
         </div>
         <ImportModal importModal={importModal} setImportModal={setImportModal} />

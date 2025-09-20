@@ -80,7 +80,7 @@ const SqlQuery: FC<SqlQueryProps> = ({ instanceInfo, id }) => {
         return <FetchData instanceInfo={instanceInfo} />;
       // 数据库信息
       case 'dbInfo':
-        return <ServerDemo {...demoData.dbInfo} />;
+        return <ServerDemo {...(typeof demoData.dbInfo === 'function' ? demoData.dbInfo?.({}) : {})} />;
       default:
         return null;
     }

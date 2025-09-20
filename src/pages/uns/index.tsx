@@ -64,26 +64,34 @@ const Module = () => {
       case 'label':
         modal.confirm({
           content: formatMessage('uns.areYouSureToDeleteThisLabel'),
-          cancelText: formatMessage('common.cancel'),
-          okText: formatMessage('common.confirm'),
           onOk() {
             deleteLabel(id as string).then(() => {
               loadData({ clearSelect: id === selectedNode?.id });
               message.success(formatMessage('common.deleteSuccessfully'));
             });
           },
+          okButtonProps: {
+            title: formatMessage('common.confirm'),
+          },
+          cancelButtonProps: {
+            title: formatMessage('common.cancel'),
+          },
         });
         break;
       case 'template':
         modal.confirm({
           content: formatMessage('common.deleteTemplateConfirm'),
-          cancelText: formatMessage('common.cancel'),
-          okText: formatMessage('common.confirm'),
           onOk() {
             deleteTemplate(id as string).then(() => {
               loadData({ clearSelect: id === selectedNode?.id });
               message.success(formatMessage('common.deleteSuccessfully'));
             });
+          },
+          okButtonProps: {
+            title: formatMessage('common.confirm'),
+          },
+          cancelButtonProps: {
+            title: formatMessage('common.cancel'),
           },
         });
         break;

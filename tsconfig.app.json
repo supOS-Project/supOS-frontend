@@ -28,5 +28,5 @@
     "customConditions": ["development"]
   },
   "include": ["src", "src/types"],
-  "exclude": ["node_modules", ".docker-node/node_modules"]
+  "exclude": ["node_modules", ".docker-node/node_modules", ".docker-node/**"]
 }

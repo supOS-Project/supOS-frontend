@@ -120,6 +120,9 @@ iframe {
   --supos-craft-bg-color: #f4f4f4;
   --supos-t-text-disabled-color: var(--supos-t-select-d-color);
   --supos-t-dividr-color: var(--supos-fill-secondary);
+  --supos-card-bg: var(--supos-t-gray-color-10);
+  --supos-card-hover-bg: var(--supos-t-gray-color-20);
+  --supos-card-active-bg: var(--supos-t-gray-color-30);
 }
 
 /* dark Theme */
@@ -195,6 +198,9 @@ iframe {
   --supos-layer-selecter-hover: #d1d1d1;
   --supos-t-text-disabled-color: var(--supos-t-white-select-d-color);
   --supos-t-dividr-color: #6e6e6e;
+  --supos-card-bg: var(--supos-t-gray-color-90);
+  --supos-card-hover-bg: var(--supos-t-gray-color-80);
+  --supos-card-active-bg: var(--supos-t-gray-color-70);
 }
 // chartreuse
 .chartreuse {

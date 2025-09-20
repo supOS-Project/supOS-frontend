@@ -297,10 +297,12 @@ const EventFlowPreview: FC<PageProps> = ({ location }) => {
           onCancel: () => {
             form.resetFields();
           },
-          cancelButtonProps: {
-            // style: { color: '#000' },
+          okButtonProps: {
+            title: formatMessage('common.confirm'),
           },
-          okText: formatMessage('common.confirm'),
+          cancelButtonProps: {
+            title: formatMessage('common.cancel'),
+          },
         });
       })
       .finally(() => {

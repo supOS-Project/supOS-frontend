@@ -39,6 +39,7 @@ const FooterOperation: FC<FooterOperationProps> = ({ options, record }) => {
       {options?.map((item: any) => (
         <AuthWrapper auth={item.auth} key={item.label}>
           <div
+            title={typeof item.label === 'string' ? item.label : ''}
             style={colorList?.find((f) => f.type === item.type)?.style}
             className={cx('item', { 'item-disable': item.disabled ? item.disabled(record) : false })}
             onClick={() => !(item?.disabled ? item.disabled(record) : false) && item?.onClick?.(record, item)}

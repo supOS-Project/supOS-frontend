@@ -97,10 +97,10 @@
   }
 }
 
-.ant-menu-title-content {
-  display: inline-flex;
-  align-items: center;
-}
+// .ant-menu-title-content {
+//   display: inline-flex;
+//   align-items: center;
+// }
 
 .user-guide-icon {
   color: var(--supos-text-color);
@@ -142,4 +142,10 @@
   .ant-menu.ant-menu-sub.ant-menu-vertical {
     max-height: 50vh;
   }
+}
+
+.ant-menu-submenu-popup .ant-menu-vertical .ant-menu-item,
+.ant-menu-submenu-popup .ant-menu-vertical .ant-menu-submenu-title {
+  min-width: calc(100% - 8px);
+  width: max-content;
 }

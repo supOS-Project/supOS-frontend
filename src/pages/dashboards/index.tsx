@@ -246,7 +246,12 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
                         modal.confirm({
                           title: formatMessage('common.deleteConfirm'),
                           onOk: () => onDeleteHandle(item),
-                          okText: formatMessage('common.confirm'),
+                          okButtonProps: {
+                            title: formatMessage('common.confirm'),
+                          },
+                          cancelButtonProps: {
+                            title: formatMessage('common.cancel'),
+                          },
                         }),
                       type: 'link',
                       btnProps: {

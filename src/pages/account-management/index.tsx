@@ -163,88 +163,6 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
         );
       },
     },
-    {
-      titleIntlId: 'common.edit',
-      dataIndex: 'Operation',
-      width: '15%',
-      minWidth: 350,
-      ellipsis: true,
-      render(_: any, record: any) {
-        return (
-          <Flex gap={16} style={{ fontSize: 12 }}>
-            <AuthButton
-              auth={ButtonPermission['UserManagement.edit']}
-              style={{
-                height: 18,
-                fontSize: 12,
-                backgroundColor: buttonBg,
-              }}
-              color="default"
-              variant="filled"
-              onClick={() => {
-                onAddOpen?.(record);
-              }}
-              disabled={record?.source === 'external'}
-            >
-              {formatMessage('common.edit')}
-              <Edit size={14} />
-            </AuthButton>
-            <AuthButton
-              auth={ButtonPermission['UserManagement.resetPassword']}
-              style={{
-                height: 18,
-                fontSize: 12,
-                backgroundColor: buttonBg,
-              }}
-              color="default"
-              variant="filled"
-              onClick={() => {
-                onOpen?.(record);
-              }}
-              disabled={ldapEnable && record?.preferredUsername !== 'supos'}
-            >
-              {formatMessage('account.resetpassword')}
-              <Password size={14} />
-            </AuthButton>
-            {record?.preferredUsername !== 'supos' ? (
-              <AuthButton
-                auth={ButtonPermission['UserManagement.delete']}
-                style={{
-                  height: 18,
-                  fontSize: 12,
-                }}
-                disabled={(ldapEnable && record?.preferredUsername !== 'supos') || record?.source === 'external'}
-                color="default"
-                variant="filled"
-                onClick={() => {
-                  modal.confirm({
-                    title: formatMessage('common.deleteConfirm'),
-                    onOk: () => {
-                      setLoading(true);
-                      deleteUser(record.id)
-                        .then(() => {
-                          message.success(formatMessage('common.optsuccess'));
-                          refreshRequest();
-                        })
-                        .finally(() => {
-                          setLoading(false);
-                        });
-                    },
-                    cancelButtonProps: {
-                      // style: { color: '#000' },
-                    },
-                    okText: formatMessage('common.confirm'),
-                  });
-                }}
-              >
-                {formatMessage('common.delete')}
-                <Delete size={14} />
-              </AuthButton>
-            ) : null}
-          </Flex>
-        );
-      },
-    },
   ];
   return (
     <ComLayout loading={loading}>
@@ -300,6 +218,72 @@ const AccountManagement: FC<PageProps> = ({ title }) => {
             onChange: pagination.onChange,
             onShowSizeChange: (current, size) => {
               pagination.onChange({ page: current, pageSize: size });
+            },
+          }}
+          operationOptions={{
+            title: () => formatMessage('common.edit'),
+            render: (record) => {
+              return [
+                {
+                  key: 'edit',
+                  auth: ButtonPermission['UserManagement.edit'],
+                  onClick: () => onAddOpen?.(record),
+                  disabled: record?.source === 'external',
+                  label: formatMessage('common.edit'),
+                  extra: (
+                    <Flex style={{ height: '100%' }} align="center">
+                      <Edit size={14} />
+                    </Flex>
+                  ),
+                },
+                {
+                  key: 'resetpassword',
+                  auth: ButtonPermission['UserManagement.resetPassword'],
+                  onClick: () => onOpen?.(record),
+                  disabled: ldapEnable && record?.preferredUsername !== 'supos',
+                  label: formatMessage('account.resetpassword'),
+                  extra: (
+                    <Flex style={{ height: '100%' }} align="center">
+                      <Password size={14} />
+                    </Flex>
+                  ),
+                },
+                record?.preferredUsername !== 'supos'
+                  ? {
+                      key: 'delete',
+                      auth: ButtonPermission['UserManagement.delete'],
+                      onClick: () => {
+                        modal.confirm({
+                          title: formatMessage('common.deleteConfirm'),
+                          onOk: () => {
+                            setLoading(true);
+                            deleteUser(record.id)
+                              .then(() => {
+                                message.success(formatMessage('common.optsuccess'));
+                                refreshRequest();
+                              })
+                              .finally(() => {
+                                setLoading(false);
+                              });
+                          },
+                          okButtonProps: {
+                            title: formatMessage('common.confirm'),
+                          },
+                          cancelButtonProps: {
+                            title: formatMessage('common.cancel'),
+                          },
+                        });
+                      },
+                      disabled: (ldapEnable && record?.preferredUsername !== 'supos') || record?.source === 'external',
+                      label: formatMessage('common.delete'),
+                      extra: (
+                        <Flex style={{ height: '100%' }} align="center">
+                          <Delete size={14} />
+                        </Flex>
+                      ),
+                    }
+                  : null,
+              ];
             },
           }}
         />

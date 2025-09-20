@@ -12,6 +12,7 @@ import './index.scss';
 import InlineLoading from '@/components/inline-loading';
 import ProModal from '@/components/pro-modal';
 import { importGlobal } from '@/apis/inter-api/global.ts';
+import { getToken } from '@/utils/auth';
 
 const { Dragger } = Upload;
 
@@ -83,7 +84,7 @@ const Module: FC<ImportModalProps> = (props) => {
             const protocol = location.protocol.includes('https') ? 'wss' : 'ws';
             // 创建 WebSocket 连接
             setSocketUrl(
-              `${protocol}://${location.host}/inter-api/supos/uns/ws?file=${encodeURIComponent(data)}&global=${String(Date.now())}`
+              `${protocol}://${location.host}/inter-api/supos/uns/ws?file=${encodeURIComponent(data)}&global=${String(Date.now())}&token=${getToken()}`
             );
           }
         })
@@ -133,6 +134,12 @@ const Module: FC<ImportModalProps> = (props) => {
         title: formatMessage('uns.PartialDataImportFailed'),
         onOk() {
           window.open(`/inter-api/supos/global/file/download?path=${socketData.errTipFile}`, '_self');
+        },
+        okButtonProps: {
+          title: formatMessage('common.confirm'),
+        },
+        cancelButtonProps: {
+          title: formatMessage('common.cancel'),
         },
       });
     }

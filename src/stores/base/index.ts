@@ -4,8 +4,15 @@ import { shallow } from 'zustand/vanilla/shallow';
 import { DataItem, ResourceProps, UserInfoProps } from '@/stores/types.ts';
 import { storageOpt } from '@/utils/storage';
 import { APP_TITLE, SUPOS_LANG, SUPOS_UNS_TREE, SUPOS_USER_TIPS_ENABLE } from '@/common-types/constans.ts';
-import { getSystemConfig, getUserInfo, postPickRoutes, getAllThemeConfig, getPersonConfigApi } from '@/apis/inter-api';
+import { getPersonConfigApi } from '@/apis/inter-api/uns.ts';
+import { getSystemConfig, getAllThemeConfig } from '@/apis/inter-api/system-config.ts';
+import { getUserInfo } from '@/apis/inter-api/auth';
 import { getPluginListApi } from '@/apis/inter-api/plugin.ts';
+
+import { preloadPluginLang } from '@/utils/plugin.ts';
+import { TBaseStore } from '@/stores/base/type.ts';
+import { initI18n, defaultLanguage, useI18nStore } from '../i18n-store.ts';
+import { getRoutesResourceApi } from '@/apis/inter-api/resource.ts';
 import {
   Criteria,
   filterArrays,
@@ -14,12 +21,50 @@ import {
   guideConfig,
   handleButtonPermissions,
   multiGroupByCondition,
-} from '@/stores/utils.ts';
-import { preloadPluginLang } from '@/utils/plugin.ts';
-import { TBaseStore } from '@/stores/base/type.ts';
-import { initI18n, defaultLanguage } from '../i18n-store.ts';
-import { getRoutesResourceApi } from '@/apis/inter-api/resource.ts';
-import { buildResourceTrees, filterRouteByUserResource, mapResource } from '../utils.ts';
+  buildResourceTrees,
+  filterRouteByUserResource,
+  mapResource,
+} from '../utils.ts';
+import { getLangListApi } from '@/apis/inter-api/i18n.ts';
+
+/**
+ * 获取语言包
+ */
+export const getLangList = async () => {
+  try {
+    const langList = await getLangListApi();
+    useI18nStore.setState({
+      langList: langList,
+    });
+    return langList;
+  } catch (e) {
+    console.log(e);
+    const langList = [
+      {
+        hasUsed: true,
+        id: 1,
+        languageCode: 'zh_CN',
+        languageName: '中文（简体）',
+        languageType: 1,
+        label: '中文（简体）',
+        value: 'zh_CN',
+      },
+      {
+        hasUsed: true,
+        id: 2,
+        languageCode: 'en_US',
+        languageName: 'English',
+        languageType: 1,
+        label: 'English',
+        value: 'en_US',
+      },
+    ];
+    useI18nStore.setState({
+      langList: langList,
+    });
+    return langList;
+  }
+};
 /**
  * @description: 系统基础store 路由、用户信息、系统信息、当前菜单信息等
  *
@@ -61,6 +106,10 @@ export const setUserTipsEnable = (value: string) => {
   });
 };
 
+const criteria: Criteria<DataItem> = {
+  buttonGroup: (item: any) => item?.uri?.includes('button:'),
+};
+
 // 更新路由基础方法 (私有)
 const updateBaseStore = async (isFirst: boolean = false) => {
   if (isFirst) {
@@ -78,19 +127,20 @@ const updateBaseStore = async (isFirst: boolean = false) => {
       } catch (err) {
         console.error(err);
       }
-      const criteria: Criteria<DataItem> = {
-        buttonGroup: (item: any) => item?.uri?.includes('button:'),
-      };
-      // 过滤菜单资源、按钮资源
+
+      // 国际化语言包list
+      await getLangList();
+
+      // 通过用户的资源池  拿到 - 菜单资源 和 操作资源
       const { buttonGroup, others } = multiGroupByCondition(info?.resourceList, criteria);
-      // 过滤拒绝有限的 菜单资源、按钮资源
+      // 拿到 拒绝优先的 菜单资源、 操作资源
       const { buttonGroup: denyButtonGroup, others: denyOthers } = multiGroupByCondition(
         info?.denyResourceList,
         criteria
       );
-      // 用户路由资源组
+      // 整合出用户路由资源组
       const userRoutesResourceList = filterObjectArrays(denyOthers, others);
-      // 过滤后的路由组,含home\home_tab\menu及目录
+      // 过滤后的路由组,含home\home_tab\menu及目录 去除操作权限
       const allRoutes = filterRouteByUserResource(
         mapResource(resource?.filter((r: ResourceProps) => r.type !== 3)),
         userRoutesResourceList,
@@ -100,7 +150,7 @@ const updateBaseStore = async (isFirst: boolean = false) => {
       const enableRoutes = allRoutes?.filter((f) => f.enable);
       // 获取终极菜单
       const { homeTree, homeTabGroup, homeGroup, menuGroup, menuTree } = buildResourceTrees(enableRoutes);
-      const allButtonGroup = resource?.filter((r: ResourceProps) => r.groupType === 1 && r.type === 3);
+      const allButtonGroup = resource?.filter((r: ResourceProps) => r.type === 3);
       const _buttonList =
         systemInfo?.authEnable === false || info?.superAdmin === true
           ? handleButtonPermissions(['button:*'], allButtonGroup) || []
@@ -131,7 +181,7 @@ const updateBaseStore = async (isFirst: boolean = false) => {
         homeGroup,
         menuGroup,
         menuTree,
-        originMenu: resource?.filter((r: ResourceProps) => r.groupType === 1),
+        originMenu: resource,
         allButtonGroup,
         pluginList,
         routesStatus: reason?.status,
@@ -190,7 +240,7 @@ const updateBaseStore = async (isFirst: boolean = false) => {
       );
       const enableRoutes = allRoutes?.filter((f) => f.enable);
       const { homeTree, homeTabGroup, homeGroup, menuGroup, menuTree } = buildResourceTrees(enableRoutes);
-      const allButtonGroup = resource?.filter((r: ResourceProps) => r.groupType === 1 && r.type === 3);
+      const allButtonGroup = resource?.filter((r: ResourceProps) => r.type === 3);
       const _buttonList =
         baseState?.systemInfo?.authEnable === false || baseState?.currentUserInfo?.superAdmin === true
           ? handleButtonPermissions(['button:*'], allButtonGroup) || []
@@ -210,7 +260,7 @@ const updateBaseStore = async (isFirst: boolean = false) => {
         homeGroup,
         menuGroup,
         menuTree,
-        originMenu: resource?.filter((r: ResourceProps) => r.groupType === 1),
+        originMenu: resource,
         allButtonGroup,
         buttonList: _buttonList,
       });
@@ -225,15 +275,6 @@ export const fetchBaseStore = async (isFirst: boolean = false): Promise<any> => 
     useBaseStore.setState({
       loading: false,
     });
-  });
-};
-
-// 更新选中的路由
-export const postRoutes = async (data: { menuName?: string; picked?: boolean }[]) => {
-  return postPickRoutes(data).then(() => {
-    // 更新路由
-    updateBaseStore();
-    return true;
   });
 };
 

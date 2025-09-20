@@ -15,7 +15,6 @@
     "@langchain/anthropic": "^0.3.15",
     "@langchain/ollama": "^0.1.2",
     "@langchain/openai": "^0.3.14",
-    "axios": "^1.10.0",
     "dockerode": "^4.0.7",
     "express": "^4.21.1",
     "openai": "^4.68.1"

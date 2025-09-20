@@ -24,9 +24,12 @@ const DocumentList = forwardRef<DocumentListRef | undefined, { alias: string }>(
   const request = () => {
     if (!alias) return;
     getAttachmentsList({ alias }).then((data: any) => {
+      console.log(data);
       setData(
         data?.map((item: any) => {
-          const [_label, _type] = item.originalName.split('.');
+          const lastDotIndex = item.originalName.lastIndexOf('.');
+          const _label = item.originalName.slice(0, lastDotIndex);
+          const _type = item.originalName.slice(lastDotIndex + 1);
           return {
             ...item,
             _label,

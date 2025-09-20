@@ -7,9 +7,15 @@ export interface SortableTreeProps {
   renderLabel?: (node: TreeDataProps) => ReactNode;
   indentationWidth?: number;
   rightExtra?: ((node: TreeDataProps) => ReactNode) | ReactNode;
+  leftExtra?: ((node: TreeDataProps) => ReactNode) | ReactNode;
   allowDrop?: (info: { drop?: TreeDataProps; drag: TreeDataProps }) => boolean;
-  selectedKey?: UniqueIdentifier;
+  selectedKey?: UniqueIdentifier | null;
   onSelect?: (key?: UniqueIdentifier, node?: TreeDataProps) => void;
+  disabledSelected?: (node: TreeDataProps) => boolean;
+  style?: CSSProperties;
+  loading?: boolean;
+  treeData?: TreeDataProps[];
+  onHandleDragEnd?: (list: TreeDataProps[], tree: TreeDataProps[]) => void;
 }
 
 export interface TreeItemProps extends Omit<HTMLAttributes<HTMLDivElement>, 'id' | 'title' | 'onSelect'> {
@@ -33,7 +39,7 @@ export interface TreeItemProps extends Omit<HTMLAttributes<HTMLDivElement>, 'id'
   leftExtra?: ReactNode;
   wrapperStyle?: CSSProperties;
   // 是否拖拽
-  disabled?: boolean;
+  fixed?: boolean;
   // 是否使用指示器
   indicator?: boolean;
   clone?: boolean;
@@ -44,6 +50,8 @@ export interface TreeItemProps extends Omit<HTMLAttributes<HTMLDivElement>, 'id'
   // 点击事件
   onSelect?: SortableTreeProps['onSelect'];
   node?: TreeDataProps;
+  // 禁止点击
+  disabledSelect?: boolean;
 }
 
 export interface SortableTreeItemProps extends TreeItemProps {
@@ -57,7 +65,7 @@ export interface TreeDataProps {
   parentId?: UniqueIdentifier | null;
   collapsed?: boolean;
   // 是否拖拽
-  disabled?: boolean;
+  fixed?: boolean;
   isLeaf?: boolean;
   children: TreeDataProps[];
   tabChildren?: TreeDataProps[];

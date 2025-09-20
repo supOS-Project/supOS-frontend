@@ -6,12 +6,13 @@ import { StoreApi } from 'zustand';
 import { shallow } from 'zustand/vanilla/shallow';
 import { createIntl, createIntlCache, IntlShape } from 'react-intl';
 import { SUPOS_LANG_MESSAGE, SUPOS_LANG } from '@/common-types/constans.ts';
-import { I18nData, antSources, loadMessages } from '@/utils/i18ns';
+import { I18nData, loadMessages, loadAntdLocale } from '@/utils/i18ns';
 import { storageOpt } from '@/utils/storage';
 import { createWithEqualityFn, UseBoundStoreWithEqualityFn } from 'zustand/traditional';
 import { subscribeWithSelector } from 'zustand/middleware';
 import 'dayjs/locale/zh-cn';
 import dayjs from 'dayjs';
+
 const loadDayjsLocale = (locale: string) => {
   if (dayjs.locale() === locale) return;
   dayjs.locale(locale);
@@ -24,6 +25,15 @@ export enum I18nEnum {
 
 export const defaultLanguage = I18nEnum.EnUS; // 默认语言为英文
 
+interface LanguageProps {
+  hasUsed?: boolean;
+  id: number;
+  languageCode: string;
+  languageName: string;
+  languageType: number;
+  value: string;
+  label: string;
+}
 const intlCache = createIntlCache();
 
 export type TI18nStore = {
@@ -32,6 +42,7 @@ export type TI18nStore = {
   antMessages: I18nData;
   prefix?: string;
   intl: IntlShape;
+  langList: LanguageProps[];
 };
 
 export const useI18nStore: UseBoundStoreWithEqualityFn<StoreApi<TI18nStore>> = createWithEqualityFn(
@@ -41,7 +52,7 @@ export const useI18nStore: UseBoundStoreWithEqualityFn<StoreApi<TI18nStore>> = c
     return {
       lang,
       langMessages: messages,
-      antMessages: antSources[lang],
+      antMessages: {},
       intl: createIntl(
         {
           locale: lang,
@@ -49,6 +60,7 @@ export const useI18nStore: UseBoundStoreWithEqualityFn<StoreApi<TI18nStore>> = c
         },
         intlCache
       ),
+      langList: [],
     };
   }),
   shallow
@@ -56,7 +68,8 @@ export const useI18nStore: UseBoundStoreWithEqualityFn<StoreApi<TI18nStore>> = c
 
 // 初始化国际化
 export const initI18n = async (lang: string = defaultLanguage, pluginLang: any = {}) => {
-  loadDayjsLocale(lang === I18nEnum.EnUS ? 'en' : 'zh-cn');
+  loadDayjsLocale(lang === I18nEnum.ZhCN ? 'zh-cn' : 'en');
+  const antMessages = await loadAntdLocale(lang);
   return await loadMessages(lang as I18nEnum).then((res: I18nData) => {
     const finallyMsg = { ...res, ...pluginLang };
     storageOpt.set(SUPOS_LANG_MESSAGE, finallyMsg);
@@ -71,7 +84,7 @@ export const initI18n = async (lang: string = defaultLanguage, pluginLang: any =
     useI18nStore.setState({
       langMessages: finallyMsg,
       lang,
-      antMessages: antSources[lang],
+      antMessages,
       intl: createIntl(
         {
           locale: lang,

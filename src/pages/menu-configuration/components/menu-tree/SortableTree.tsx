@@ -21,168 +21,18 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FlattenedItem, SortableTreeProps, TreeDataProps, UniqueIdentifier } from './type.ts';
-import { Flex } from 'antd';
+import { FlattenedItem, SortableTreeProps, UniqueIdentifier } from './type.ts';
+import { Empty, Flex, Spin } from 'antd';
 import { removeChildrenOf, flattenTree, getProjection, buildTree } from './utils.ts';
 import { SortableTreeItem } from './TreeItem';
 import usePropsValue from '@/hooks/usePropsValue.ts';
+import styles from './index.module.scss';
 
 const measuring = {
   droppable: {
     strategy: MeasuringStrategy.Always,
   },
 };
-
-const defaultData: TreeDataProps[] = [
-  {
-    label: '首页',
-    id: 'home',
-    disabled: true,
-    // children: [],
-    children: [
-      {
-        tabChildren: [
-          {
-            tabChildren: [],
-            label: '概述',
-            id: 'overview',
-            isLeaf: true,
-            parentId: 'home_tab',
-            children: [],
-            disabled: true,
-          },
-          {
-            label: '示例',
-            id: 'examples',
-            isLeaf: true,
-            parentId: 'home_tab',
-            children: [],
-            disabled: true,
-          },
-          {
-            label: '资源监控',
-            id: 'resource-monitor',
-            isLeaf: true,
-            parentId: 'home_tab',
-            children: [],
-            disabled: true,
-          },
-        ],
-        showTabs: true,
-        label: 'home_tab',
-        id: 'home_tab',
-        isLeaf: true,
-        parentId: 'home',
-        children: [],
-        disabled: true,
-      },
-    ],
-  },
-  {
-    label: '数据管理',
-    id: 'data-management',
-    children: [
-      {
-        label: '数据连接数据连接数据连接数据连接数据连接数据连接数据连接数据连接',
-        id: 'data-connection',
-        isLeaf: true,
-        parentId: 'data-management',
-        children: [],
-      },
-      {
-        label: '数据建模',
-        id: 'data-modeling',
-        isLeaf: true,
-        parentId: 'data-management',
-        children: [],
-      },
-      {
-        label: '事件流程',
-        id: 'event-process',
-        isLeaf: true,
-        parentId: 'data-management',
-        children: [],
-      },
-      {
-        label: '采集器网关管理',
-        id: 'collector-gateway',
-        isLeaf: true,
-        parentId: 'data-management',
-        children: [],
-      },
-    ],
-  },
-  {
-    label: '工具集',
-    id: 'toolset',
-    children: [
-      {
-        label: 'CICD',
-        id: 'cicd',
-        isLeaf: true,
-        parentId: 'toolset',
-        children: [],
-      },
-      {
-        label: '数据源链接',
-        id: 'data-source-link',
-        isLeaf: true,
-        parentId: 'toolset',
-        children: [],
-      },
-      {
-        label: '报警管理',
-        id: 'alarm-management',
-        isLeaf: true,
-        parentId: 'toolset',
-        children: [],
-      },
-      {
-        label: 'SQL编辑器',
-        id: 'sql-editor',
-        isLeaf: true,
-        parentId: 'toolset',
-        children: [],
-      },
-    ],
-  },
-  {
-    label: '应用集',
-    id: 'application-set',
-    children: [
-      {
-        label: 'PRIDE智能监控',
-        id: 'pride-monitor',
-        isLeaf: true,
-        parentId: 'application-set',
-        children: [],
-      },
-    ],
-  },
-  {
-    label: '系统配置',
-    id: 'system-config',
-    disabled: true,
-    children: [
-      {
-        label: '用户管理',
-        id: 'user-management',
-        isLeaf: true,
-        parentId: 'system-config',
-        children: [],
-        disabled: true,
-      },
-      {
-        label: 'APP管理',
-        id: 'app-management',
-        isLeaf: true,
-        parentId: 'system-config',
-        children: [],
-        disabled: true,
-      },
-    ],
-  },
-];
 
 const dropAnimationConfig: DropAnimation = {
   keyframes({ transform }) {
@@ -212,15 +62,22 @@ export const SortableTree: FC<SortableTreeProps> = ({
   renderLabel,
   indentationWidth = 50,
   rightExtra,
+  leftExtra,
   allowDrop,
   selectedKey,
   onSelect,
+  style,
+  treeData = [],
+  loading,
+  disabledSelected,
+  onHandleDragEnd,
   // ...restProps
 }) => {
-  const [data, setData] = useState(() => defaultData);
+  const [data, setData] = usePropsValue({ value: treeData });
   const [selectValue, setSelect] = usePropsValue({
     value: selectedKey,
   });
+
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
@@ -281,8 +138,11 @@ export const SortableTree: FC<SortableTreeProps> = ({
 
       const sortedItems = arrayMove(clonedItems, activeIndex, overIndex);
       const newItems = buildTree(sortedItems);
-
-      setData(newItems);
+      if (onHandleDragEnd) {
+        onHandleDragEnd?.(flattenTree(newItems), newItems);
+      } else {
+        setData(newItems);
+      }
     }
   };
 
@@ -295,92 +155,117 @@ export const SortableTree: FC<SortableTreeProps> = ({
 
   const _allowDrop = useMemo(() => {
     const __allowDrop = projected && allowDrop ? allowDrop({ drop: projected?.parent, drag: projected?.drag }) : true;
-    document.body.style.setProperty('cursor', __allowDrop ? 'grabbing' : 'no-drop');
+    if (activeId) {
+      document.body.style.setProperty('cursor', __allowDrop ? 'grabbing' : 'no-drop');
+    }
     return __allowDrop;
-  }, [projected, allowDrop]);
+  }, [projected, allowDrop, activeId]);
 
   const sortedIds = useMemo(() => flattenedItems.map(({ id }) => id), [flattenedItems]);
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      measuring={measuring}
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <SortableContext items={sortedIds} strategy={verticalListSortingStrategy}>
-        <Flex gap={8} vertical>
-          {flattenedItems?.map((item) => {
-            if (item.showTabs) {
-              return (
-                <Flex wrap style={{ paddingLeft: item.depth * indentationWidth }} gap={8}>
-                  {item.tabChildren?.map((tab) => {
+    <Spin spinning={!!loading} wrapperClassName={styles['sortable-tree-loading']}>
+      <div style={style} className={styles['sortable-tree-wrap']}>
+        {!treeData?.length ? (
+          <Flex justify="center" align="center" style={{ height: '100%' }}>
+            {<Empty />}
+          </Flex>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            measuring={measuring}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <SortableContext items={sortedIds} strategy={verticalListSortingStrategy}>
+              <Flex gap={8} vertical>
+                {flattenedItems?.map((item) => {
+                  const disabledSelect = disabledSelected?.(item) || false;
+                  if (item.showTabs) {
+                    const tabChildren = item.tabChildren?.filter((f) => f.id !== '102');
                     return (
-                      <SortableTreeItem
-                        node={tab}
-                        onSelect={(v, node) => {
-                          setSelect(v);
-                          onSelect?.(v, node);
-                        }}
-                        key={tab.id}
-                        indicator={indicator}
-                        disabled={tab.disabled}
-                        wrapperStyle={{ width: 'calc((100% - 16px)/ 3)' }}
-                        id={tab.id}
-                        depth={0}
-                        label={renderLabel ? renderLabel(tab) : tab.label}
-                        rightExtra={typeof rightExtra === 'function' ? rightExtra?.(tab) : rightExtra}
-                        indentationWidth={0}
-                        selected={tab.id === selectValue}
-                      />
+                      <Flex wrap style={{ paddingLeft: item.depth * indentationWidth }} gap={8} key={item.id}>
+                        {tabChildren?.map((tab) => {
+                          const length = tabChildren && tabChildren?.length < 3 ? tabChildren?.length : 3;
+                          const disabledSelect = disabledSelected?.(tab) || false;
+                          return (
+                            <SortableTreeItem
+                              node={tab}
+                              onSelect={(v, node) => {
+                                if (disabledSelect) return;
+                                setSelect(v);
+                                onSelect?.(v, node);
+                              }}
+                              disabledSelect={disabledSelect}
+                              key={tab.id}
+                              indicator={indicator}
+                              fixed={tab.fixed}
+                              wrapperStyle={{
+                                width: `calc((100% - ${(length - 1) * 8}px)/ ${length})`,
+                              }}
+                              id={tab.id}
+                              depth={0}
+                              label={renderLabel ? renderLabel(tab) : tab.label}
+                              rightExtra={typeof rightExtra === 'function' ? rightExtra?.(tab) : rightExtra}
+                              leftExtra={typeof leftExtra === 'function' ? leftExtra?.(tab) : leftExtra}
+                              indentationWidth={0}
+                              selected={tab.id === selectValue}
+                            />
+                          );
+                        })}
+                      </Flex>
                     );
-                  })}
-                </Flex>
-              );
-            }
-            return (
-              <SortableTreeItem
-                node={item}
-                onSelect={(v, node) => {
-                  setSelect(v);
-                  onSelect?.(v, node);
-                }}
-                indicator={indicator}
-                disabled={item.disabled}
-                id={item.id}
-                depth={item.id === activeId && projected ? projected.depth : item.depth}
-                label={renderLabel ? renderLabel(item) : item.label}
-                rightExtra={typeof rightExtra === 'function' ? rightExtra?.(item) : rightExtra}
-                indentationWidth={indentationWidth}
-                allowDrop={activeId === item.id ? _allowDrop : true}
-                selected={item.id === selectValue}
-              />
-            );
-          })}
-        </Flex>
-        {createPortal(
-          <DragOverlay dropAnimation={dropAnimationConfig} modifiers={indicator ? [adjustTranslate] : undefined}>
-            {activeId && activeItem ? (
-              <SortableTreeItem
-                id={activeId}
-                depth={activeItem.depth}
-                clone
-                // childCount={getChildCount(items, activeId) + 1}
-                label={renderLabel ? renderLabel(activeItem) : activeItem.label}
-                indentationWidth={indentationWidth}
-                indicator={indicator}
-                allowDrop={_allowDrop}
-              />
-            ) : null}
-          </DragOverlay>,
-          document.body
+                  }
+                  return (
+                    <SortableTreeItem
+                      node={item}
+                      onSelect={(v, node) => {
+                        if (disabledSelect) return;
+                        setSelect(v);
+                        onSelect?.(v, node);
+                      }}
+                      disabledSelect={disabledSelect}
+                      key={item.id}
+                      indicator={indicator}
+                      fixed={item.fixed}
+                      id={item.id}
+                      depth={item.id === activeId && projected ? projected.depth : item.depth}
+                      label={renderLabel ? renderLabel(item) : item.label}
+                      rightExtra={typeof rightExtra === 'function' ? rightExtra?.(item) : rightExtra}
+                      leftExtra={typeof leftExtra === 'function' ? leftExtra?.(item) : leftExtra}
+                      indentationWidth={indentationWidth}
+                      allowDrop={activeId === item.id ? _allowDrop : true}
+                      selected={item.id === selectValue}
+                    />
+                  );
+                })}
+              </Flex>
+              {createPortal(
+                <DragOverlay dropAnimation={dropAnimationConfig} modifiers={indicator ? [adjustTranslate] : undefined}>
+                  {activeId && activeItem ? (
+                    <SortableTreeItem
+                      id={activeId}
+                      depth={activeItem.depth}
+                      clone
+                      // childCount={getChildCount(items, activeId) + 1}
+                      label={renderLabel ? renderLabel(activeItem) : activeItem.label}
+                      indentationWidth={indentationWidth}
+                      indicator={indicator}
+                      allowDrop={_allowDrop}
+                    />
+                  ) : null}
+                </DragOverlay>,
+                document.body
+              )}
+            </SortableContext>
+          </DndContext>
         )}
-      </SortableContext>
-    </DndContext>
+      </div>
+    </Spin>
   );
 };
 

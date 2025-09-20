@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, memo, FC, useMemo } from 'react';
-import { Table, TableProps } from 'antd';
+import React, { useState, useRef, useEffect, memo, FC, useMemo, CSSProperties } from 'react';
+import { Button, Dropdown, Table, TableProps } from 'antd';
 import type { TableColumnsType } from 'antd';
 import expandIcon from '@/assets/icons/expand.svg';
 import collapseIcon from '@/assets/icons/collapse.svg';
@@ -8,6 +8,9 @@ import './index.scss';
 import { useTranslate } from '@/hooks';
 import { useThemeStore } from '@/stores/theme-store.ts';
 import { useI18nStore } from '@/stores/i18n-store.ts';
+import { EllipsisOutlined } from '@ant-design/icons';
+import { hasPermission } from '@/utils';
+import { commonLabelRender, OperationProps } from '../operation-buttons/utils.tsx';
 
 interface TitlePropsType {
   width?: number;
@@ -23,6 +26,14 @@ export interface ATableProps extends Omit<TableProps, 'columns'> {
   hiddenEmpty?: boolean;
   fixedPosition?: boolean; // 是否固定页码在底部
   showExpand?: boolean; // 是否显示展开按钮
+  wrapperStyle?: CSSProperties;
+  // 操作项配置
+  operationOptions?: {
+    title?: string | (() => string);
+    width?: number | string;
+    render: (record: any, index: number) => (OperationProps | null)[];
+    disabled?: boolean;
+  };
 }
 // 查找所有可滚动祖先元素（包括window）
 const findScrollParents = (element: HTMLElement | null): (HTMLElement | Window)[] => {
@@ -194,6 +205,7 @@ const ProTable: React.FC<ATableProps> = ({
   pagination,
   fixedPosition,
   showExpand,
+  wrapperStyle,
   ...restProps
 }) => {
   const formatMessage = useTranslate();
@@ -202,7 +214,6 @@ const ProTable: React.FC<ATableProps> = ({
     primaryColor: state.primaryColor,
   }));
   const selectBgColor = colorObj?.[primaryColor]?.[theme];
-
   const [resizeColumns, setResizeColumns] = useState<TableColumnsType>(columns);
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const containerWidthRef = useRef(0);
@@ -318,23 +329,32 @@ const ProTable: React.FC<ATableProps> = ({
   }, []);
 
   useEffect(() => {
-    if (resizeable) setResizeColumns(columns);
+    if (!containerWidthRef.current) return;
+    const newColumns = columns.map((col) => {
+      return typeof col.width === 'string'
+        ? {
+            ...col,
+            width: col.width.includes('%') ? containerWidthRef.current * (parseFloat(col.width) / 100) : col.width,
+          }
+        : col;
+    });
+    setResizeColumns(() => balanceColumns(newColumns));
   }, [columns]);
 
-  useEffect(() => {
-    if (tableWrapRef.current) {
-      const tableElementWidth = (tableWrapRef?.current?.querySelector('.ant-table') as HTMLElement)?.clientWidth;
-      const newColumns = resizeColumns.map((col) => {
-        return typeof col.width === 'string'
-          ? {
-              ...col,
-              width: col.width.includes('%') ? tableElementWidth * (parseFloat(col.width) / 100) : col.width,
-            }
-          : col;
-      });
-      setResizeColumns(newColumns);
-    }
-  }, [tableWrapRef.current]);
+  // useEffect(() => {
+  //   if (tableWrapRef.current) {
+  //     const tableElementWidth = (tableWrapRef?.current?.querySelector('.ant-table') as HTMLElement)?.clientWidth;
+  //     const newColumns = resizeColumns.map((col) => {
+  //       return typeof col.width === 'string'
+  //         ? {
+  //             ...col,
+  //             width: col.width.includes('%') ? tableElementWidth * (parseFloat(col.width) / 100) : col.width,
+  //           }
+  //         : col;
+  //     });
+  //     setResizeColumns(newColumns);
+  //   }
+  // }, [tableWrapRef.current]);
 
   const mergedColumns = resizeColumns.map<TableColumnsType[number]>((col, index) => ({
     ...col,
@@ -375,6 +395,7 @@ const ProTable: React.FC<ATableProps> = ({
       style={{
         '--supos-table-select-bg-color': selectBgColor,
         width: '100%',
+        ...wrapperStyle,
       }}
       onMouseEnter={toggleExpanded}
       onMouseLeave={toggleExpanded}
@@ -419,11 +440,51 @@ const ProTable: React.FC<ATableProps> = ({
 };
 
 const withIntlTable = (WrappedTable: FC<ATableProps>) => {
-  const IntlTableWrapper = memo(({ columns, ...restProps }: ATableProps) => {
+  const IntlTableWrapper = memo(({ columns, operationOptions, ...restProps }: ATableProps) => {
     const lang = useI18nStore((state) => state.lang);
     const formatMessage = useTranslate();
-
     const _columns = useMemo(() => {
+      if (operationOptions) {
+        // 通用操作项
+        columns.push({
+          title: () => formatMessage('common.operation'),
+          width: 120,
+          dataIndex: 'operation',
+          align: 'left',
+          fixed: 'right',
+          ...operationOptions,
+          render: (_: any, record: any, index: number) => {
+            const contentRaw: any =
+              operationOptions.render?.(record, index).filter((item: any) => {
+                return item && (!item.auth || hasPermission(item.auth));
+              }) || [];
+            if (contentRaw?.length === 0) return null;
+            return (
+              <div className="custom-operation">
+                <Dropdown
+                  disabled={operationOptions.disabled}
+                  menu={{
+                    items: contentRaw.map((record: any) => {
+                      const { key, label, icon, title, onClick, disabled, type, extra } = record;
+                      return {
+                        key,
+                        label: commonLabelRender(record),
+                        icon,
+                        title: title ? title : typeof label === 'string' ? label : '',
+                        onClick: type !== 'Popconfirm' && onClick,
+                        disabled,
+                        extra,
+                      };
+                    }),
+                  }}
+                >
+                  <Button type="text" icon={<EllipsisOutlined />} style={{ height: 21 }} size="small" />
+                </Dropdown>
+              </div>
+            );
+          },
+        });
+      }
       return columns.map((i: any) => {
         const type = typeof i.title;
         if (i.titleIntlId) {
@@ -441,7 +502,7 @@ const withIntlTable = (WrappedTable: FC<ATableProps>) => {
           return i;
         }
       });
-    }, [lang, columns]);
+    }, [lang, columns, operationOptions]);
     return <WrappedTable {...restProps} columns={_columns} />;
   });
   return IntlTableWrapper;

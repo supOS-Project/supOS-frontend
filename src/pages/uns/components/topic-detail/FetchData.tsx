@@ -27,7 +27,7 @@ const HistoryData = ({ instanceInfo }: any) => {
   // 时序 - restApi
   const timeSeriesRestJs = `curl -X POST -H "Content-Type: application/json" -H "apikey:${apikey}" -d "select ${fields
     ?.map((m: string) => (sqlKeywordsRegex.test(m) ? m : `\`${m}\``))
-    .join(',')} from ${instanceInfo?.alias};" ${window.location.origin}/open-api/supos/rest/sql`;
+    .join(',')} from ${instanceInfo?.alias};" ${window.location.origin}/open-api/rest/sql`;
   const items =
     instanceInfo.dataType !== 2
       ? [
@@ -38,7 +38,7 @@ const HistoryData = ({ instanceInfo }: any) => {
               <Flex gap={14} vertical>
                 <ComCopyContent
                   label={formatMessage('uns.restApiUrl')}
-                  textToCopy={`${window.location.origin}/open-api/supos/rest/sql`}
+                  textToCopy={`${window.location.origin}/open-api/rest/sql`}
                 />
                 <ComCopyContent label={formatMessage('uns.apiKey')} textToCopy={apikey} />
               </Flex>

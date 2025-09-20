@@ -145,9 +145,11 @@ const useInformationModal = ({ onCallBack }: any) => {
                     });
                   },
                   afterClose: () => {},
-                  okText: formatMessage('common.confirm'),
+                  okButtonProps: {
+                    title: formatMessage('common.confirm'),
+                  },
                   cancelButtonProps: {
-                    // style: { color: '#000' },
+                    title: formatMessage('common.cancel'),
                   },
                 });
               }}
@@ -211,9 +213,11 @@ const useInformationModal = ({ onCallBack }: any) => {
                                 },
                                 afterClose: () => {},
                                 onCancel: () => {},
-                                okText: formatMessage('common.confirm'),
+                                okButtonProps: {
+                                  title: formatMessage('common.confirm'),
+                                },
                                 cancelButtonProps: {
-                                  // style: { color: '#000' },
+                                  title: formatMessage('common.cancel'),
                                 },
                               });
                             }}

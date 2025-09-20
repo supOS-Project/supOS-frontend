@@ -10,7 +10,7 @@ import { AuthButton } from '@/components/auth';
 import ProModal from '@/components/pro-modal';
 import FileEdit from '@/components/svg-components/FileEdit';
 
-const EditButton = ({ modelInfo, getModel, auth }: any) => {
+const EditButton = ({ modelInfo, getModel, auth, editType }: any) => {
   const { alias, fields = [] } = modelInfo || {};
   const { message, modal } = App.useApp();
   const [form] = Form.useForm();
@@ -61,16 +61,17 @@ const EditButton = ({ modelInfo, getModel, auth }: any) => {
   };
 
   const onSave = () => {
-    if (fieldList.length === 0) {
+    if (fieldList.length === 0 && editType === 'template') {
       return message.error(formatMessage('uns.pleaseEnterAtLeastOneAttribute'));
     }
 
     form
       .validateFields()
       .then((values) => {
-        const _fields = values.fields.map(({ name, type, displayName, remark, maxLen }: FieldItem) => {
-          return { name, type, displayName, remark, maxLen };
-        });
+        const _fields =
+          values?.fields?.map(({ name, type, displayName, remark, maxLen }: FieldItem) => {
+            return { name, type, displayName, remark, maxLen };
+          }) || [];
 
         detectModel({
           alias,
@@ -79,13 +80,17 @@ const EditButton = ({ modelInfo, getModel, auth }: any) => {
           if (res && res.referred) {
             modal.confirm({
               content: res.tips,
-              cancelText: formatMessage('common.cancel'),
-              okText: formatMessage('common.confirm'),
               zIndex: 9001,
               onOk() {
                 editRequest(_fields);
               },
               onCancel() {},
+              okButtonProps: {
+                title: formatMessage('common.confirm'),
+              },
+              cancelButtonProps: {
+                title: formatMessage('common.cancel'),
+              },
             });
           } else {
             editRequest(_fields);

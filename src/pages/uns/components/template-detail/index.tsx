@@ -129,6 +129,7 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
           auth={ButtonPermission['uns.templateDetail']}
           modelInfo={info}
           getModel={() => getModel(id as string)}
+          editType="template"
         />
       ),
       children: (

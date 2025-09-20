@@ -20,7 +20,7 @@ export const SortableTreeItem: FC<SortableTreeItemProps> = ({ id, depth, ...rest
   } = useSortable({
     id,
     animateLayoutChanges,
-    disabled: restProps.disabled,
+    disabled: restProps.fixed,
   });
   const style: CSSProperties = {
     transform: CSS.Translate.toString(transform),
@@ -29,8 +29,8 @@ export const SortableTreeItem: FC<SortableTreeItemProps> = ({ id, depth, ...rest
 
   return (
     <TreeItem
-      ref={restProps.disabled ? undefined : setDraggableNodeRef}
-      wrapperRef={restProps.disabled ? undefined : setDroppableNodeRef}
+      ref={restProps.fixed ? undefined : setDraggableNodeRef}
+      wrapperRef={restProps.fixed ? undefined : setDroppableNodeRef}
       style={style}
       depth={depth}
       ghost={isDragging}

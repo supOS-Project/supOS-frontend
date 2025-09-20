@@ -29,11 +29,6 @@
 }
 
 ::selection {
-  background: var(--supos-theme-color);
-  color: #fff;
-}
-
-::selection {
   /* Firefox */
   background: var(--supos-theme-color);
   color: #fff;
@@ -50,3 +45,27 @@ body {
   background-color: var(--supos-bg-color) !important;
   color: var(--supos-text-color, #161616) !important;
 }
+
+.ant-btn > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ant-form-item-horizontal > .ant-row {
+  align-items: center;
+
+  .ant-form-item-label > label {
+    height: auto;
+    min-height: 32px;
+  }
+}
+
+.ant-modal-confirm-btns {
+  .ant-btn {
+    max-width: 48%;
+  }
+}
+/*.ant-table-cell-scrollbar {*/
+/*  visibility: hidden;*/
+/*}*/

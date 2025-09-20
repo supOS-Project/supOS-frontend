@@ -13,6 +13,7 @@ import type { InitTreeDataFnType } from '@/pages/uns/types';
 import './index.scss';
 import InlineLoading from '@/components/inline-loading';
 import ProModal from '@/components/pro-modal';
+import { getToken } from '@/utils/auth';
 
 const { Dragger } = Upload;
 
@@ -81,7 +82,9 @@ const Module: FC<ImportModalProps> = (props) => {
           if (data) {
             const protocol = location.protocol.includes('https') ? 'wss' : 'ws';
             // 创建 WebSocket 连接
-            setSocketUrl(`${protocol}://${location.host}/inter-api/supos/uns/ws?file=${encodeURIComponent(data)}`);
+            setSocketUrl(
+              `${protocol}://${location.host}/inter-api/supos/uns/ws?file=${encodeURIComponent(data)}&token=${getToken()}`
+            );
           }
         })
         .catch(() => {
@@ -130,6 +133,12 @@ const Module: FC<ImportModalProps> = (props) => {
         title: formatMessage('uns.PartialDataImportFailed'),
         onOk() {
           window.open(`/inter-api/supos/uns/excel/download?path=${socketData.errTipFile}`, '_self');
+        },
+        okButtonProps: {
+          title: formatMessage('common.confirm'),
+        },
+        cancelButtonProps: {
+          title: formatMessage('common.cancel'),
         },
       });
     }

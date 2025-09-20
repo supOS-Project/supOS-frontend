@@ -232,7 +232,14 @@ const useAddUser = ({ onSaveBack }: any) => {
           </Col>
         </Row>
 
-        <Button onClick={onSave} style={{ height: 32 }} block type="primary" loading={loading}>
+        <Button
+          onClick={onSave}
+          style={{ height: 32 }}
+          block
+          type="primary"
+          loading={loading}
+          title={formatMessage('common.save')}
+        >
           {formatMessage('common.save')}
         </Button>
       </Form>

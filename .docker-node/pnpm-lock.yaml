@@ -20,9 +20,6 @@ importers:
       '@langchain/openai':
         specifier: ^0.3.14
         version: 0.3.14(@langchain/core@0.3.46(openai@4.68.1(zod@3.23.8)))
-      axios:
-        specifier: ^1.10.0
-        version: 1.10.0(debug@4.3.7)
       dockerode:
         specifier: ^4.0.7
         version: 4.0.7

@@ -110,9 +110,16 @@ const ComCardList: FC<ComCardListProps> = ({
                 </div>
               </Flex>
               {item.status && (
-                <div>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
                   <Tag
-                    style={{ borderRadius: 15 }}
+                    title={titleStatehandle(item)}
+                    style={{
+                      borderRadius: 15,
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 100,
+                    }}
                     bordered={false}
                     color={(runStatusOptions?.find((f: any) => f.value === item.status)?.bgType || 'red') as any}
                   >
@@ -129,9 +136,11 @@ const ComCardList: FC<ComCardListProps> = ({
                     modal.confirm({
                       title: formatMessage('common.deleteConfirm'),
                       onOk: () => onDeleteHandle?.(item),
-                      okText: formatMessage('common.confirm'),
+                      okButtonProps: {
+                        title: formatMessage('common.confirm'),
+                      },
                       cancelButtonProps: {
-                        // style: { color: '#000' },
+                        title: formatMessage('common.cancel'),
                       },
                     })
                   }

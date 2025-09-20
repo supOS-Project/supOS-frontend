@@ -11,7 +11,6 @@ import { childrenRoutes } from '@/routers';
 import { validSpecialCharacter } from '@/utils/pattern';
 import Loading from '@/components/loading';
 import ProModal from '@/components/pro-modal';
-import { getRoutesResourceApi } from '@/apis/inter-api/resource.ts';
 import { useBaseStore } from '@/stores/base';
 import { ResourceProps } from '@/stores/types.ts';
 
@@ -96,7 +95,14 @@ const AddRoleContent = ({ successBack, disabled }: { successBack: (data: any) =>
             }}
           />
           <Flex justify="flex-end" align="center" style={{ padding: '0 12px' }}>
-            <Button loading={loading} type="primary" size="small" style={{ width: 60 }} onClick={onSave}>
+            <Button
+              loading={loading}
+              type="primary"
+              size="small"
+              style={{ width: 60 }}
+              onClick={onSave}
+              title={formatMessage('common.save')}
+            >
               {formatMessage('common.save')}
             </Button>
           </Flex>
@@ -229,6 +235,12 @@ const useRoleSetting = ({ onSaveBack }: any) => {
         onCancel: () => {
           setOpen(false);
         },
+        okButtonProps: {
+          title: formatMessage('common.save'),
+        },
+        cancelButtonProps: {
+          title: formatMessage('common.unSave'),
+        },
       });
     } else {
       setOpen(false);
@@ -260,9 +272,6 @@ const useRoleSetting = ({ onSaveBack }: any) => {
         setItems(info);
         initItems.current = info;
         setActiveKey(role?.[0]?.roleId);
-        getRoutesResourceApi?.({
-          groupType: 1,
-        });
       });
     }
   }, [open, originMenu]);
@@ -320,6 +329,12 @@ const useRoleSetting = ({ onSaveBack }: any) => {
           permissionRefs.current.get(activeKey)?.setValue(initPermission?.resourceList);
           unsavedChanges.current.set(activeKey, false);
           setActiveKey(key);
+        },
+        okButtonProps: {
+          title: formatMessage('common.save'),
+        },
+        cancelButtonProps: {
+          title: formatMessage('common.unSave'),
         },
       });
     } else {
@@ -413,7 +428,12 @@ const useRoleSetting = ({ onSaveBack }: any) => {
                                 );
                               });
                             },
-                            okText: formatMessage('common.confirm'),
+                            okButtonProps: {
+                              title: formatMessage('common.confirm'),
+                            },
+                            cancelButtonProps: {
+                              title: formatMessage('common.cancel'),
+                            },
                           });
                         }}
                       />
@@ -445,6 +465,7 @@ const useRoleSetting = ({ onSaveBack }: any) => {
             block
             type="primary"
             loading={loading}
+            title={formatMessage('common.save')}
           >
             {formatMessage('common.save')}
           </Button>

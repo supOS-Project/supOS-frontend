@@ -52,6 +52,7 @@ const OperationForm: FC<OperationFormProps> = ({
       wrapperCol={{ span: 13 }}
       {...formConfig}
       form={form}
+      labelWrap
     >
       {title && (
         <Typography style={{ marginBottom: 40 }}>
@@ -73,21 +74,29 @@ const OperationForm: FC<OperationFormProps> = ({
               ...buttonStyle,
               backgroundColor: 'var(--supos-uns-button-color)',
               color: 'var(--supos-text-color)',
+              flex: 1,
+              minWidth: 0,
             }}
             color="default"
             variant="filled"
             onClick={onCancel}
             block={buttonConfig?.block}
+            title={formatMessage('common.cancel')}
           >
             {formatMessage('common.cancel')}
           </Button>
           <Button
-            style={buttonStyle}
+            style={{
+              ...buttonStyle,
+              flex: 1,
+              minWidth: 0,
+            }}
             type="primary"
             variant="solid"
             onClick={onSave}
             loading={loading}
             block={buttonConfig?.block}
+            title={formatMessage('common.save')}
           >
             {formatMessage('common.save')}
           </Button>

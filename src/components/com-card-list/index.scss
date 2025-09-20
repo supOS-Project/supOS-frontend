@@ -47,7 +47,7 @@
         display: flex;
         overflow: hidden;
         gap: 12px;
-        justify-content: flex-start;
+        justify-content: space-between;
         align-items: center;
       }
 
@@ -109,7 +109,7 @@
     .text {
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2; /* 限制为两行 */
+      -webkit-line-clamp: var(--supos-line-clamp, 2); /* 限制为两行 */
       overflow: hidden;
       text-overflow: ellipsis;
       word-break: break-all;
@@ -124,14 +124,23 @@
   .item {
     flex: 1;
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     cursor: pointer;
     color: var(--common-color);
     transition: background-color 0.3s; /* 添加过渡效果 */
     font-size: 14px;
     font-weight: 400;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: center;
+    line-height: 36px;
+    border: none;
+    border-right: 1px solid var(--crl-border-color); /* 添加右边框 */
+    padding: 0 4px;
+  }
+
+  .item:last-child {
+    border-right: 1px solid transparent; /* 最后一个项不加右边框 */
   }
 
   .item-disable {

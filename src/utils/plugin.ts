@@ -1,6 +1,6 @@
 import { loadRemote, registerRemotes } from '@module-federation/enhanced/runtime';
 import { getProperties } from 'properties-file';
-import { getPlugI18Api } from '@/apis/inter-api';
+import { getPlugI18Api } from '@/apis/inter-api/uns.ts';
 
 // 获取通用的Remotes 相关信息  name：/Alert
 export const getRemotesInfo = ({ name }: { name: string }) => {
@@ -11,16 +11,23 @@ export const getRemotesInfo = ({ name }: { name: string }) => {
 };
 
 // 获取国际化信息
-export const getPluginI18n = async ({ name, lang }: { name: string; lang: string }) => {
+export const getPluginI18n = async ({
+  name,
+  lang,
+  backendName,
+}: {
+  name: string;
+  lang: string;
+  backendName: string;
+}) => {
   let messages: any = await loadRemote(`supos-ce${name}/${lang === 'zh-CN' ? 'zhCN' : 'enUS'}`);
   messages = messages?.default || messages;
   if (messages.error && typeof messages?.error === 'object') {
     return {};
   }
   const newMessages: any = {};
-  const prefix: string = name.substring(1);
   Object.entries(messages).forEach(([key, value]) => {
-    newMessages[`${prefix}.${key}`] = value;
+    newMessages[`${backendName}.${key}`] = value;
   });
   return newMessages;
 };
@@ -32,14 +39,14 @@ export const preloadPluginLang = async (remoteList: { name: string; backendName:
     // 注册
     registerRemotes(
       remoteList.map(({ name }) => {
-        return getRemotesInfo({ name: import.meta.env.VITE_ENABLE_LOCAL_REMOTE_NAME ?? name });
+        return getRemotesInfo({ name });
       })
     );
     let finallyMsg = {};
     // 获取本地国际化
-    const messagePromises = remoteList.map(async ({ name }) => {
+    const messagePromises = remoteList.map(async ({ name, backendName }) => {
       try {
-        return await getPluginI18n({ name: import.meta.env.VITE_ENABLE_LOCAL_REMOTE_NAME ?? name, lang });
+        return await getPluginI18n({ name, lang, backendName });
       } catch (err) {
         console.log(`Failed to load i18n for plugin ${name}:`, err);
         return {};

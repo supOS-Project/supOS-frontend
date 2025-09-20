@@ -36,10 +36,12 @@ const AppSpaceList: FC<any> = ({ list, getHtmlList, clickItemId, setClickItemIdI
                     modal.confirm({
                       title: formatMessage('common.deleteConfirm'),
                       onOk: () => deleteHandle(item.name),
-                      cancelButtonProps: {
-                        // style: { color: '#000' },
+                      okButtonProps: {
+                        title: formatMessage('common.confirm'),
                       },
-                      okText: formatMessage('common.confirm'),
+                      cancelButtonProps: {
+                        title: formatMessage('common.cancel'),
+                      },
                     });
                     e.stopPropagation();
                   }}

@@ -8,7 +8,7 @@ import { Button, Empty, message, Tooltip } from 'antd';
 import { ClearOutlined } from '@ant-design/icons';
 import type { UnsTreeNode } from '@/pages/uns/types';
 import { isJsonString } from '@/utils/common';
-import { formatTimestamp } from '@/utils/format';
+import { formatTimestamp, getToken } from '@/utils';
 
 interface IProps {
   currentNode: UnsTreeNode;
@@ -64,7 +64,7 @@ const RealTimeData: FC<IProps> = ({ currentNode: { id, type, pathName } }) => {
     setDataSource([]);
     if (type === 2) {
       setSocketUrl(
-        `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?topic=${id}`
+        `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/inter-api/supos/uns/ws?topic=${id}&token=${getToken()}`
       );
     } else {
       setSocketUrl('');

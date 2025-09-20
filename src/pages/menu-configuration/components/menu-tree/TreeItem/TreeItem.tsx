@@ -3,6 +3,18 @@ import cx from 'classnames';
 import { TreeItemProps } from '../type.ts';
 import styles from './TreeItem.module.scss';
 import { Draggable } from '@carbon/icons-react';
+import { useThemeStore } from '@/stores/theme-store.ts';
+
+const colorObj: any = {
+  blue: {
+    light: '#E8F1FF',
+    dark: '#061833',
+  },
+  chartreuse: {
+    light: '#F0FBD2',
+    dark: '#242F06',
+  },
+};
 
 export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
   (
@@ -13,9 +25,10 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
       depth,
       indentationWidth,
       label,
+      leftExtra,
       rightExtra,
       wrapperStyle,
-      disabled,
+      fixed,
       disableSelection,
       disableInteraction,
       ghost,
@@ -25,14 +38,21 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
       node,
       onSelect,
       selected,
+      disabledSelect,
       ...restProps
     },
     ref
   ) => {
+    const { selectBgColor } = useThemeStore((state) => ({
+      selectBgColor: colorObj?.[state.primaryColor]?.[state.theme],
+    }));
+
     const className = cx(
       styles.TreeItemWrapper,
       clone && styles.clone,
       ghost && styles.ghost,
+      fixed && styles.fixed,
+      disabledSelect && styles.disabledSelect,
       {
         [styles.notAllow]: allowDrop === false,
       },
@@ -48,6 +68,7 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
         {...restProps}
         className={className}
         style={{
+          '--supos-select-bg-color': selectBgColor,
           '--spacing': `${indentationWidth * depth}px`,
           ...wrapperStyle,
         }}
@@ -61,9 +82,10 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
         }}
       >
         <div ref={ref} style={style} className={styles.TreeItem}>
-          {!clone && !disabled && <Draggable style={{ cursor: 'grab', flexShrink: 0 }} {...handleProps} />}
+          {!clone && !fixed && <Draggable style={{ cursor: 'grab', flexShrink: 0 }} {...handleProps} />}
+          {leftExtra && <div className={styles.leftExtra}>{leftExtra}</div>}
           <div className={styles.Text}>{label}</div>
-          {rightExtra && <div className={styles.RightExtra}>{rightExtra}</div>}
+          {rightExtra && <div className={styles.rightExtra}>{rightExtra}</div>}
         </div>
       </div>
     );

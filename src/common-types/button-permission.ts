@@ -86,4 +86,17 @@ export const ButtonPermission = {
   'appSpace.showPage': 'appSpace.showPage',
   'appSpace.newPage': 'appSpace.newPage',
   'appSpace.newgenerate': 'appSpace.newgenerate',
+  // 国际化管理
+  'Localization.localesSetting': 'Localization.localesSetting',
+  'Localization.editEntry': 'Localization.editEntry',
+  'Localization.entryDelete': 'Localization.entryDelete',
+  'Localization.newEntry': 'Localization.newEntry',
+  // 菜单配置
+  'MenuConfiguration.addOperation': 'MenuConfiguration.addOperation',
+  'MenuConfiguration.editOperation': 'MenuConfiguration.editOperation',
+  'MenuConfiguration.deleteOperation': 'MenuConfiguration.deleteOperation',
+  'MenuConfiguration.addMenu': 'MenuConfiguration.addMenu',
+  'MenuConfiguration.editMenu': 'MenuConfiguration.editMenu',
+  'MenuConfiguration.deleteMenu': 'MenuConfiguration.deleteMenu',
+  'MenuConfiguration.enabledMenu': 'MenuConfiguration.enabledMenu',
 };
