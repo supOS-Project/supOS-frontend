@@ -254,7 +254,7 @@ const TdEngine1: FC<any> = ({ payload, dt = {}, instanceInfo }) => {
   // const navigate = useNavigate();
   const columns: any = [
     {
-      title: formatMessage('uns.key'),
+      title: formatMessage('uns.attribute'),
       dataIndex: 'key',
       width: '30%',
       render: (text: any) => <span className="payloadFirstTd">{text}</span>,
@@ -433,7 +433,7 @@ const Tables: FC<any> = ({ instanceInfo }) => {
       key: 'topic',
     },
     {
-      title: formatMessage('uns.key'),
+      title: formatMessage('uns.attribute'),
       dataIndex: 'field',
       width: '30%',
       key: 'field',

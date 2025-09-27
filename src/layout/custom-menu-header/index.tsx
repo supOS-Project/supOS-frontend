@@ -242,7 +242,7 @@ const CustomMenuHeader = () => {
               },
               {
                 label: <Task size={20} style={{ color: 'var(--supos-text-color)' }} />,
-                title: formatMessage('common.todo'),
+                title: formatMessage('common.taskCenter'),
                 key: 'todo',
                 onClick: handleTodoClick,
               },

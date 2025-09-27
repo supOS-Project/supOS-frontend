@@ -16,7 +16,7 @@ const Definition: FC<DefinitionProps> = ({ instanceInfo }) => {
       bordered
       columns={[
         {
-          title: formatMessage('uns.key'),
+          title: formatMessage('uns.attribute'),
           dataIndex: 'name',
           width: '20%',
           render: (text, record) => (

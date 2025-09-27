@@ -80,7 +80,7 @@ const HelpNav = () => {
     <Dropdown
       arrow
       placement="bottom"
-      trigger={['hover', 'click']}
+      trigger={['hover']}
       overlayStyle={{ zIndex: 10000 }}
       menu={{
         items: dropdownItems,

@@ -174,12 +174,13 @@ export function mapResource(source: ResourceProps[] = []) {
   });
 }
 
-// 根据用户路由资源组 匹配出 路由 - 如果免登或者超级管理员，不进行过滤; type为1既是目录不进行过滤
+// 根据用户路由资源组 匹配出 路由 - 如果免登或者超级管理员，不进行过滤; type为1既是目录不进行过滤;type为4的也不控制
 export function filterRouteByUserResource(source: any[] = [], target: any[] = [], authEnable?: boolean) {
   if (authEnable)
     return source.filter(
       (sourceItem) =>
         sourceItem.type === 1 ||
+        sourceItem.type === 4 ||
         sourceItem.subMenu === true ||
         target.some((targetItem) => {
           if (sourceItem?.urlType !== 1) {

@@ -103,6 +103,7 @@ const Module: FC<PageProps> = ({ title }) => {
                   type="text"
                   onClick={() => setContentType('addMenu')}
                   auth={ButtonPermission['MenuConfiguration.addMenu']}
+                  title={formatMessage('MenuConfiguration.addMenu')}
                 >
                   <DocumentAdd />
                 </AuthButton>
@@ -112,6 +113,7 @@ const Module: FC<PageProps> = ({ title }) => {
                   type="text"
                   onClick={() => setContentType('addGroup')}
                   auth={ButtonPermission['MenuConfiguration.addMenu']}
+                  title={formatMessage('MenuConfiguration.addGroup')}
                 >
                   <FolderAdd />
                 </AuthButton>
@@ -176,16 +178,26 @@ const Module: FC<PageProps> = ({ title }) => {
                   <Flex gap={8}>
                     {node?.enable ? (
                       <AuthWrapper auth={ButtonPermission['MenuConfiguration.enabledMenu']}>
-                        <View style={{ cursor: 'pointer' }} onClick={(e) => onEnabledHandle(node, e)} />
+                        <Flex
+                          title={formatMessage('MenuConfiguration.disabled')}
+                          onClick={(e) => onEnabledHandle(node, e)}
+                        >
+                          <View style={{ cursor: 'pointer' }} />
+                        </Flex>
                       </AuthWrapper>
                     ) : (
                       <AuthWrapper auth={ButtonPermission['MenuConfiguration.enabledMenu']}>
-                        <ViewOff style={{ cursor: 'pointer' }} onClick={(e) => onEnabledHandle(node, e)} />
+                        <Flex
+                          title={formatMessage('MenuConfiguration.enable')}
+                          onClick={(e) => onEnabledHandle(node, e)}
+                        >
+                          <ViewOff style={{ cursor: 'pointer' }} />
+                        </Flex>
                       </AuthWrapper>
                     )}
                     <AuthWrapper auth={ButtonPermission['MenuConfiguration.deleteMenu']}>
-                      <Close
-                        style={{ cursor: 'pointer' }}
+                      <Flex
+                        title={formatMessage('common.delete')}
                         onClick={(e) => {
                           e.stopPropagation();
                           modal.confirm({
@@ -204,7 +216,9 @@ const Module: FC<PageProps> = ({ title }) => {
                             },
                           });
                         }}
-                      />
+                      >
+                        <Close style={{ cursor: 'pointer' }} />
+                      </Flex>
                     </AuthWrapper>
                   </Flex>
                 );

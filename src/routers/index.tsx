@@ -93,7 +93,7 @@ export const childrenRoutes = [
     Component: Todo,
     handle: {
       parentPath: '/_common',
-      code: 'common.todo',
+      code: 'common.taskCenter',
       type: 'all',
     },
   },

@@ -210,7 +210,7 @@ const Todo = () => {
                 }}
                 defaultValue="todo"
               >
-                <Radio.Button value="todo">{`${formatMessage('common.toDo')}(${todoTotal ?? 0})`}</Radio.Button>
+                <Radio.Button value="todo">{`${formatMessage('common.todo')}(${todoTotal ?? 0})`}</Radio.Button>
                 <Radio.Button value="completed">{formatMessage('common.completed')}</Radio.Button>
               </Radio.Group>
             </div>

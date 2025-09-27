@@ -136,10 +136,10 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
             onBegin={(_, __, info) => form.setFieldsValue(info?.value)}
             onFinish={(_, nextStepName) => setAddNamespaceForAi({ ...addNamespaceForAi, currentStep: nextStepName })}
           >
-            <div>{formatMessage('uns.key')}</div>
+            <div>{formatMessage('uns.attribute')}</div>
           </ComPopupGuide>
         ) : (
-          <div>{formatMessage('uns.key')}</div>
+          <div>{formatMessage('uns.attribute')}</div>
         )}
         {showTooltip && <HelpTooltip title={formatMessage('uns.keyTooltip')} />}
       </Flex>

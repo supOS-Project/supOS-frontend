@@ -115,9 +115,6 @@ export interface ResourceProps {
   parentId?: string;
   // 主键ID
   id: string;
-  /**
-   * @deprecated
-   * */
   // 菜单分组 1-导航 2-菜单 home    属于哪组  3-tab home页tab
   // groupType?: number;
   // 菜单类型（1、目录 2、菜单 3、按钮 4、home_tab 5、子菜单 ）

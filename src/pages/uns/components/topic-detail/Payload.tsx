@@ -29,7 +29,7 @@ const Payload: FC<PayloadProps> = ({ websocketData, fields }) => {
       bordered={true}
       columns={[
         {
-          title: formatMessage('uns.key'),
+          title: formatMessage('uns.attribute'),
           dataIndex: 'key',
           width: '30%',
           ellipsis: true,

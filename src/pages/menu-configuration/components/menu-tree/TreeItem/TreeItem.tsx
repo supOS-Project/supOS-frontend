@@ -63,7 +63,6 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
     );
     return (
       <div
-        title={typeof label === 'string' ? label : ''}
         ref={wrapperRef}
         {...restProps}
         className={className}
@@ -84,7 +83,9 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
         <div ref={ref} style={style} className={styles.TreeItem}>
           {!clone && !fixed && <Draggable style={{ cursor: 'grab', flexShrink: 0 }} {...handleProps} />}
           {leftExtra && <div className={styles.leftExtra}>{leftExtra}</div>}
-          <div className={styles.Text}>{label}</div>
+          <div className={styles.Text} title={typeof label === 'string' ? label : ''}>
+            {label}
+          </div>
           {rightExtra && <div className={styles.rightExtra}>{rightExtra}</div>}
         </div>
       </div>
