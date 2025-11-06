@@ -2,12 +2,13 @@ import { Checkbox, Divider, Flex, Spin, Image, Typography, Dropdown, Button } fr
 import { FC, useState } from 'react';
 import { ProCardProps } from '@/components/pro-card/type.ts';
 import cx from 'classnames';
-import { ChevronRight } from '@carbon/icons-react';
-import { EllipsisOutlined } from '@ant-design/icons';
+import { ChevronRight, OverflowMenuVertical, Pin, PinFilled } from '@carbon/icons-react';
 import { AuthButton } from '@/components/auth';
 import defaultUrl from '@/assets/home-icons/default.svg';
 import InlineLoading from '@/components/inline-loading';
 import { hasPermission } from '@/utils/auth.ts';
+import ComButton from '../com-button';
+import useTranslate from '@/hooks/useTranslate.ts';
 import './index.scss';
 
 const { Paragraph } = Typography;
@@ -25,13 +26,24 @@ const ProCard: FC<ProCardProps> = ({
   secondaryDescription,
   allowHover = true,
   actions: _actions,
+  iconBg = true,
   item,
+  actionConfig,
 }) => {
+  const formatMessage = useTranslate();
   const [checked, setChecked] = useState(false);
   const [clickLoading, setClickLoading] = useState(false);
   const cardClassName = cx('pro-card', classNames?.card, checked && 'pro-card-checked', allowHover && 'pro-card-hover');
-  const { allowCheck, statusInfo, statusTag } = statusHeader || {};
-  const { customIcon, defaultIconUrl = defaultUrl, iconSrc, title, titleDescription } = header || {};
+  const { allowCheck, statusInfo, statusTag, pinOptions } = statusHeader || {};
+  const actionNum = actionConfig?.num ?? 2;
+  const {
+    customIcon,
+    defaultIconUrl = defaultUrl,
+    iconSrc,
+    title,
+    titleDescription,
+    onClick: headerClick,
+  } = header || {};
   const actions = _actions
     ? typeof _actions === 'function'
       ? _actions(item)
@@ -61,6 +73,9 @@ const ProCard: FC<ProCardProps> = ({
       setClickLoading(false);
     }
   };
+  const isPin = pinOptions?.renderPinIcon?.(item) ?? false;
+  const _description =
+    description !== false ? (typeof description === 'string' ? description : description?.content) : false;
   return (
     <div style={styles?.root} className={classNames?.root}>
       <Spin spinning={loading || clickLoading || false}>
@@ -79,6 +94,66 @@ const ProCard: FC<ProCardProps> = ({
               align="center"
               gap={4}
             >
+              <Flex
+                align="center"
+                style={{ flex: 1, overflow: 'hidden', ...styles?.statusInfo }}
+                className={cx(styles?.statusInfo)}
+                justify="space-between"
+              >
+                <Flex align="center" justify="flex-start" style={{ flex: 1, overflow: 'hidden' }}>
+                  {statusInfo && (
+                    <Flex
+                      style={{ overflow: 'hidden' }}
+                      justify="flex-start"
+                      align="center"
+                      gap={8}
+                      title={`${statusInfo.title}: ${statusInfo.label}`}
+                    >
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: statusInfo?.color,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <Paragraph
+                        ellipsis={{
+                          rows: 1,
+                        }}
+                        style={{ margin: 0, wordBreak: 'break-all', color: 'var(--supos-table-first-color)' }}
+                      >
+                        {statusInfo.label}
+                      </Paragraph>
+                    </Flex>
+                  )}
+                  {statusInfo && statusTag && (
+                    <Divider
+                      type="vertical"
+                      style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                      }}
+                    />
+                  )}
+                  {statusTag && (
+                    <Flex align="center" style={styles?.statusTag} className={classNames?.statusTag}>
+                      {statusTag}
+                    </Flex>
+                  )}
+                </Flex>
+                {pinOptions && (
+                  <ComButton
+                    title={isPin ? formatMessage('common.pin') : formatMessage('common.unPin')}
+                    auth={pinOptions?.auth}
+                    disabled={pinOptions?.disabled}
+                    onClick={() => pinOptions?.onClick?.(item)}
+                    icon={isPin ? <Pin style={{ color: '#525252' }} /> : <PinFilled />}
+                    size="small"
+                    type={'text'}
+                  />
+                )}
+              </Flex>
               {allowCheck ? (
                 <Checkbox
                   value={value}
@@ -91,47 +166,6 @@ const ProCard: FC<ProCardProps> = ({
               ) : (
                 <span></span>
               )}
-              <Flex
-                align="center"
-                style={{ flex: 1, overflow: 'hidden', ...styles?.statusInfo }}
-                className={cx(styles?.statusInfo)}
-                justify="flex-end"
-              >
-                {statusInfo && (
-                  <Flex
-                    style={{ flex: 1, overflow: 'hidden' }}
-                    justify="flex-end"
-                    align="center"
-                    gap={8}
-                    title={`${statusInfo.title}: ${statusInfo.label}`}
-                  >
-                    <div
-                      style={{ width: 8, height: 8, borderRadius: '50%', background: statusInfo?.color, flexShrink: 0 }}
-                    />
-                    <Paragraph
-                      ellipsis={{
-                        rows: 1,
-                      }}
-                      style={{ margin: 0, wordBreak: 'break-all', color: 'var(--supos-table-first-color)' }}
-                    >
-                      {statusInfo.label}
-                    </Paragraph>
-                  </Flex>
-                )}
-                {statusInfo && statusTag && (
-                  <Divider
-                    type="vertical"
-                    style={{
-                      backgroundColor: 'rgba(0, 0, 0, 0.06)',
-                    }}
-                  />
-                )}
-                {statusTag && (
-                  <Flex align="center" style={styles?.statusTag} className={classNames?.statusTag}>
-                    {statusTag}
-                  </Flex>
-                )}
-              </Flex>
             </Flex>
           ) : null}
           {/* Header */}
@@ -141,58 +175,84 @@ const ProCard: FC<ProCardProps> = ({
             justify="space-between"
             gap={16}
           >
-            <Flex
-              style={{
-                borderRadius: 3,
-                backgroundColor: 'var(--supos-image-card-color)',
-                padding: 6,
-              }}
-            >
-              {customIcon ? (
-                customIcon
-              ) : (
-                <Image preview={false} src={`${iconSrc ?? ''}`} width={28} height={28} fallback={defaultIconUrl} />
-              )}
-            </Flex>
-            <Flex
-              justify={titleDescription ? 'space-between' : 'center'}
-              style={{ flex: 1, overflow: 'hidden' }}
-              vertical
-            >
-              <Flex align="center" justify="space-between" title={typeof title === 'string' ? title : ''}>
-                <div className={cx('header-title')}>{title}</div>
-                {onClick && <ChevronRight style={{ flexShrink: 0 }} />}
+            {(iconSrc || customIcon) && (
+              <Flex
+                style={
+                  iconBg
+                    ? {
+                        borderRadius: 3,
+                        backgroundColor: 'var(--supos-image-card-color)',
+                        padding: 6,
+                      }
+                    : undefined
+                }
+              >
+                {customIcon ? (
+                  customIcon
+                ) : (
+                  <Image preview={false} src={`${iconSrc ?? ''}`} width={28} height={28} fallback={defaultIconUrl} />
+                )}
               </Flex>
-              {titleDescription && (
-                <div title={typeof titleDescription === 'string' ? titleDescription : ''} className="title-description">
-                  {titleDescription}
-                </div>
-              )}
+            )}
+            <Flex
+              style={{ cursor: headerClick ? 'pointer' : 'inherit', flex: 1, overflow: 'hidden' }}
+              onClick={() => headerClick?.(item)}
+              align="center"
+            >
+              <Flex
+                style={{ flex: 1, height: '100%', overflow: 'hidden' }}
+                vertical
+                justify={titleDescription ? 'space-between' : 'center'}
+              >
+                <Flex align="center" justify="space-between" title={typeof title === 'string' ? title : ''}>
+                  <div className={cx('header-title', classNames?.headerTitle)} style={styles?.headerTitle}>
+                    {title}
+                  </div>
+                </Flex>
+                {titleDescription && (
+                  <div
+                    title={typeof titleDescription === 'string' ? titleDescription : ''}
+                    className="title-description"
+                  >
+                    {titleDescription}
+                  </div>
+                )}
+              </Flex>
+              {(onClick || headerClick) && <ChevronRight style={{ flexShrink: 0 }} size={26} />}
             </Flex>
           </Flex>
           {/* description */}
-          {description && (
+          {description !== false && (
             <div
               className="pro-card-description"
               title={typeof description === 'string' ? description : description?.content}
               style={{
-                height: typeof description === 'string' ? 60 : description?.rows ? (60 / 3) * description?.rows : 60,
+                height: typeof description === 'string' ? 40 : description?.rows ? (40 / 2) * description?.rows : 40,
               }}
             >
-              <Paragraph
-                ellipsis={{
-                  rows: typeof description === 'string' ? 3 : description?.rows || 3,
-                }}
-                style={{ margin: 0, wordBreak: 'break-all', color: 'var(--supos-table-first-color)', fontSize: 12 }}
-              >
-                {typeof description === 'string' ? description : description?.content}
-              </Paragraph>
+              {!_description ? (
+                <span style={{ color: '#8D8D8D' }}>
+                  {formatMessage(
+                    typeof description !== 'string' && description?.empty ? description?.empty : 'common.noDescription'
+                  )}
+                </span>
+              ) : (
+                <Paragraph
+                  ellipsis={{
+                    rows: typeof description === 'string' ? 2 : description?.rows || 2,
+                  }}
+                  style={{ margin: 0, wordBreak: 'break-all', color: 'var(--supos-table-first-color)', fontSize: 12 }}
+                >
+                  {typeof description === 'string' ? description : description?.content}
+                </Paragraph>
+              )}
             </div>
           )}
           {/* 二级描述 */}
           {secondaryDescription && (
             <div
-              className="pro-card-secondary-description"
+              style={styles?.secondaryDescription}
+              className={cx('pro-card-secondary-description', classNames?.secondaryDescription)}
               title={typeof secondaryDescription === 'string' ? secondaryDescription : undefined}
             >
               {secondaryDescription}
@@ -201,7 +261,7 @@ const ProCard: FC<ProCardProps> = ({
           {actions && (
             <Divider
               style={{
-                margin: '16px 0',
+                margin: '12px 0',
                 backgroundColor: 'var(--supos-t-dividr-color)',
               }}
             />
@@ -210,7 +270,7 @@ const ProCard: FC<ProCardProps> = ({
             <Flex align="center" justify="space-between">
               <Flex gap={8} align="center" style={{ flex: 1, overflow: 'hidden' }}>
                 {Array.isArray(actions) &&
-                  actions.slice(0, 2).map(({ label, key, title, icon, button, onClick, status, disabled }) =>
+                  actions.slice(0, actionNum).map(({ label, key, title, icon, button, onClick, status, disabled }) =>
                     key === 'loading' ? (
                       <InlineLoading key={key} status={status || 'active'} description={label} />
                     ) : (
@@ -218,7 +278,7 @@ const ProCard: FC<ProCardProps> = ({
                         {...button}
                         style={{
                           ...button?.style,
-                          maxWidth: 'calc((100% - 16px) / 2)',
+                          maxWidth: `calc((100% - 16px) / ${actionNum})`,
                         }}
                         icon={icon}
                         size="small"
@@ -232,20 +292,21 @@ const ProCard: FC<ProCardProps> = ({
                     )
                   )}
               </Flex>
-              {Array.isArray(actions) && actions.length > 2 && (
+              {Array.isArray(actions) && actions.length > actionNum && (
                 <Dropdown
                   menu={{
-                    items: actions.slice(2).map(({ key, label, icon, title, onClick, disabled }) => ({
+                    items: actions.slice(actionNum).map(({ key, label, icon, title, onClick, disabled, extra }) => ({
                       key,
                       label,
                       icon,
                       title: title ? title : typeof label === 'string' ? label : '',
                       onClick: (e) => handleClick(e, onClick),
                       disabled,
+                      extra,
                     })),
                   }}
                 >
-                  <Button type="text" icon={<EllipsisOutlined />} size="small" />
+                  <Button type="text" icon={<OverflowMenuVertical />} size="small" />
                 </Dropdown>
               )}
             </Flex>

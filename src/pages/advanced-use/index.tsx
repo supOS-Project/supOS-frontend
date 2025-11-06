@@ -58,7 +58,7 @@ const Index = () => {
                       window.open(`http://${window.location.host}${item.envMap.service_redirect_url}`);
                     }
                   }}
-                  description={item?.description || ' '}
+                  description={item?.description}
                 />
               );
             })}

@@ -1,8 +1,8 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import { PageProps } from '@/common-types';
-import { SoftwareResourceCluster as _App, InformationFilled, Grid, List, FolderAdd } from '@carbon/icons-react';
+import { SoftwareResourceCluster as _App, InformationFilled, FolderAdd } from '@carbon/icons-react';
 import { useTranslate } from '@/hooks';
-import { Flex, Tag, App, Popover, Empty, Segmented, Upload, Button } from 'antd';
+import { Flex, Tag, App, Popover, Empty, Upload, Button } from 'antd';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
@@ -23,6 +23,7 @@ import ProModal from '@/components/pro-modal/index.tsx';
 import ProCard from '@/components/pro-card/ProCard.tsx';
 import SecondaryList from '@/components/pro-card/SecondaryList.tsx';
 import ProCardContainer from '@/components/pro-card/ProCardContainer.tsx';
+import ComSegmented from '@/components/com-segmented';
 const { Dragger } = Upload;
 
 const StatusOptions = [
@@ -357,31 +358,7 @@ const Index: FC<PageProps> = ({ title }) => {
         }}
         className={styles['plugin-management']}
       >
-        <Flex justify="flex-end" align="center" style={{ marginBottom: 16, marginTop: 16, paddingRight: 16 }}>
-          <Segmented
-            size="small"
-            value={mode}
-            onChange={(v) => setMode(v)}
-            options={[
-              {
-                value: 'card',
-                icon: (
-                  <span className={styles['flex']} title={commonFormatMessage('common.cardMode')}>
-                    <Grid />
-                  </span>
-                ),
-              },
-              {
-                value: 'list',
-                icon: (
-                  <span className={styles['flex']} title={commonFormatMessage('common.listMode')}>
-                    <List />
-                  </span>
-                ),
-              },
-            ]}
-          />
-        </Flex>
+        <ComSegmented value={mode} onChange={setMode} defaultValue="card" />
         <div style={{ flex: 1, padding: '0 16px 16px', overflow: 'auto', alignItems: 'center' }}>
           {mode === 'card' ? (
             data.length > 0 ? (
@@ -398,31 +375,25 @@ const Index: FC<PageProps> = ({ title }) => {
                       statusHeader={{
                         statusTag: <CardTag status={d?.installStatus} latestFailMsg={d.latestFailMsg} />,
                       }}
-                      styles={{
-                        card: { height: 275 },
-                      }}
                       header={{
                         customIcon: <IconImage theme={primaryColor} iconName={icon} />,
                         title: plugInfoYml.showName,
                         titleDescription: formatTimestamp(d?.installTime),
                       }}
-                      description={plugInfoYml?.description || ' '}
+                      description={plugInfoYml?.description}
                       secondaryDescription={
                         <SecondaryList
                           options={[
                             {
                               label: commonFormatMessage('common.dev'),
                               content: plugInfoYml?.vendorName,
-                              span: 8,
+                              span: 24,
                               key: 'dev',
                             },
                             {
                               label: commonFormatMessage('common.version'),
                               content: plugInfoYml?.version,
-                              span: 16,
-                              contentStyle: { maxWidth: 'calc(100% - 55px)' },
-                              labelStyle: { maxWidth: '50%' },
-                              wrapperStyle: { justifyContent: 'flex-end' },
+                              span: 24,
                               key: 'version',
                             },
                             {
@@ -442,7 +413,7 @@ const Index: FC<PageProps> = ({ title }) => {
                 })}
               </ProCardContainer>
             ) : (
-              <Empty style={{ width: '100%' }} />
+              <Empty />
             )
           ) : (
             <ProTable

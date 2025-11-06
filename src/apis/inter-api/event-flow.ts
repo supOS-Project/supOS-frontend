@@ -42,3 +42,7 @@ export const processList = async () =>
       [CustomAxiosConfigEnum.BusinessResponse]: true,
     }
   );
+
+// 置顶
+export const markFlow = async (id: string) => api.post('/mark', { id });
+export const unmarkFlow = async (id: string) => api.delete(`/unmark?id=${id}`);

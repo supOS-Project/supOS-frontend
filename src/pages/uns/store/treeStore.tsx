@@ -11,6 +11,7 @@ import {
   createLoadMoreNode,
   findNodeInfoById,
   formatNodeData,
+  formatNodeDataForTemplate,
   getDescendantKeys,
   getParentNodes,
   handlerTreeData,
@@ -86,6 +87,71 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
                 state.lazyTree = next;
               }
             }),
+          recursiveLoadDataForList: async (options, cb) => {
+            const { newNodeKey, queryType } = options || {};
+            const { searchValue, setTreeData, setLoading, setNodePaginationState, scrollTreeNode, loadMoreText } =
+              get();
+            const _newNodeKey = newNodeKey as string;
+            setLoading(true);
+            let childrenData: UnsTreeNode[] = [];
+            async function fn(page: number): Promise<boolean> {
+              const params = {
+                pageNo: page,
+                pageSize: PAGE_SIZE,
+                key: searchValue,
+              };
+              try {
+                const { data, ...restResponse } = await getAllTemplate(params, {
+                  [CustomAxiosConfigEnum.BusinessResponse]: true,
+                });
+                const childNodes = formatNodeDataForTemplate(data);
+                childrenData = uniqueArr([...childrenData, ...childNodes]);
+                // 检查是否找到目标节点
+                if (!data?.some((item: any) => item.id === _newNodeKey)) {
+                  // 如果没有找到目标节点且有更多页，继续请求下一页
+                  if (hasMoreData(restResponse)) {
+                    // 使用await等待递归调用完成
+                    return await fn(restResponse?.pageNo + 1);
+                  }
+                  // 如果没有更多页，返回false表示未找到
+                  return false;
+                } else {
+                  // 找到目标节点，添加hasMore节点（如果需要）
+                  const hasMore = hasMoreData(restResponse);
+                  if (hasMore) {
+                    childrenData = [
+                      ...childrenData,
+                      createLoadMoreNode(ROOT_NODE_ID, page, { key: ROOT_NODE_ID, path: '' }, loadMoreText),
+                    ];
+                    setNodePaginationState((pre) => {
+                      pre[ROOT_NODE_ID] = { currentPage: restResponse?.pageNo, hasMore, isLoading: false };
+                    });
+                  }
+                  // 返回true表示找到了目标节点
+                  return true;
+                }
+              } catch (error) {
+                console.error('递归加载数据出错:', error);
+                return false;
+              }
+            }
+            try {
+              const found = await fn(1);
+              setTreeData(childrenData);
+              console.log('递归加载完成，找到节点:', found);
+              console.log('加载的数据:', childrenData);
+              if (queryType === 'editTemplateName' || queryType === 'deleteTemplate') {
+                setTimeout(() => {
+                  scrollTreeNode(_newNodeKey);
+                }, 0);
+              }
+              cb?.(childrenData);
+            } catch (error) {
+              console.error('递归加载过程出错:', error);
+            } finally {
+              setLoading(false);
+            }
+          },
           recursiveLoadData: async (options, cb) => {
             const { key = '', newNodeKey, queryType, nodeDetail } = options || {};
             const {
@@ -164,9 +230,9 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
             try {
               const found = await fn(1);
               console.log('递归加载完成，找到节点:', found);
-              console.log('加载的数据:', childrenData);
+              console.log('加载的数据:', childrenData, parentId);
 
-              if (parentId === ROOT_NODE_ID) {
+              if (!parentId || keyStr === ROOT_NODE_ID) {
                 setTreeData(childrenData);
               } else {
                 setTreeData((pre) => {
@@ -229,6 +295,7 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
               loadMoreText,
               setSelectedNode,
               resetTreeData,
+              recursiveLoadDataForList,
             } = get();
             if (reset) {
               // 重置异步加载key
@@ -290,7 +357,8 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
                       return;
                     }
 
-                    if (loadingKeys.has(key)) {
+                    // reset必须是false，不然enter搜索会取消请求
+                    if (!reset && loadingKeys.has(key)) {
                       console.log(`节点正在请求：${key};  page: ${page}`);
                       return;
                     }
@@ -351,6 +419,7 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
                             scrollTreeNode?.(get().treeData?.[0]?.id);
                           }
                         }
+                        cb?.(get().treeData);
                         return;
                       }
                       // 子节点的处理逻辑
@@ -429,34 +498,108 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
                 }
                 break;
               case 'template':
-                setLoading(true);
-                getAllTemplate({ pageNo: 1, pageSize: 9999, key: searchValue })
-                  .then((res: any) => {
-                    if (res && Array.isArray(res)) {
-                      const data = res.map((e: any) => ({
-                        ...e,
-                        type: 1,
-                        value: 0,
-                        title: e.name,
-                        isLeaf: true,
-                        key: e.id,
-                      }));
-                      setTreeData(data);
-                      if (reset) {
-                        scrollTreeNode?.(res?.[0]?.id);
-                      }
-                      cb?.(data);
-                    } else {
-                      resetTreeData();
-                    }
-                  })
-                  .catch((err) => {
-                    resetTreeData();
-                    console.log(err);
-                  })
-                  .finally(() => {
-                    setLoading(false);
+                {
+                  if (!reset && loadingKeys.has(key)) {
+                    console.log(`节点正在请求：${key};  page: ${page}`);
+                    return;
+                  }
+                  addLoadingKey(key);
+                  setNodePaginationState((pre) => {
+                    pre[key as string] = { ...pre[key as string], isLoading: true };
                   });
+                  // 创建AbortController用于取消请求
+                  const controller = new AbortController();
+                  const keyStr = key.toString();
+                  setAbortController(keyStr, controller);
+                  try {
+                    const params = {
+                      pageNo: page,
+                      pageSize: PAGE_SIZE,
+                      key: searchValue,
+                    };
+
+                    if (
+                      queryType === 'addTemplate' ||
+                      queryType === 'editTemplateName' ||
+                      queryType === 'deleteTemplate' ||
+                      queryType === 'viewTemplate'
+                    ) {
+                      recursiveLoadDataForList(options, cb);
+                      return;
+                    }
+
+                    const { data, ...restResponse } = await getAllTemplate(params, {
+                      signal: controller.signal,
+                      [CustomAxiosConfigEnum.BusinessResponse]: true,
+                    });
+                    if (page === 1) {
+                      const fn = () => {
+                        if (data && Array.isArray(data)) {
+                          const rootNodes = formatNodeDataForTemplate(data);
+
+                          // 判断是否有更多数据
+                          const hasMore = hasMoreData(restResponse);
+
+                          // 设置根节点分页状态
+                          setNodePaginationState((pre) => {
+                            pre[ROOT_NODE_ID] = { currentPage: restResponse.pageNo, hasMore, isLoading: false };
+                          });
+
+                          // 如果有更多数据，添加"加载更多"节点
+                          if (hasMore) {
+                            return [...rootNodes, createLoadMoreNode(ROOT_NODE_ID, 1, parentInfo, loadMoreText)];
+                          }
+
+                          return rootNodes;
+                        }
+                        return [];
+                      };
+                      const rootNodes = fn();
+                      setTreeData(rootNodes);
+                      if (reset) {
+                        scrollTreeNode?.(rootNodes?.[0]?.id);
+                      }
+                    } else {
+                      let hasMore = false;
+                      hasMore = hasMoreData(restResponse);
+                      setTreeData((pre) => {
+                        // 过滤掉之前的加载更多节点
+                        const filteredData = pre.filter((node) => !node.isLoadMoreNode);
+                        const newNodes = formatNodeDataForTemplate(data);
+                        return hasMore
+                          ? [
+                              ...filteredData,
+                              ...newNodes,
+                              createLoadMoreNode(ROOT_NODE_ID, page, parentInfo, loadMoreText),
+                            ]
+                          : [...filteredData, ...newNodes];
+                      });
+                      setNodePaginationState((pre) => {
+                        pre[key as string] = { currentPage: page, hasMore, isLoading: false };
+                      });
+                      if (reset) {
+                        scrollTreeNode?.(get().treeData?.[0]?.id);
+                      }
+                    }
+                  } catch (error: any) {
+                    // Axios取消请求时会设置error.name为'CanceledError'或message为'canceled'
+                    if (
+                      error?.name === 'AbortError' ||
+                      error?.name === 'CanceledError' ||
+                      error?.message === 'canceled'
+                    ) {
+                      console.log(`取消请求 ${key}`);
+                    } else {
+                      console.error(`获取节点数据失败 ${key}:`, error);
+                    }
+                    setNodePaginationState((pre) => {
+                      pre[key as string] = { ...pre[key as string], isLoading: false };
+                    });
+                  } finally {
+                    removeLoadingKey(key);
+                    setLoading(false);
+                  }
+                }
                 break;
               case 'label':
                 setLoading(true);
@@ -595,13 +738,17 @@ const createTreeStore = (initProps?: Partial<TreeStoreProps>) => {
             }
             return [];
           },
-          setSelectedNode: (selectedNode) => {
-            get().setBreadcrumbList(selectedNode);
+          setSelectedNode: (selectedNode, quick = false) => {
+            get().setBreadcrumbList(selectedNode, quick);
             return set({ selectedNode });
           },
-          setBreadcrumbList: (selectedNode) => {
+          setBreadcrumbList: (selectedNode, quick = false) => {
             const { treeData, treeType, setExpandedKeys } = get();
-            const breadcrumbList = selectedNode && treeType === 'uns' ? getParentNodes(treeData, selectedNode.key) : [];
+            const breadcrumbList = quick
+              ? ([selectedNode] as UnsTreeNode[])
+              : selectedNode && treeType === 'uns'
+                ? getParentNodes(treeData, selectedNode.key)
+                : [];
             // 设置自动展开所有父级
             if (selectedNode && treeType === 'uns') {
               setExpandedKeys((pre) => {

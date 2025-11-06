@@ -1,8 +1,8 @@
 import { useState, useEffect, FC, CSSProperties, useRef } from 'react';
-import { getLabelDetail, updateLabel, makeSingleLabel } from '@/apis/inter-api/uns';
+import { getLabelDetail, updateLabel, makeSingleLabel, updateLabelSubscribe } from '@/apis/inter-api/uns';
 import { useTranslate } from '@/hooks';
 import { Collapse, theme, Form, Flex, Button, message, Typography } from 'antd';
-import { CaretRight, Tag } from '@carbon/icons-react';
+import { CaretRight, Copy, Tag } from '@carbon/icons-react';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
 import SearchSelect from '@/pages/uns/components/use-create-modal/components/SearchSelect';
 import Icon from '@ant-design/icons';
@@ -12,6 +12,12 @@ import { AuthButton, AuthWrapper } from '@/components/auth';
 import ProModal from '@/components/pro-modal';
 import FileEdit from '@/components/svg-components/FileEdit';
 import { hasPermission } from '@/utils/auth';
+import Subscribe from '@/pages/uns/components/subscribe';
+import ComDetailList from '@/components/com-detail-list';
+import useClipboard from '@/hooks/useClipboard.ts';
+import CustomParagraph from '@/components/custom-paragraph';
+import { formatTimestamp } from '@/utils/format.ts';
+import styles from './index.module.scss';
 
 const { Title } = Typography;
 
@@ -89,7 +95,68 @@ const Module: FC<LabelDetailProps> = (props) => {
   const onDeleteHandle = () => {
     handleDelete({ key: '', id, type: 9 });
   };
+  const { copy } = useClipboard();
+
   const items = [
+    {
+      key: 'detail',
+      label: <span>{formatMessage('common.detail')}</span>,
+      children: (
+        <ComDetailList
+          list={[
+            {
+              label: 'Topic',
+              key: 'topic',
+              hide: !modelInfo?.subscribeEnable,
+              render: () => {
+                return (
+                  <div>
+                    {modelInfo.topic}
+                    <span
+                      style={{ marginLeft: '5px', verticalAlign: 'sub', cursor: 'pointer' }}
+                      onClick={() => copy(modelInfo.topic)}
+                      title={formatMessage('common.copy')}
+                    >
+                      <Copy />
+                    </span>
+                  </div>
+                );
+              },
+            },
+            {
+              label: formatMessage('uns.alias'),
+              key: 'labelName',
+            },
+            {
+              label: formatMessage('uns.subscriptionFrequency'),
+              key: 'subscribeFrequency',
+              hide: !modelInfo?.subscribeEnable,
+              render: () => {
+                return (
+                  <CustomParagraph
+                    className={styles.paragraph}
+                    value={modelInfo.subscribeFrequency}
+                    onChange={(value) => {
+                      updateLabelSubscribe({ id, ...value }).then(() => {
+                        message.success(formatMessage('uns.editSuccessful'));
+                        getModel(id as string);
+                      });
+                    }}
+                  />
+                );
+              },
+            },
+            {
+              label: formatMessage('common.creationTime'),
+              key: 'createTime',
+              render: (item) => formatTimestamp(item),
+            },
+          ]}
+          data={modelInfo}
+        />
+      ),
+      style: panelStyle,
+    },
     {
       key: 'fileList',
       label: formatMessage('common.fileList'),
@@ -103,7 +170,6 @@ const Module: FC<LabelDetailProps> = (props) => {
             border: '1px solid #C6C6C6',
             background: 'var(--supos-uns-button-color)',
             color: 'var(--supos-text-color)',
-            width: '32px',
           }}
         >
           +
@@ -111,7 +177,11 @@ const Module: FC<LabelDetailProps> = (props) => {
       ),
     },
   ];
-
+  const handleChangeSubscribe = async (enable: boolean, frequency?: string) => {
+    await updateLabelSubscribe({ id, enable, frequency });
+    getModel(id as string);
+    message.success(enable ? formatMessage('uns.subscribeSuccessful') : formatMessage('uns.unsubscribeSuccessful'));
+  };
   return (
     <div className="topicDetailWrap">
       <div className="topicDetailContent">
@@ -160,6 +230,13 @@ const Module: FC<LabelDetailProps> = (props) => {
           >
             {topicTitle}
           </Title>
+          <Subscribe
+            showModal
+            value={modelInfo.subscribeEnable}
+            topic={modelInfo.topic}
+            subscribeFrequency={modelInfo.subscribeFrequency}
+            onChange={handleChangeSubscribe}
+          />
         </Flex>
         <div className="tableWrap">
           <Collapse

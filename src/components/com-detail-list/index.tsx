@@ -7,6 +7,7 @@ export interface ComDetailListProps {
   list?: {
     key: string;
     prefix?: ReactNode;
+    hide?: boolean;
     label: ReactNode;
     render?: (item: any, data: any) => ReactNode;
   }[];
@@ -15,17 +16,19 @@ export interface ComDetailListProps {
 const ComDetailList: FC<ComDetailListProps> = ({ data, list }) => {
   return (
     <div className="com-detail-list">
-      {list?.map?.((l) => {
-        return (
-          <Flex className="com-detail-list-item" align="center" key={l.key}>
-            <Flex className="item-label" align="center" gap={4}>
-              {l.prefix && <Flex>{l.prefix}</Flex>}
-              <div>{l.label}</div>
+      {list
+        ?.filter((item) => !item.hide)
+        .map?.((l) => {
+          return (
+            <Flex className="com-detail-list-item" align="center" key={l.key}>
+              <Flex className="item-label" align="center" gap={4}>
+                {l.prefix && <Flex>{l.prefix}</Flex>}
+                <div>{l.label}</div>
+              </Flex>
+              <div className="item-content">{l.render ? l.render(data?.[l?.key], data) : data?.[l?.key]}</div>
             </Flex>
-            <div className="item-content">{l.render ? l.render(data?.[l?.key], data) : data?.[l?.key]}</div>
-          </Flex>
-        );
-      })}
+          );
+        })}
     </div>
   );
 };

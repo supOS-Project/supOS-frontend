@@ -1,6 +1,6 @@
 import { Key, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { App, Button, Divider, Flex, Popover, Radio } from 'antd';
-import { getTreeStoreSnapshot, useTreeStore, useTreeStoreRef } from '../../store/treeStore';
+import { getTreeStoreSnapshot, ROOT_NODE_ID, useTreeStore, useTreeStoreRef } from '../../store/treeStore';
 import { TTreeType } from '../../store/types';
 import useTranslate from '@/hooks/useTranslate';
 import {
@@ -14,12 +14,15 @@ import {
   RepoArtifact,
   Document,
   TrashCan,
+  WatsonHealth3DCurveAutoColon,
+  SendAlt,
+  ChartLine,
 } from '@carbon/icons-react';
 import Icon from '@ant-design/icons';
 import { ButtonPermission } from '@/common-types/button-permission';
 import _ from 'lodash';
 import { ItemType } from 'antd/es/menu/interface';
-import { getInstanceInfo, getModelInfo } from '@/apis/inter-api/uns';
+import { getInstanceInfo, getModelInfo, pasteUns } from '@/apis/inter-api/uns';
 import { useViewLabelModal } from '@/pages/uns/components';
 import ReverseModal from '@/pages/uns/components/reverse-modal';
 import { UnsTreeNode } from '@/pages/uns/types';
@@ -29,6 +32,10 @@ import ProSearch from '@/components/pro-search';
 import ProTree, { ProTreeProps } from '@/components/pro-tree';
 import TagAdd from '@/components/svg-components/TagAdd';
 import { usePageIsShow } from '@/contexts/tabs-lifecycle-context.ts';
+import { useUnsContext } from '@/pages/uns/UnsContext';
+import StatusDot from './StatusDot';
+import { useBaseStore } from '@/stores/base';
+import { getTargetNode } from '@/utils';
 
 const renderOperationDom = (type: string) => {
   switch (type) {
@@ -59,8 +66,17 @@ const Operation = () => {
     selectedNode: state.selectedNode,
     loadData: state.loadData,
   }));
+  const {
+    systemInfo: { enableAutoCategorization },
+  } = useBaseStore((state) => ({
+    systemInfo: state.systemInfo,
+  }));
   const { message } = App.useApp();
   const [reverserOpen, setReverserOpen] = useState<boolean>(false); //复制的topic
+
+  const hasTopicType =
+    enableAutoCategorization && selectedNode && !(selectedNode?.type === 0 && !selectedNode?.dataType);
+
   const options = useMemo(() => {
     return filterPermissionToList<{
       onClick: () => void;
@@ -69,6 +85,7 @@ const Operation = () => {
       key: string;
       title?: string;
       id?: string;
+      disabled?: boolean;
     }>([
       {
         title: formatMessage('uns.newFile'),
@@ -79,6 +96,7 @@ const Operation = () => {
         buttonType: 'DocumentAdd',
         showTreeType: 'uns',
         key: 'addFile',
+        disabled: !!selectedNode?.mount,
       },
       {
         title: formatMessage('uns.newFolder'),
@@ -89,16 +107,18 @@ const Operation = () => {
         buttonType: 'FolderAdd',
         showTreeType: 'uns',
         key: 'addFolder',
+        disabled: !!selectedNode?.mount || hasTopicType,
       },
       {
-        title: formatMessage('uns.batchReverseGeneration'),
+        title: formatMessage('uns.batchGeneration'),
         auth: ButtonPermission['uns.batchGeneration'],
         onClick: () => {
           setReverserOpen(true);
         },
         buttonType: 'RepoArtifact',
         showTreeType: 'uns',
-        key: 'batchReverseGeneration',
+        key: 'batchGeneration',
+        disabled: !!selectedNode?.mount || hasTopicType,
       },
       {
         title: formatMessage('uns.addTemplate'),
@@ -142,10 +162,11 @@ const Operation = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
+            cursor: item.disabled ? 'not-allowed' : 'pointer',
+            color: item.disabled ? 'var(--supos-select-d-color)' : 'var(--supos-text-color)',
           }}
           id={item.id}
-          onClick={item.onClick}
+          onClick={item.disabled ? undefined : item.onClick}
           key={item.key}
           title={item.title}
         >
@@ -373,17 +394,67 @@ const TreeHeader = () => {
 
 // uns树的icon展示
 const TreeNodeIcon = memo(({ dataNode }: { dataNode: UnsTreeNode }) => {
+  const { mountStatus } = useUnsContext();
   const { expandedKeys } = useTreeStore((state) => ({
     expandedKeys: state.expandedKeys,
   }));
+  const {
+    systemInfo: { enableAutoCategorization },
+  } = useBaseStore((state) => ({
+    systemInfo: state.systemInfo,
+  }));
+
+  let Dom;
+  let color;
+  const parentDataType = enableAutoCategorization
+    ? dataNode.type === 0
+      ? dataNode.dataType
+      : dataNode.parentDataType
+    : 0;
+  switch (parentDataType) {
+    case 1:
+      Dom = Document;
+      color = '#D2A106';
+      break;
+    case 2:
+      Dom = SendAlt;
+      color = '#94C518';
+      break;
+    case 3:
+      Dom = ChartLine;
+      color = '#1D77FE';
+      break;
+    default:
+      break;
+  }
+  const commonStyle = { flexShrink: 0, marginRight: '5px' };
+
   if (dataNode.type === 0) {
-    return expandedKeys.includes(dataNode.key) ? (
-      <FolderOpen style={{ flexShrink: 0, marginRight: '5px' }} />
-    ) : (
-      <Folder style={{ flexShrink: 0, marginRight: '5px' }} />
+    return (
+      <Flex align="center">
+        <div style={{ width: 10, display: 'flex', alignItems: 'center' }}>
+          {dataNode.alias && mountStatus[dataNode.alias] && <StatusDot status={mountStatus[dataNode.alias]} />}
+        </div>
+        {enableAutoCategorization ? (
+          dataNode.dataType && Dom ? (
+            <Dom style={{ ...commonStyle, color: color }} />
+          ) : (
+            <WatsonHealth3DCurveAutoColon style={commonStyle} />
+          )
+        ) : expandedKeys.includes(dataNode.key) && dataNode.hasChildren ? (
+          <FolderOpen style={commonStyle} />
+        ) : (
+          <Folder style={commonStyle} />
+        )}
+      </Flex>
     );
   } else if (dataNode.type === 2) {
-    return <Document style={{ flexShrink: 0, marginRight: '5px' }} />;
+    return (
+      <Flex align="center">
+        <div style={{ width: 10 }} />
+        {Dom ? <Dom style={{ ...commonStyle, color: color }} /> : <Document style={commonStyle} />}
+      </Flex>
+    );
   }
   return null;
 });
@@ -407,14 +478,21 @@ const findNodeWithParent = (
 const TopTreeCom = ({
   header,
   treeNodeExtra,
+  changeCurrentPath,
 }: {
   header: ProTreeProps['header'];
   treeNodeExtra?: ProTreeProps['treeNodeExtra'];
+  changeCurrentPath?: any;
 }) => {
   const formatMessage = useTranslate();
   const { message } = App.useApp();
   // 创建一个 ref 来引用 tree 元素
   const treeRef = useRef<any>(null);
+  const {
+    systemInfo: { enableAutoCategorization },
+  } = useBaseStore((state) => ({
+    systemInfo: state.systemInfo,
+  }));
 
   const {
     lazyTree,
@@ -442,6 +520,7 @@ const TopTreeCom = ({
     setTreeType,
     handleExpandNode,
     setTreeData,
+    setLoading,
   } = useTreeStore((state) => ({
     lazyTree: state.lazyTree,
     loadData: state.loadData,
@@ -469,6 +548,7 @@ const TopTreeCom = ({
     setTreeType: state.setTreeType,
     handleExpandNode: state.handleExpandNode,
     setTreeData: state.setTreeData,
+    setLoading: state.setLoading,
   }));
 
   //滚动到目标树节点
@@ -493,7 +573,7 @@ const TopTreeCom = ({
     setTreeMap(false);
     setTreeType(type);
     scrollTreeNode(node.id);
-    loadData({}, (data) => {
+    loadData({ queryType: 'viewTemplate', newNodeKey: node.id }, (data) => {
       setSelectedNode(data?.find((f) => f.id === node.id));
       scrollTreeNode(node.id);
       setCurrentTreeMapType('all');
@@ -522,6 +602,64 @@ const TopTreeCom = ({
   };
   const isUns = treeType === 'uns';
   const isShow = usePageIsShow();
+  const pasteHandle = (source: any, target: any) => {
+    if (source) {
+      setLoading(true);
+      const targetId = (target?.type === 0 ? target?.id : target?.parentId) || '';
+      pasteUns({
+        sourceId: source?.id,
+        targetId,
+      })
+        .then(({ data, msg, code }) => {
+          const { parentId, id } = data;
+          const hasParentNode = getTargetNode(treeData || [], parentId);
+
+          const _parentId = hasParentNode ? parentId : targetId ? targetId : ROOT_NODE_ID;
+          const _childId = hasParentNode || parentId === targetId || !lazyTree ? id : parentId;
+          if (code === 206) {
+            message.warning(msg);
+          } else {
+            message.success(formatMessage('uns.pasteSuccess'));
+          }
+          console.log(_parentId, _childId);
+          loadData(
+            {
+              queryType: source?.type === 0 ? 'addFolder' : 'addFile',
+              // key: targetId ? targetId : ROOT_NODE_ID,
+              // newNodeKey: data,
+              key: _parentId,
+              newNodeKey: _childId,
+              // reset: !targetId,
+              reset: !(targetId || parentId),
+              nodeDetail: source,
+            },
+            (_, selectInfo, opt) => {
+              if (!selectInfo && !_childId) return;
+
+              const currentNode = getTargetNode(_ || [], _childId);
+              changeCurrentPath(
+                selectInfo ||
+                  currentNode || {
+                    key: _childId,
+                    id: _childId,
+                    type: source?.type === 0 ? 0 : 2,
+                  }
+              );
+              setTreeMap(false);
+              if (selectInfo) {
+                // 非lasy树
+                opt?.scrollTreeNode?.(id);
+              }
+            }
+          );
+        })
+        .catch(() => {
+          setLoading(false);
+        });
+    } else {
+      message.warning(formatMessage('uns.copyTip'));
+    }
+  };
   return (
     <>
       {ViewLabelModal}
@@ -579,13 +717,96 @@ const TopTreeCom = ({
         rightClickMenuItems={
           isUns
             ? ({ node }) => {
+                if (!node) {
+                  // 空白点击
+                  return [
+                    {
+                      auth: [ButtonPermission['uns.folderPaste'], ButtonPermission['uns.filePaste']],
+                      key: 'paste',
+                      label: formatMessage('common.paste'),
+                      onClick: () => {
+                        pasteHandle(pasteNode, null);
+                      },
+                    },
+                    {
+                      auth: [ButtonPermission['uns.folderPaste'], ButtonPermission['uns.filePaste']],
+                      key: 'pasteAndEdit',
+                      label: formatMessage('common.pasteAndEdit'),
+                      onClick: () => {
+                        if (pasteNode) {
+                          //纯前端方案
+                          operationFns?.setOptionOpen?.('paste', null, pasteNode);
+                        } else {
+                          message.warning(formatMessage('uns.copyTip'));
+                        }
+                      },
+                      disabled: !!(enableAutoCategorization && pasteNode?.type === 0 && pasteNode?.dataType),
+                    },
+                    {
+                      auth: ButtonPermission['uns.folderAdd'],
+                      key: 'addFolder',
+                      label: formatMessage('common.createNewFolder'),
+                      onClick: () => {
+                        operationFns?.setOptionOpen?.('addFolder');
+                      },
+                    },
+                    {
+                      auth: ButtonPermission['uns.fileAdd'],
+                      key: 'addFile',
+                      label: formatMessage('common.createNewFile'),
+                      onClick: () => {
+                        operationFns?.setOptionOpen?.('addFile');
+                      },
+                    },
+                  ];
+                }
                 const _node = { ...node };
-                const baseItems = ['viewTemplate', 'copy', 'paste', 'addFolder', 'addFile', 'delete'];
+                const baseItems =
+                  (_node.type === 0 && !_node.dataType) || !enableAutoCategorization
+                    ? ['viewTemplate', 'copy', 'paste', 'pasteAndEdit', 'addFolder', 'addFile', 'delete']
+                    : ['viewTemplate', 'copy', 'paste', 'pasteAndEdit', 'addFile', 'delete'];
+                let disabledPaste = false;
+                let disabledPasteAndEdit = false;
+                if (enableAutoCategorization && pasteNode) {
+                  if (pasteNode.type === 0) {
+                    if (pasteNode.dataType) {
+                      if (
+                        (_node.type === 0 && _node.dataType && pasteNode.dataType !== _node.dataType) ||
+                        (_node.type === 2 && pasteNode.dataType !== _node.parentDataType)
+                      ) {
+                        disabledPaste = true;
+                        disabledPasteAndEdit = true;
+                      }
+                      if (
+                        (_node.type === 0 && pasteNode.dataType === _node.dataType) ||
+                        (_node.type === 2 && pasteNode.dataType === _node.parentDataType) ||
+                        !_node.dataType
+                      ) {
+                        disabledPasteAndEdit = true;
+                      }
+                    } else {
+                      if ((_node.type === 0 && _node.dataType) || (_node.type === 2 && _node.parentDataType)) {
+                        disabledPaste = true;
+                        disabledPasteAndEdit = true;
+                      }
+                    }
+                  } else if (pasteNode.type === 2) {
+                    if (
+                      (_node.type === 0 && _node.dataType && pasteNode.parentDataType !== _node.dataType) ||
+                      (_node.type === 2 && pasteNode.parentDataType !== _node.parentDataType)
+                    ) {
+                      disabledPaste = true;
+                      disabledPasteAndEdit = true;
+                    }
+                  }
+                }
                 const folderItems = lazyTree
                   ? ['refresh', ...baseItems, 'collapseFolder']
                   : [...baseItems, 'expandFolder', 'collapseFolder'];
 
                 const mapItem = _node.type === 0 ? folderItems : ['viewLabels', ...baseItems];
+                const isMountFile = !!node.mount;
+
                 return filterPermissionToList<ItemType>(
                   [
                     {
@@ -635,6 +856,15 @@ const TopTreeCom = ({
                       key: 'paste',
                       label: formatMessage('common.paste'),
                       onClick: () => {
+                        pasteHandle(pasteNode, _node);
+                      },
+                      disabled: isMountFile || disabledPaste,
+                    },
+                    {
+                      auth: _node.type === 0 ? ButtonPermission['uns.folderPaste'] : ButtonPermission['uns.filePaste'],
+                      key: 'pasteAndEdit',
+                      label: formatMessage('common.pasteAndEdit'),
+                      onClick: () => {
                         if (pasteNode) {
                           //纯前端方案
                           operationFns?.setOptionOpen?.('paste', _node, pasteNode);
@@ -642,6 +872,7 @@ const TopTreeCom = ({
                           message.warning(formatMessage('uns.copyTip'));
                         }
                       },
+                      disabled: isMountFile || disabledPasteAndEdit,
                     },
                     {
                       auth: ButtonPermission['uns.folderAdd'],
@@ -650,6 +881,7 @@ const TopTreeCom = ({
                       onClick: () => {
                         operationFns?.setOptionOpen?.('addFolder', _node);
                       },
+                      disabled: isMountFile,
                     },
                     {
                       auth: ButtonPermission['uns.fileAdd'],
@@ -658,6 +890,7 @@ const TopTreeCom = ({
                       onClick: () => {
                         operationFns?.setOptionOpen?.('addFile', _node);
                       },
+                      disabled: isMountFile,
                     },
                     {
                       key: 'expandFolder',
@@ -715,7 +948,7 @@ const TopTreeCom = ({
           setExpandedKeys(expandedKeys);
           setLoadedKeys(expandedKeys);
         }}
-        lazy={lazyTree}
+        lazy={treeType === 'template' ? true : lazyTree}
         header={header}
         wrapperStyle={{ padding: '0 14px' }}
         height={0}
@@ -732,7 +965,13 @@ const TopTreeCom = ({
         treeNodeCount={(dataNode) => {
           return (
             dataNode.type === 0 && (
-              <span style={{ color: 'var(--supos-text-color)', fontSize: '12px', opacity: 0.5 }}>
+              <span
+                style={{
+                  color: enableAutoCategorization ? '#161616' : 'var(--supos-text-color)',
+                  fontSize: '12px',
+                  opacity: 0.5,
+                }}
+              >
                 ({dataNode.countChildren})
               </span>
             )
@@ -767,12 +1006,43 @@ const TopTreeCom = ({
             return '';
           }
         }}
+        renderTitleStyle={(dataNode) => {
+          const bgColor =
+            dataNode.type === 0 && dataNode.dataType && enableAutoCategorization
+              ? dataNode.dataType === 1
+                ? '#FCF4D6'
+                : dataNode.dataType === 2
+                  ? '#F0FBD2'
+                  : '#E8F1FF'
+              : '';
+          const highNode =
+            breadcrumbList
+              ?.slice(0, -1)
+              .map((e) => e.key)
+              .includes(dataNode.key) ?? false;
+
+          return bgColor
+            ? {
+                height: '26px',
+                backgroundColor: bgColor,
+                borderRadius: '3px',
+                paddingRight: '8px',
+                color: highNode ? 'var(--supos-theme-color)' : '#161616',
+              }
+            : {};
+        }}
       />
     </>
   );
 };
 
-const UnsTree = ({ treeNodeExtra }: { treeNodeExtra?: ProTreeProps['treeNodeExtra'] }) => {
-  return <TopTreeCom treeNodeExtra={treeNodeExtra} header={<TreeHeader />} />;
+const UnsTree = ({
+  treeNodeExtra,
+  changeCurrentPath,
+}: {
+  treeNodeExtra?: ProTreeProps['treeNodeExtra'];
+  changeCurrentPath?: any;
+}) => {
+  return <TopTreeCom treeNodeExtra={treeNodeExtra} changeCurrentPath={changeCurrentPath} header={<TreeHeader />} />;
 };
 export default UnsTree;

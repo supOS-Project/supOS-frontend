@@ -18,11 +18,11 @@ const copyPerMap: { [key: string]: string } = {
   template: ButtonPermission['uns.templateCopy'],
 };
 
-const TreeNodeExtra: FC<{ handleDelete: () => void; handleCopy: () => void; type?: number }> = ({
-  handleDelete,
-  handleCopy,
-  type,
-}) => {
+const TreeNodeExtra: FC<{
+  handleDelete: () => void;
+  handleCopy: () => void;
+  type?: number;
+}> = ({ handleDelete, handleCopy, type }) => {
   const formatMessage = useTranslate();
   const { treeType } = useTreeStore((state) => ({
     treeType: state.treeType,
@@ -44,9 +44,13 @@ const TreeNodeExtra: FC<{ handleDelete: () => void; handleCopy: () => void; type
         </AuthWrapper>
       )}
       <AuthWrapper auth={deletePerMap[treeType === 'uns' ? treeType + type : treeType]}>
-        <span title={formatMessage('common.delete')} style={{ lineHeight: 1 }}>
+        <span
+          title={formatMessage('common.delete')}
+          style={{
+            lineHeight: 1,
+          }}
+        >
           <Subtract
-            style={{ cursor: 'pointer' }}
             onClick={(e) => {
               e?.stopPropagation();
               handleDelete?.();

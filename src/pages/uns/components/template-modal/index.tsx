@@ -86,7 +86,7 @@ const useTemplateModal = ({ successCallBack, changeCurrentPath, scrollTreeNode, 
     addTemplate(values)
       .then((data: any) => {
         onClose();
-        successCallBack?.({}, () => {
+        successCallBack?.({ queryType: 'addTemplate', newNodeKey: data }, () => {
           changeCurrentPath({ key: data, id: data, type: 1 });
           setTreeMap(false);
           scrollTreeNode(data);

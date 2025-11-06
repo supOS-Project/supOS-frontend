@@ -5,7 +5,8 @@ export type SemanticDOM =
   | 'statusInfo'
   | 'statusTag'
   | 'header'
-  | 'title'
+  | 'headerTitle'
+  | 'secondaryDescription'
   | 'actions';
 
 import { CSSProperties, ReactNode } from 'react';
@@ -18,6 +19,8 @@ export interface ProCardProps {
   styles?: Partial<Record<SemanticDOM, CSSProperties>>;
   classNames?: Partial<Record<SemanticDOM, string>>;
   value?: boolean;
+  // 是否有icon背景色
+  iconBg?: boolean;
   onChange?: (e: any) => void;
   statusHeader?: {
     allowCheck?: boolean;
@@ -27,6 +30,12 @@ export interface ProCardProps {
       title: string;
     };
     statusTag?: ReactNode;
+    pinOptions?: {
+      disabled?: boolean;
+      onClick?: (record: any) => Promise<any>;
+      renderPinIcon?: (record: any) => boolean;
+      auth?: string | string[];
+    };
   };
   item?: any;
   onClick?: (item?: any) => void;
@@ -36,8 +45,12 @@ export interface ProCardProps {
     defaultIconUrl?: string;
     title?: ReactNode;
     titleDescription?: ReactNode;
+    onClick?: (item?: any) => void;
   };
-  description?: string | { content?: string; rows?: number };
+  description?: false | string | { content?: string; rows?: number; empty?: string };
   secondaryDescription?: ReactNode;
   actions?: ((item: any) => OperationProps[]) | OperationProps[];
+  actionConfig?: {
+    num?: number;
+  };
 }

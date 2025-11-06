@@ -13,6 +13,7 @@ import { getExternalTreeData } from '@/apis/inter-api/external.ts';
 import ComLeft from '@/components/com-layout/ComLeft';
 import Loading from '@/components/loading';
 import { useWebSocket } from 'ahooks';
+import { useBaseStore } from '@/stores/base';
 
 const panelCloseSize = 48;
 const panelOpenSize = 500;
@@ -43,7 +44,11 @@ const LeftDom: FC<{
   const formatMessage = useTranslate();
   // 针对Unused订阅的topic进行实时数据展示
   const [unusedTopicTreeData, setUnusedTopicTreeData] = useState<UnsTreeNode[]>([]); // unusedTopic订阅
-
+  const {
+    systemInfo: { enableAutoCategorization },
+  } = useBaseStore((state) => ({
+    systemInfo: state.systemInfo,
+  }));
   const { treeType, operationFns, selectedNode } = useTreeStore((state) => ({
     treeType: state.treeType,
     operationFns: state.operationFns,
@@ -166,6 +171,7 @@ const LeftDom: FC<{
   };
 
   useEffect(() => {
+    if (enableAutoCategorization) return;
     if (treeType === 'uns') {
       connect?.();
     }
@@ -176,7 +182,7 @@ const LeftDom: FC<{
       // abortControllerRef.current?.abort();
       disconnect?.();
     };
-  }, [treeType]);
+  }, [treeType, enableAutoCategorization]);
 
   const { isTreeMapVisible, setTreeMapVisible } = useUnsTreeMapContext();
   const { isH5 } = useMediaSize();
@@ -185,6 +191,7 @@ const LeftDom: FC<{
       <Splitter layout="vertical" onResize={setUnusedTopicPanelSize} className="unusedTopicTree-Splitter">
         <Splitter.Panel min={120} size={unusedTopicPanelSize[0]}>
           <Tree
+            changeCurrentPath={changeCurrentPath}
             treeNodeExtra={(dataNode) => {
               return (
                 <TreeNodeExtra
@@ -196,7 +203,7 @@ const LeftDom: FC<{
             }}
           />
         </Splitter.Panel>
-        {treeType === 'uns' && (
+        {treeType === 'uns' && !enableAutoCategorization && (
           <Splitter.Panel size={unusedTopicPanelSize[1]} min={panelCloseSize} style={{ overflow: 'hidden' }}>
             <div
               className="unusedTopicTree-collapsible"

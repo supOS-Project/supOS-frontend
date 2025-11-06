@@ -16,6 +16,7 @@
       height: 100%;
       background-color: var(--supos-bg-color);
       border-radius: 3px;
+      border: 1px solid transparent;
       border-left: 4px solid var(--supos-mode-color, var(--supos-theme-color));
       color: var(--supos-text-color);
       display: flex;
@@ -100,6 +101,26 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      line-height: 15px;
+    }
+
+    .loading-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--supos-gray-color-30);
+      border-top: 2px solid var(--supos-theme-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
   }
 

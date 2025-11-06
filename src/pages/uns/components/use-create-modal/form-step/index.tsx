@@ -1,7 +1,7 @@
 import { FC, useState, Dispatch, SetStateAction, useEffect } from 'react';
 import { ChevronRight, ChevronLeft } from '@carbon/icons-react';
 import { Form, App, Button, Flex } from 'antd';
-import { addModel, makeLabel } from '@/apis/inter-api/uns';
+import { addModel, pasteUns } from '@/apis/inter-api/uns';
 import { topic2Uns } from '@/apis/inter-api/external';
 import { useTranslate, useFormValue } from '@/hooks';
 import dayjs from 'dayjs';
@@ -25,6 +25,7 @@ export interface FormStepProps {
   setTreeMap: TreeStoreActions['setTreeMap'];
   sourceId: string;
   addModalType: string;
+  open: boolean;
 }
 
 const FormStep: FC<FormStepProps> = ({
@@ -39,15 +40,18 @@ const FormStep: FC<FormStepProps> = ({
   setTreeMap,
   sourceId,
   addModalType,
+  open,
 }) => {
   const { message } = App.useApp();
   const formatMessage = useTranslate();
   const form = Form.useFormInstance();
   const [loading, setLoading] = useState(false);
 
-  const { operationFns, setCurrentTreeMapType } = useTreeStore((state) => ({
+  const { operationFns, setCurrentTreeMapType, lazyTree, treeData } = useTreeStore((state) => ({
     operationFns: state.operationFns,
     setCurrentTreeMapType: state.setCurrentTreeMapType,
+    lazyTree: state.lazyTree,
+    treeData: state.treeData,
   }));
 
   //以下变量用于控制步骤按钮的显示
@@ -72,6 +76,11 @@ const FormStep: FC<FormStepProps> = ({
     form
       .validateFields()
       .then(async () => {
+        const next = form.getFieldValue('next');
+        if ((attributeType === 3 || (isFormTopic && jsonList?.length > 1)) && !next) {
+          message.error(formatMessage('uns.noFieldsTip'));
+          return;
+        }
         const {
           alias,
           fields,
@@ -94,6 +103,8 @@ const FormStep: FC<FormStepProps> = ({
           createTemplate,
           displayName,
           timeReference,
+          accessLevel,
+          extendFieldUsed,
 
           functions,
           DataSource,
@@ -106,6 +117,9 @@ const FormStep: FC<FormStepProps> = ({
           table,
 
           path,
+          pasteInfo,
+          parentDataType,
+          pasteNode,
         } = cloneDeep(form.getFieldsValue(true));
 
         // 表单验证通过后的操作
@@ -130,7 +144,10 @@ const FormStep: FC<FormStepProps> = ({
               save2db,
               pathType: 2,
               extend: extendToObj(extend),
-              ...(dataType !== 6 ? { fields, addDashBoard } : {}),
+              labelNames: tags?.map(({ label, value }: { label: string; value: string }) => label || value) || [],
+              fields: [1, 2, 3].includes(dataType) ? fields : undefined,
+              addDashBoard,
+              parentDataType,
             };
 
         if (isCreateFolder && modelId === 'custom' && fields?.length > 0) {
@@ -143,12 +160,46 @@ const FormStep: FC<FormStepProps> = ({
             case 1:
             case 2:
               if (dataType === 1) {
-                data.fields = fields.filter((e: FieldItem) => !e.systemField);
+                data.fields = fields
+                  .filter((e: FieldItem) => !e.systemField)
+                  .map(
+                    ({
+                      name,
+                      type,
+                      displayName,
+                      remark,
+                      maxLen,
+                      unit,
+                      upperLimit,
+                      lowerLimit,
+                      decimal,
+                    }: FieldItem) => ({
+                      name,
+                      type,
+                      displayName,
+                      remark,
+                      maxLen,
+                      unit: extendFieldUsed?.includes('unit') ? unit : undefined,
+                      upperLimit: extendFieldUsed?.includes('upperLimit') ? upperLimit : undefined,
+                      lowerLimit: extendFieldUsed?.includes('lowerLimit') ? lowerLimit : undefined,
+                      decimal: extendFieldUsed?.includes('decimal') ? decimal : undefined,
+                    })
+                  );
+                if (!modelId) {
+                  data.extendFieldUsed = extendFieldUsed;
+                }
+              } else {
+                if (mainKey > -1) fields[mainKey].unique = true;
+                data.fields = fields.map((e: FieldItem) => ({
+                  name: e.name,
+                  type: e.type,
+                  displayName: e.displayName,
+                  remark: e.remark,
+                  maxLen: e.maxLen,
+                  unique: e.unique,
+                }));
               }
               data.addFlow = addFlow;
-              if (dataType === 2 && mainKey > -1) {
-                fields[mainKey].unique = true;
-              }
               if (table?.value) {
                 data.protocol = {
                   referenceDataSource: table.value
@@ -157,10 +208,37 @@ const FormStep: FC<FormStepProps> = ({
                     ?.join('.'),
                 };
               }
+              data.accessLevel = accessLevel;
               break;
             case 3:
               if (calculationType === 3) {
-                data.fields = fields.filter((e: FieldItem) => !e.systemField);
+                data.extendFieldUsed = extendFieldUsed;
+                data.fields = fields
+                  .filter((e: FieldItem) => !e.systemField)
+                  .map(
+                    ({
+                      name,
+                      type,
+                      displayName,
+                      remark,
+                      maxLen,
+                      unit,
+                      upperLimit,
+                      lowerLimit,
+                      decimal,
+                    }: FieldItem) => ({
+                      name,
+                      type,
+                      displayName,
+                      remark,
+                      maxLen,
+                      unit: extendFieldUsed?.includes('unit') ? unit : undefined,
+                      upperLimit: extendFieldUsed?.includes('upperLimit') ? upperLimit : undefined,
+                      lowerLimit: extendFieldUsed?.includes('lowerLimit') ? lowerLimit : undefined,
+                      decimal: extendFieldUsed?.includes('decimal') ? decimal : undefined,
+                    })
+                  );
+
                 type ReferItemType = {
                   refer: {
                     label: string;
@@ -218,9 +296,13 @@ const FormStep: FC<FormStepProps> = ({
             case 7:
               Object.assign(data, {
                 referIds: [referId?.value],
-                fields: undefined,
                 save2db: undefined,
                 addDashBoard: undefined,
+              });
+              break;
+            case 8:
+              Object.assign(data, {
+                fields: [{ name: 'json', type: 'string' }],
               });
               break;
             default:
@@ -229,13 +311,28 @@ const FormStep: FC<FormStepProps> = ({
         }
 
         setLoading(true);
-        const handleCallback = (id: string, queryType: string) => {
-          successCallBack(
-            { queryType, key: sourceId ? sourceId : ROOT_NODE_ID, newNodeKey: id, reset: !sourceId },
-            (_, selectInfo, opt) => {
-              const currentNode = getTargetNode(_ || [], id);
+        const handleCallback = (data: { id: string; parentId: string }, queryType: string) => {
+          const { id, parentId } = data;
+          const hasParentNode = getTargetNode(treeData || [], parentId);
 
-              changeCurrentPath(selectInfo || currentNode || { key: id, id, type: queryType === 'addFolder' ? 0 : 2 });
+          const _parentId = hasParentNode ? parentId : sourceId ? sourceId : ROOT_NODE_ID;
+          const _childId = hasParentNode || parentId === sourceId || !lazyTree ? id : parentId;
+          successCallBack(
+            {
+              queryType,
+              key: _parentId,
+              newNodeKey: _childId,
+              reset: !(sourceId || parentId),
+              nodeDetail: pasteNode,
+            },
+            (_, selectInfo, opt) => {
+              if (!selectInfo && !_childId) return;
+
+              const currentNode = getTargetNode(_ || [], _childId);
+
+              changeCurrentPath(
+                selectInfo || currentNode || { key: _childId, id: _childId, type: queryType === 'addFolder' ? 0 : 2 }
+              );
               setTreeMap(false);
               if (selectInfo) {
                 // 非lasy树
@@ -256,38 +353,51 @@ const FormStep: FC<FormStepProps> = ({
           data.path = path;
           data.labelList = labelList;
         }
-
-        addRequest({ ...data })
-          .then((res: any) => {
-            message.success(formatMessage('uns.newSuccessfullyAdded'));
-            if (isFormTopic) {
-              setCurrentTreeMapType('all');
-              handleCallback(res, 'addFile');
-              operationFns?.refreshUnusedTopicTree?.(path);
-            } else {
-              if (isCreateFolder) {
-                handleCallback(res, 'addFolder');
+        if (pasteInfo) {
+          pasteUns({
+            sourceId: pasteInfo?.sourceId,
+            targetId: data?.parentId,
+            newF: data,
+          })
+            .then(({ msg, code, data }) => {
+              handleCallback(data, isCreateFolder ? 'addFolder' : 'addFile');
+              handleClose(() => setLoading(false));
+              if (code === 206) {
+                message.warning(msg);
               } else {
-                makeLabel(res, labelList).then(() => {
-                  handleCallback(res, 'addFile');
-                });
+                message.success(formatMessage('uns.pasteSuccess'));
               }
-            }
-            handleClose(() => setLoading(false));
-          })
-          .catch((err) => {
-            setLoading(false);
-            console.error(err);
-            setAddNamespaceForAi?.(null);
-          })
-          .finally(() => {
-            if (isCreateFolder && addNamespaceForAi) {
-              // 如果是新增文件的
-              setTimeout(() => {
-                setAddNamespaceForAi({ ...addNamespaceForAi, currentStep: 'openFileNewModal' });
-              }, 500);
-            }
-          });
+            })
+            .catch(() => {
+              setLoading(false);
+            });
+        } else {
+          addRequest({ ...data })
+            .then((res: any) => {
+              message.success(formatMessage('uns.newSuccessfullyAdded'));
+              if (isFormTopic) {
+                setCurrentTreeMapType('all');
+                handleCallback(res, 'addFile');
+                operationFns?.refreshUnusedTopicTree?.(path);
+              } else {
+                handleCallback(res, isCreateFolder ? 'addFolder' : 'addFile');
+              }
+              handleClose(() => setLoading(false));
+            })
+            .catch((err) => {
+              setLoading(false);
+              console.error(err);
+              setAddNamespaceForAi?.(null);
+            })
+            .finally(() => {
+              if (isCreateFolder && addNamespaceForAi) {
+                // 如果是新增文件的
+                setTimeout(() => {
+                  setAddNamespaceForAi({ ...addNamespaceForAi, currentStep: 'openFileNewModal' });
+                }, 500);
+              }
+            });
+        }
       })
       .catch((info) => {
         console.error('校验失败:', info);
@@ -301,11 +411,6 @@ const FormStep: FC<FormStepProps> = ({
 
   const handleStep = async () => {
     return form.validateFields().then(() => {
-      const next = form.getFieldValue('next');
-      if ((attributeType === 3 || (isFormTopic && jsonList?.length > 1)) && !next) {
-        message.error(formatMessage('uns.noFieldsTip'));
-        return;
-      }
       if (step === 2) {
         if (calculationType === 4 && advancedOptions) {
           setStep(() => step + 1);
@@ -317,9 +422,10 @@ const FormStep: FC<FormStepProps> = ({
   };
 
   useEffect(() => {
+    if (!open) return;
     const drawerBody = document.querySelector('.newFolderOrFileModalBody');
-    if (drawerBody) drawerBody.scrollTop = 0;
-  }, [step]);
+    if (drawerBody) setTimeout(() => (drawerBody.scrollTop = 0));
+  }, [step, open]);
 
   return (
     <Flex align="center" justify="flex-end" gap={10}>
@@ -338,7 +444,10 @@ const FormStep: FC<FormStepProps> = ({
           {formatMessage('common.prev')}
         </Button>
       )}
-      {(step === 1 && [6, 7].includes(dataType)) || (step === 2 && !advancedOptions) || step === 3 || isCreateFolder ? (
+      {(step === 1 && [1, 2, 6, 7, 8].includes(dataType)) ||
+      (step === 2 && !advancedOptions) ||
+      step === 3 ||
+      isCreateFolder ? (
         <ComPopupGuide
           key={isCreateFolder ? 'saveFolder' : 'saveFile'}
           currentStep={addNamespaceForAi?.currentStep}

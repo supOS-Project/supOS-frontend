@@ -2,7 +2,7 @@ import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { ATableProps } from '../pro-table';
+import type { ATableProps } from '../pro-table/types.ts';
 import ProTable from '../pro-table';
 
 interface PropsTypes {

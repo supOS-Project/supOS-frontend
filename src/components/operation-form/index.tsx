@@ -10,8 +10,8 @@ const { Title } = Typography;
 export interface OperationFormProps {
   form: FormInstance;
   formConfig?: FormProps;
-  onSave: () => void;
-  onCancel: () => void;
+  onSave?: () => void;
+  onCancel?: () => void;
   formItemOptions: RenderFormItemProps[];
   title?: ReactNode;
   loading?: boolean;

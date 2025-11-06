@@ -1,11 +1,11 @@
 import { CSSProperties, FC, useEffect, useState } from 'react';
-import { CaretRight, WatsonHealth3DMprToggle } from '@carbon/icons-react';
+import { CaretRight, Copy, WatsonHealth3DMprToggle } from '@carbon/icons-react';
 import { App, Button, Collapse, Flex, theme, Typography } from 'antd';
 import { useTranslate } from '@/hooks';
 import Icon from '@ant-design/icons';
 import EditButton from '@/pages/uns/components/EditButton.tsx';
 import FileList from './FileList';
-import { editTemplateName, getTemplateDetail } from '@/apis/inter-api/uns.ts';
+import { editTemplateName, getTemplateDetail, updateTemplateSubscribe } from '@/apis/inter-api/uns.ts';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
 const { Paragraph, Title } = Typography;
 
@@ -16,6 +16,10 @@ import ProTable from '@/components/pro-table';
 import FileEdit from '@/components/svg-components/FileEdit';
 import { hasPermission } from '@/utils/auth';
 import { formatTimestamp } from '@/utils/format';
+import Subscribe from '@/pages/uns/components/subscribe';
+import CustomParagraph from '@/components/custom-paragraph';
+import styles from './index.module.scss';
+import useClipboard from '@/hooks/useClipboard.ts';
 
 interface TemplateDetailProps {
   // id
@@ -54,6 +58,7 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
       getModel(id as string);
     }
   }, [id]);
+  const { copy } = useClipboard();
 
   const items = [
     {
@@ -63,8 +68,46 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
         <ComDetailList
           list={[
             {
+              label: 'Topic',
+              key: 'topic',
+              hide: !info?.subscribeEnable,
+              render: () => {
+                return (
+                  <div>
+                    {info.topic}
+                    <span
+                      style={{ marginLeft: '5px', verticalAlign: 'sub', cursor: 'pointer' }}
+                      onClick={() => copy(info.topic)}
+                      title={formatMessage('common.copy')}
+                    >
+                      <Copy />
+                    </span>
+                  </div>
+                );
+              },
+            },
+            {
               label: formatMessage('uns.alias'),
               key: 'alias',
+            },
+            {
+              label: formatMessage('uns.subscriptionFrequency'),
+              key: 'subscribeFrequency',
+              hide: !info?.subscribeEnable,
+              render: () => {
+                return (
+                  <CustomParagraph
+                    className={styles.paragraph}
+                    value={info.subscribeFrequency}
+                    onChange={(value) => {
+                      updateTemplateSubscribe({ id, ...value }).then(() => {
+                        message.success(formatMessage('uns.editSuccessful'));
+                        getModel(id as string);
+                      });
+                    }}
+                  />
+                );
+              },
             },
             {
               label: formatMessage('uns.description'),
@@ -184,6 +227,12 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
     },
   ];
 
+  const handleChangeSubscribe = async (enable: boolean, frequency?: string) => {
+    await updateTemplateSubscribe({ id, enable, frequency });
+    getModel(id as string);
+    message.success(enable ? formatMessage('uns.subscribeSuccessful') : formatMessage('uns.unsubscribeSuccessful'));
+  };
+
   return (
     <div className="topicDetailWrap">
       <div className="topicDetailContent">
@@ -220,7 +269,7 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
                       editTemplateName({ id, name: val }).then(() => {
                         message.success(formatMessage('uns.editSuccessful'));
                         getModel(id as string);
-                        initTreeData?.({});
+                        initTreeData?.({ queryType: 'editTemplateName', newNodeKey: id });
                       });
                     },
                   }
@@ -229,6 +278,13 @@ const TemplateDetail: FC<TemplateDetailProps> = ({ currentNode: { id }, handleDe
           >
             {info?.name}
           </Title>
+          <Subscribe
+            showModal
+            value={info.subscribeEnable}
+            subscribeFrequency={info.subscribeFrequency}
+            topic={info?.topic}
+            onChange={handleChangeSubscribe}
+          />
         </Flex>
         <div className="tableWrap">
           <Collapse

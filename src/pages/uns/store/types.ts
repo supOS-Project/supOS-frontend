@@ -98,6 +98,7 @@ export type TreeStoreActions = {
     ) => void
   ) => void;
   recursiveLoadData: TreeStoreActions['loadData'];
+  recursiveLoadDataForList: TreeStoreActions['loadData'];
   // 设置展开收起key
   setExpandedKeys: (newExpandedKeys: ((expandedKeys: Key[]) => Key[] | void) | Key[]) => void;
   // 设置异步加载的key
@@ -124,8 +125,8 @@ export type TreeStoreActions = {
     restResponse: { total: number; pageNo: number; pageSize: number },
     parentInfo?: UnsTreeNode
   ) => UnsTreeNode[];
-  setSelectedNode: (node?: UnsTreeNode) => void;
-  setBreadcrumbList: (node?: UnsTreeNode) => void;
+  setSelectedNode: (node?: UnsTreeNode, quick?: boolean) => void;
+  setBreadcrumbList: (node?: UnsTreeNode, quick?: boolean) => void;
   // 新增设置方法
   setOperationFns: (fns: any) => void;
   setPasteNode: (node: UnsTreeNode | null) => void;

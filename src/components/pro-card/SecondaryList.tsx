@@ -18,14 +18,18 @@ const SecondaryList = ({
   colon?: boolean;
 }) => {
   return (
-    <Row style={{ overflow: 'hidden', margin: '4px 0' }} className="secondaryList">
+    <Row style={{ overflow: 'hidden', marginTop: 4 }} className="secondaryList">
       {options?.map(({ label, labelStyle, contentStyle, span, content, wrapperStyle, key }) => {
         return (
           <Col span={span} style={{ display: 'flex', ...wrapperStyle }} key={key}>
-            <div style={labelStyle ? labelStyle : { maxWidth: 100 }} className="span-ellipsis" title={label}>
+            <div
+              style={labelStyle ? labelStyle : { maxWidth: 'calc(50% - 9px)', color: '#A8A8A8' }}
+              className="span-ellipsis"
+              title={label}
+            >
               {label}
             </div>
-            {colon && <span style={{ paddingRight: 4 }}>:</span>}
+            {colon && <span style={{ paddingRight: 4, color: '#A8A8A8' }}>:</span>}
             <div
               style={contentStyle ? contentStyle : { flex: 1, minWidth: 0 }}
               className="span-ellipsis"

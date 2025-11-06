@@ -1,12 +1,19 @@
 import { FC, useState } from 'react';
-import { App, Button, Form } from 'antd';
+import { App, Button, Empty, Flex, Form, Pagination, Segmented } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { getDashboardList, addDashboard, editDashboard, deleteDashboard } from '@/apis/inter-api/uns';
+import {
+  getDashboardList,
+  addDashboard,
+  editDashboard,
+  deleteDashboard,
+  markDashboard,
+  unmarkDashboard,
+} from '@/apis/inter-api/uns';
 import { usePagination, useTranslate } from '@/hooks';
 import { useActivate } from '@/contexts/tabs-lifecycle-context';
 import { ButtonPermission } from '@/common-types/button-permission.ts';
 import { PageProps } from '@/common-types.ts';
-import { Edit, Search, TrashCan, View } from '@carbon/icons-react';
+import { Dashboard, Edit, Grid, List, Search, TrashCan, View } from '@carbon/icons-react';
 import ComDrawer from '@/components/com-drawer';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
@@ -15,13 +22,18 @@ import OperationForm from '@/components/operation-form';
 import { validInputPattern } from '@/utils/pattern';
 import { getSearchParamsString } from '@/utils/url-util';
 import { useBaseStore } from '@/stores/base';
-import { AuthButton, AuthWrapper } from '@/components/auth';
-import { ComTableList } from '@/components';
-import OperationButtons from '@/components/operation-buttons';
+import { AuthButton } from '@/components/auth';
 import './index.scss';
+import { useLocalStorageState } from 'ahooks';
+import ProCardContainer from '@/components/pro-card/ProCardContainer.tsx';
+import ProTable from '@/components/pro-table';
+import ProCard from '@/components/pro-card/ProCard.tsx';
+import SecondaryList from '../../components/pro-card/SecondaryList.tsx';
+import { hasPermission } from '@/utils/auth.ts';
+import { formatTimestamp } from '@/utils/format.ts';
 
 const CollectionFlow: FC<PageProps> = ({ title }) => {
-  const { modal } = App.useApp();
+  const { modal, message } = App.useApp();
   const formatMessage = useTranslate();
   const dashboardType = useBaseStore((state) => state.dashboardType);
 
@@ -31,8 +43,20 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
   const [show, setShow] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [clickItem, setClickItem] = useState<any>({});
-  const { loading, pagination, data, reload, refreshRequest, setSearchParams } = usePagination({
+  const {
+    loading,
+    pagination,
+    data: _data,
+    reload,
+    refreshRequest,
+    setSearchParams,
+    onChange,
+  } = usePagination({
     fetchApi: getDashboardList,
+    initPageSize: 18,
+  });
+  const [mode, setMode] = useLocalStorageState<string>('SUPOS_DASHBOARD_MODE', {
+    defaultValue: 'list',
   });
 
   const typeOptions = [
@@ -47,7 +71,14 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
       key: 'fuxa',
     },
   ]?.filter((f) => dashboardType?.includes(f.key));
-
+  const data = (_data || [])?.map((e: any) => {
+    return {
+      ...e,
+      typeName: e.type
+        ? typeOptions?.find((o) => o.value === e.type)?.label
+        : typeOptions?.find((o) => o.value === 1)?.label,
+    };
+  });
   const formItemOptions = (isEdit: boolean) => {
     return [
       {
@@ -97,6 +128,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
   const onDeleteHandle = (item: any) => {
     deleteDashboard(item.id)
       .then(() => {
+        message.success(formatMessage('common.deleteSuccessfully'));
         reload();
       })
       .catch(() => {});
@@ -118,6 +150,7 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
         const request = isEdit ? editDashboard : addDashboard;
         request(params)
           .then(() => {
+            message.success(formatMessage('common.optsuccess'));
             onClose();
             refreshRequest();
           })
@@ -131,14 +164,94 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
     edit(item);
   };
 
+  const actions: any = (record: any) => {
+    return [
+      {
+        key: 'preview',
+        label: formatMessage('dashboards.preview'),
+        auth: ButtonPermission['Dashboards.preview'],
+        button: {
+          type: 'primary',
+        },
+        onClick: () => {
+          setClickItem(record);
+          navigate(
+            `/dashboards/preview?${getSearchParamsString({ id: record.id, type: record.type, status: 'preview', name: record.name })}`
+          );
+        },
+        extra: (
+          <Flex justify="center" align="center">
+            <View />
+          </Flex>
+        ),
+      },
+      {
+        key: 'edit',
+        label: formatMessage('common.edit'),
+        auth: ButtonPermission['Dashboards.edit'],
+        onClick: () => {
+          onEditHandle(record);
+        },
+        extra: (
+          <Flex justify="center" align="center">
+            <Edit />
+          </Flex>
+        ),
+      },
+      {
+        key: 'delete',
+        label: formatMessage('common.delete'),
+        auth: ButtonPermission['Dashboards.delete'],
+        onClick: () => {
+          modal.confirm({
+            title: formatMessage('common.deleteConfirm'),
+            onOk: () => onDeleteHandle(record),
+            okButtonProps: {
+              title: formatMessage('common.confirm'),
+            },
+            cancelButtonProps: {
+              title: formatMessage('common.cancel'),
+            },
+          });
+        },
+        extra: (
+          <Flex justify="center" align="center">
+            <TrashCan />
+          </Flex>
+        ),
+      },
+    ];
+  };
+
+  const pinOptions = {
+    onClick: (record: any) => {
+      const isMark = record?.mark === 1;
+      const api = isMark ? unmarkDashboard : markDashboard;
+      return api?.(record.id).then(() => {
+        message.success(formatMessage('common.optsuccess'));
+        reload();
+      });
+    },
+    renderPinIcon: (record: any) => {
+      return record?.mark !== 1;
+    },
+  };
+
   return (
     <ComLayout loading={loading}>
       <ComContent
         mustHasBack={false}
-        title={title}
+        title={
+          <Flex align="center" gap={8}>
+            <Dashboard size={20} />
+            <span>{title}</span>
+          </Flex>
+        }
         style={{
-          padding: '30px',
           overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
         }}
         extra={
           <>
@@ -168,115 +281,174 @@ const CollectionFlow: FC<PageProps> = ({ title }) => {
           </>
         }
       >
-        <ComTableList
-          className="dashboard-table-list"
-          columns={[
-            {
-              titleIntlId: 'common.name',
-              dataIndex: 'name',
-              width: '30%',
-              render: (text: any, item: any) => (
-                <>
-                  <AuthWrapper auth={ButtonPermission['Dashboards.design']}>
-                    <Button
-                      type="link"
-                      onClick={() => {
-                        setClickItem(item);
-                        navigate(
-                          `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'design', name: item.name })}`
-                        );
+        <Flex justify="flex-end" align="center" style={{ marginBottom: 16, marginTop: 16, paddingRight: 16 }}>
+          <Segmented
+            size="small"
+            value={mode}
+            onChange={(v) => setMode(v)}
+            options={[
+              {
+                value: 'card',
+                icon: (
+                  <span title={formatMessage('common.cardMode')}>
+                    <Grid />
+                  </span>
+                ),
+              },
+              {
+                value: 'list',
+                icon: (
+                  <span title={formatMessage('common.listMode')}>
+                    <List />
+                  </span>
+                ),
+              },
+            ]}
+          />
+        </Flex>
+        <div style={{ flex: 1, padding: '0 16px 16px', overflow: 'auto', alignItems: 'center' }}>
+          {mode === 'card' ? (
+            data.length > 0 ? (
+              <ProCardContainer>
+                {data?.map((d: any) => {
+                  return (
+                    <ProCard
+                      key={d?.id}
+                      header={{
+                        title: d.name,
+                        titleDescription: formatTimestamp(d?.createTime),
+                        onClick: hasPermission(ButtonPermission['Dashboards.preview'])
+                          ? () =>
+                              navigate(
+                                `/dashboards/preview?${getSearchParamsString({ id: d.id, type: d.type, status: 'preview', name: d.name })}`
+                              )
+                          : undefined,
                       }}
-                      title={text}
-                    >
-                      {text}
-                    </Button>
-                  </AuthWrapper>
-                </>
-              ),
-            },
-            {
-              titleIntlId: 'dashboards.dashboardsTemplate',
-              dataIndex: 'typeName',
-              width: '25%',
-            },
-            {
-              titleIntlId: 'common.description',
-              dataIndex: 'description',
-              width: '30%',
-              ellipsis: true,
-            },
-            {
-              title: '',
-              dataIndex: 'operation',
-              width: '10%',
-              align: 'right',
-              fixed: 'right',
-              render: (_: any, record: any) => (
-                <OperationButtons
-                  className="list-operation"
-                  options={[
-                    {
-                      label: '',
-                      onClick: (item: any) => {
-                        setClickItem(item);
-                        navigate(
-                          `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'preview', name: item.name })}`
+                      statusHeader={{
+                        statusTag: <div></div>,
+                        pinOptions,
+                      }}
+                      description={d?.description}
+                      secondaryDescription={
+                        <SecondaryList
+                          options={[
+                            {
+                              label: formatMessage('common.creator'),
+                              content: d?.creator,
+                              span: 24,
+                              key: 'creator',
+                            },
+                            {
+                              label: formatMessage('dashboards.dashboardsTemplate'),
+                              content: d?.typeName,
+                              span: 24,
+                              key: 'dashboardsTemplate',
+                            },
+                          ]}
+                        />
+                      }
+                      actions={actions}
+                      item={d}
+                    />
+                  );
+                })}
+              </ProCardContainer>
+            ) : (
+              <Empty />
+            )
+          ) : (
+            <ProTable
+              resizeable
+              onChange={onChange}
+              style={{ height: '100%' }}
+              scroll={{ y: 'calc(100vh  - 285px)', x: 'max-content' }}
+              dataSource={data as any}
+              pinOptions={pinOptions}
+              columns={
+                [
+                  {
+                    titleIntlId: 'common.name',
+                    dataIndex: 'name',
+                    width: '20%',
+                    sorter: true,
+                    render: (text: any, item: any) => {
+                      const hasDesign = hasPermission(ButtonPermission['Dashboards.design']);
+                      if (hasDesign)
+                        return (
+                          <Button
+                            type="link"
+                            className="table-link-button"
+                            onClick={() => {
+                              setClickItem(item);
+                              navigate(
+                                `/dashboards/preview?${getSearchParamsString({ id: item.id, type: item.type, status: 'design', name: item.name })}`
+                              );
+                            }}
+                            title={text}
+                          >
+                            {text}
+                          </Button>
                         );
-                      },
-                      type: 'link',
-                      btnProps: {
-                        title: formatMessage('dashboards.preview'),
-                        icon: <View />,
-                      },
-                      auth: ButtonPermission['Dashboards.preview'],
+                      return text;
                     },
-                    {
-                      label: '',
-                      onClick: onEditHandle,
-                      type: 'link',
-                      btnProps: {
-                        title: formatMessage('common.edit'),
-                        icon: <Edit />,
-                      },
-                      auth: ButtonPermission['Dashboards.edit'],
-                    },
-                    {
-                      label: '',
-                      onClick: (item) =>
-                        modal.confirm({
-                          title: formatMessage('common.deleteConfirm'),
-                          onOk: () => onDeleteHandle(item),
-                          okButtonProps: {
-                            title: formatMessage('common.confirm'),
-                          },
-                          cancelButtonProps: {
-                            title: formatMessage('common.cancel'),
-                          },
-                        }),
-                      type: 'link',
-                      btnProps: {
-                        title: formatMessage('common.delete'),
-                        icon: <TrashCan />,
-                      },
-                      auth: ButtonPermission['Dashboards.delete'],
-                    },
-                  ]}
-                  record={record}
-                />
-              ),
-            },
-          ]}
-          dataSource={(data || []).map((e: any) => {
-            return {
-              ...e,
-              typeName: e.type
-                ? typeOptions.find((o) => o.value === e.type)?.label
-                : typeOptions.find((o) => o.value === 1)?.label,
-            };
-          })}
-          pagination={pagination}
-        />
-        {/*  <SvgIcon name="up-dark" /> */}
+                  },
+                  {
+                    titleIntlId: 'dashboards.dashboardsTemplate',
+                    dataIndex: 'typeName',
+                    width: '10%',
+                  },
+                  {
+                    titleIntlId: 'common.description',
+                    dataIndex: 'description',
+                    width: '30%',
+                    ellipsis: true,
+                  },
+                  {
+                    title: () => formatMessage('common.creationTime'),
+                    dataIndex: 'createTime',
+                    width: '15%',
+                    sorter: true,
+                    render: (item: any) => formatTimestamp(item),
+                  },
+                  {
+                    title: () => formatMessage('common.creator'),
+                    dataIndex: 'creator',
+                    width: '10%',
+                  },
+                ] as any
+              }
+              pagination={{
+                total: pagination?.total,
+                style: { display: 'flex', justifyContent: 'flex-end', padding: '10px 0' },
+                pageSize: pagination?.pageSize || 18,
+                current: pagination?.page,
+                showQuickJumper: true,
+                pageSizeOptions: pagination?.pageSizes,
+                showSizeChanger: true,
+                onChange: pagination.onChange,
+                onShowSizeChange: (current, size) => {
+                  pagination.onChange({ page: current, pageSize: size });
+                },
+              }}
+              operationOptions={{
+                render: actions,
+              }}
+            />
+          )}
+        </div>
+        {mode === 'card' && (
+          <Pagination
+            size="small"
+            className="custom-pagination"
+            align="center"
+            style={{ margin: '20px 0' }}
+            total={pagination?.total}
+            showSizeChanger={false}
+            onChange={pagination.onChange}
+            pageSize={pagination?.pageSize || 18}
+            current={pagination?.page}
+          />
+        )}
       </ComContent>
       <ComDrawer title=" " open={show} onClose={onClose}>
         <OperationForm form={form} onCancel={onClose} onSave={onSave} formItemOptions={formItemOptions(isEdit)} />

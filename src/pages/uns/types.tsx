@@ -16,6 +16,8 @@ export interface UnsTreeNode extends Omit<DataNodeProps, 'children'> {
   countChildren?: number;
   // 是否有子集
   hasChildren?: boolean;
+  dataType?: number;
+  parentDataType?: number;
   [key: string]: any;
 }
 
@@ -28,6 +30,10 @@ export interface FieldItem {
   index?: number | string;
   systemField?: boolean;
   maxLen?: number;
+  unit?: string;
+  upperLimit?: number;
+  lowerLimit?: number;
+  decimal?: number;
 }
 
 interface InitTreeDataParamsType {

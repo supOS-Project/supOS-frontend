@@ -22,6 +22,11 @@ export const getDashboardList = async (params?: Record<string, unknown>) =>
   }); // 获取dashboard
 export const addDashboard = async (data: any) => api.post('/dashboard', data); // 新增dashboard
 export const editDashboard = async (data: any) => api.put('/dashboard', data); // 编辑dashboard
+export const getDashboardByUns = async (unsAlias: string) => api.get(`/dashboard/getByUns?unsAlias=${unsAlias}`); // 获取dashboard信息
+export const bindDashboardForUns = async (data: any) => api.post(`/dashboard/bindUns`, data); // 获取dashboard信息
+// 置顶
+export const markDashboard = async (id: string) => api.post('/dashboard/mark', { id });
+export const unmarkDashboard = async (id: string) => api.delete(`/dashboard/unmark?id=${id}`);
 export const deleteDashboard = async (uid: string) => api.delete(`/dashboard/${uid}`); // 删除dashboard
 export const importExcel = async (data: any) =>
   api.upload(`/excel/template/import`, data, {
@@ -70,7 +75,7 @@ export const deleteLabel = async (id: string | number) =>
   api.delete(`/label?id=${id}`, {
     [CustomAxiosConfigEnum.BusinessResponse]: true,
   }); // 删除标签
-export const getAllTemplate = async (data: any) => api.post('/template/pageList', data); // 获取所有模板
+export const getAllTemplate = async (data: any, config?: any) => api.post('/template/pageList', data, config); // 获取所有模板
 export const getTemplateDetail = async (params: any) => api.get('/template', { params }); // 获取模板详情
 export const addTemplate = async (data: any) => api.post('/template', data); // 新增模板
 export const makeLabel = async (unsId: string, data: any) => api.post(`/makeLabel?unsId=${unsId}`, data); // 新增model
@@ -165,6 +170,66 @@ export const downloadUnsFile = async (params?: Record<string, unknown>) =>
 
 export const detectIfRemoveApi = (params: { id: any }) => api.get('/detectIfRemove', { params });
 
+// 订阅
+export const updateModelSubscribe = async (params: any) => {
+  const { id, enable, frequency } = params;
+  let query = `id=${id}&enable=${enable}`;
+  if (frequency) {
+    query += `&frequency=${frequency}`;
+  }
+  return api.put(`/model/subscribe?${query}`);
+};
+
+// 订阅
+export const updateTemplateSubscribe = async (params: any) => {
+  const { id, enable, frequency } = params;
+  let query = `id=${id}&enable=${enable}`;
+  if (frequency) {
+    query += `&frequency=${frequency}`;
+  }
+  return api.put(`/template/subscribe?${query}`);
+};
+
+// 订阅
+export const updateLabelSubscribe = async (params: any) => {
+  const { id, enable, frequency } = params;
+  let query = `id=${id}&enable=${enable}`;
+  if (frequency) {
+    query += `&frequency=${frequency}`;
+  }
+  return api.put(`/label/subscribe?${query}`);
+};
+
+// 查询文件夹订阅
+export const subscribeFolderPage = async (params?: Record<string, unknown>) =>
+  api.post('/subscribe/folder', params, {
+    [CustomAxiosConfigEnum.BusinessResponse]: true,
+  });
+
+// 查询文件订阅
+export const subscribeFilePage = async (params?: Record<string, unknown>) =>
+  api.post('/subscribe/file', params, {
+    [CustomAxiosConfigEnum.BusinessResponse]: true,
+  });
+
+// 查询模板订阅
+export const subscribeTemplatePage = async (params?: Record<string, unknown>) =>
+  api.post('/subscribe/template', params, {
+    [CustomAxiosConfigEnum.BusinessResponse]: true,
+  });
+
+// 查询标签订阅
+export const subscribeLabelPage = async (params?: Record<string, unknown>) =>
+  api.post('/subscribe/label', params, {
+    [CustomAxiosConfigEnum.BusinessResponse]: true,
+  });
+
+export const batchWriteFileValue = async (data: any) =>
+  api.post('/file/current/batchUpdate', data, {
+    [CustomAxiosConfigEnum.BusinessResponse]: true,
+    [CustomAxiosConfigEnum.NoCode]: true,
+  }); // 文件数据写值
+
 // schema 获取接口
 export const getFileSchema = async () => api.get('/file/schema', { [CustomAxiosConfigEnum.NoCode]: true });
 export const getFolderSchema = async () => api.get('/folder/schema', { [CustomAxiosConfigEnum.NoCode]: true });
@@ -172,3 +237,16 @@ export const getTemplateSchema = async () => api.get('/template/schema', { [Cust
 export const getLabelSchema = async () => api.get('/label/schema', { [CustomAxiosConfigEnum.NoCode]: true });
 export const checkDashboardIsExist = async (params?: Record<string, unknown>) =>
   api.get('/dashboard/isExist', { params, [CustomAxiosConfigEnum.NoCode]: true });
+export const getEmptyFolder = async () => api.get(`/folder/empty`); // 获取所有空文件夹
+export const saveMount = async (data: any) =>
+  api.post('/mount', data, {
+    [CustomAxiosConfigEnum.BusinessResponse]: true,
+  }); // 挂载采集器提交
+export const getCollectorList = async (params?: Record<string, unknown>) =>
+  api.get('/mount/source/collector', { params }); // 获取采集器列表
+export const getSourceList = async (params?: Record<string, unknown>) => api.get('/mount/source', { params }); // 获取数据源列表
+export const pasteUns = async (data?: { sourceId?: any; targetId?: any; newF?: Record<string, unknown> }) =>
+  api.post('/paste', data, {
+    [CustomAxiosConfigEnum.BusinessResponse]: true,
+    [CustomAxiosConfigEnum.NoCode]: true,
+  }); // 黏贴uns文件文件夹

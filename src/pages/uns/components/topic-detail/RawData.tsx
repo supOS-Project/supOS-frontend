@@ -1,7 +1,10 @@
 import CodeSnippet from '@/components/code-snippet';
 import { FC } from 'react';
+import { useTranslate } from '@/hooks';
 
 const RawData: FC<{ payload?: string }> = ({ payload }) => {
+  const formatMessage = useTranslate();
+  console.log('rawDAta');
   // 尝试首先解析payload
   let parsedPayload;
   try {
@@ -17,11 +20,15 @@ const RawData: FC<{ payload?: string }> = ({ payload }) => {
     return null;
   }
 
-  if (!parsedPayload) return null;
+  if (!parsedPayload)
+    return (
+      <CodeSnippet className="codeViewWrap" type="multi" minCollapsedNumberOfRows={1}>
+        <span style={{ fontSize: 15 }}>{formatMessage('uns.awaitingDataInput')}</span>
+      </CodeSnippet>
+    );
 
   // 转换成美观打印的字符串
   const formattedPayload = JSON.stringify(parsedPayload, null, 2);
-
   return (
     <CodeSnippet className="codeViewWrap" type="multi" minCollapsedNumberOfRows={1}>
       {formattedPayload}

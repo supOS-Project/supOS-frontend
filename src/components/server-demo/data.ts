@@ -675,6 +675,9 @@ const data: { [x: string]: ConfigTypes | ((arg0: any) => ConfigTypes) } = {
             subTitle: `${getIntl('desktopApplicationIntegrationDesc')}:`,
             minCollapsedNumberOfRows: 27,
             maxCollapsedNumberOfRows: 27,
+            style: {
+              backgroundColor: 'var(--supos-switchwrap-active-bg-color)',
+            },
             value: `{
   "mcpServers": {
     "mcp-server-supos-stdio": { // ${getIntl('stdioTransport')}

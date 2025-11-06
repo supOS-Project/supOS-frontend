@@ -52,7 +52,7 @@ export interface TreeNode extends TreeDataNode {
   [key: string]: any;
 }
 
-const JsonForm = forwardRef<JsonTreeRefProps | undefined, JsonTreeProps>(
+const JsonForm = forwardRef<JsonTreeRefProps, JsonTreeProps>(
   ({ treeData, setTreeData, selectedInfo, setSelectedInfo }, ref) => {
     const form = Form.useFormInstance();
     const [checkedKeys, setCheckedKeys] = useState<string[]>([]);

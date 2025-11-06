@@ -147,6 +147,15 @@ export const appendTreeData = (
         } else if (type === 'addFolder') {
           node.hasChildren = true;
           node.isLeaf = false;
+          const updateAncestors = (key: string) => {
+            let parent = findNodeInfoById(list, key);
+            while (parent) {
+              parent.countChildren =
+                (parent.countChildren ?? 0) + (nodeDetail?.countChildren ? nodeDetail?.countChildren : 0);
+              parent = findNodeInfoById(list, parent.parentId as string);
+            }
+          };
+          updateAncestors(key as string);
         } else if (type === 'deleteFile' || type === 'deleteFolder') {
           const countChild = type === 'deleteFolder' ? nodeDetail?.countChildren || 0 : 1;
           // 递归处理数量减掉
@@ -203,6 +212,19 @@ export const formatNodeData = (data: any[], parentPath: string = '', preId?: any
     parentPath: parentPath,
     key: item.id,
     isLeaf: !item.hasChildren,
+    preId: index === 0 && preId ? preId : data?.[index - 1]?.id,
+    nextId: data?.[index + 1]?.id,
+  }));
+};
+
+export const formatNodeDataForTemplate = (data: any[], preId?: any): UnsTreeNode[] => {
+  return data.map((item: any, index: number) => ({
+    ...item,
+    type: 1,
+    value: 0,
+    title: item.name,
+    isLeaf: true,
+    key: item.id,
     preId: index === 0 && preId ? preId : data?.[index - 1]?.id,
     nextId: data?.[index + 1]?.id,
   }));

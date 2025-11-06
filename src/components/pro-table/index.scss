@@ -5,10 +5,22 @@
       .custom-operation {
         display: block;
       }
+
+      .custom-pin {
+        display: block;
+      }
     }
 
     .custom-operation {
       display: none;
+    }
+
+    .custom-pin {
+      display: none;
+    }
+
+    .custom-pin-fixed {
+      display: block !important;
     }
   }
 
@@ -50,7 +62,7 @@
   }
 
   .ant-table {
-    scrollbar-color: auto; /* 重置默认颜色控制 */
+    scrollbar-color: auto;
   }
 
   /* 针对Antd5的Table组件 */
@@ -133,5 +145,19 @@
     &.pro-table-expanded {
       right: 0;
     }
+  }
+}
+
+.table-link-button {
+  padding: 0;
+  margin-right: 10px;
+  max-width: 80%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  display: inline-block;
+
+  &:hover {
+    text-decoration: underline;
   }
 }

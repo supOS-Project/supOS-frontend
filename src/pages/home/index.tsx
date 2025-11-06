@@ -308,6 +308,7 @@ const Index = () => {
                   </>
                 ) : (
                   <Button
+                    title={formatMessage('common.fullScreen')}
                     icon={<FullscreenOutlined />}
                     onClick={() => {
                       if (screenfull.isEnabled) {

@@ -32,6 +32,7 @@ const ComSearch: FC<ComSearchProps> = ({ form, formConfig, formItemOptions, onSe
       })}
       <Flex gap={4}>
         <Button
+          htmlType="submit"
           color="primary"
           variant="outlined"
           style={{ height: 32, background: 'var(--supos-bg-color)' }}

@@ -1,4 +1,4 @@
-import { Input, Form, InputNumber, FormItemProps, Upload, Button } from 'antd';
+import { Input, Form, InputNumber, FormItemProps, Upload, Button, Switch } from 'antd';
 import ComSelect from '../com-select';
 import { isValidElement, ReactNode } from 'react';
 import TagSelect from '@/pages/uns/components/use-create-modal/components/TagSelect.tsx';
@@ -30,6 +30,8 @@ export const render = (type: any, properties: any) => {
           </Button>
         </Upload>
       );
+    case 'Switch':
+      return <Switch {...properties} />;
     default:
       return null;
   }

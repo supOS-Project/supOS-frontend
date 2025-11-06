@@ -1,4 +1,5 @@
 import { Key, useCallback, useEffect, useRef, useState } from 'react';
+import _ from 'lodash';
 interface UsePaginationParams {
   initPageSize?: number; // 每页大小，默认为10
   initPageSizes?: number[];
@@ -12,6 +13,15 @@ interface UsePaginationParams {
   autoRefresh?: boolean; // 是否自动刷新
   refreshInterval?: number; // 自动刷新间隔，单位毫秒
   rowKey?: string;
+  /** 默认排序 */
+  defaultSort?:
+    | {
+        orderCode?: string;
+        isAsc?: boolean;
+      }
+    | { [key: string]: any };
+  /** 是否累加数据，默认为false，即覆盖数据 */
+  appendData?: boolean;
 }
 
 const usePagination = <T>({
@@ -25,6 +35,8 @@ const usePagination = <T>({
   autoRefresh = false,
   refreshInterval = 5000, // 默认5秒
   rowKey = 'id',
+  defaultSort = {},
+  appendData = false,
 }: UsePaginationParams) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
   const [selectedRows, setSelectedRows] = useState<any[]>([]);
@@ -38,6 +50,7 @@ const usePagination = <T>({
     pageSize: initPageSize,
     pageNo: initPage,
     searchFormData: {},
+    sortData: defaultSort,
   });
 
   const cancelRequest = useCallback(() => {
@@ -65,6 +78,7 @@ const usePagination = <T>({
       {
         ...defaultParams,
         ...paramsData.searchFormData,
+        ...paramsData.sortData,
         pageSize: paramsData.pageSize,
         pageNo: paramsData.pageNo,
       },
@@ -76,7 +90,12 @@ const usePagination = <T>({
         if (abortControllerRef.current?.signal.aborted) {
           return; // 如果请求被中止，则不处理响应
         }
-        setData(data?.data);
+        // 根据appendData参数决定是追加数据还是覆盖数据
+        if (appendData && paramsData.pageNo > 1) {
+          setData((prevData) => [...prevData, ...(data?.data || [])]);
+        } else {
+          setData(data?.data);
+        }
         totalRef.current = data?.total ?? 0;
         if (onSuccessCallback) {
           onSuccessCallback?.(data);
@@ -202,6 +221,37 @@ const usePagination = <T>({
       setSelectedRows(a?.map((aa) => data?.find((f: any) => f[rowKey] === aa))?.filter((f) => f));
     }
   };
+  const onChange = useCallback((_a: any, _b: any, sort: any, action: any) => {
+    if (action.action === 'sort') {
+      if (sort instanceof Array) {
+        const sortData = sort?.map((m: any) => ({
+          orderCode: m.column.sortKey || (_.isArray(m.field) ? m.field.join('.') : m.field),
+          isAsc: m.order === 'ascend',
+        }));
+        setParamsData((o) => ({
+          ...o,
+          sortData: {
+            sortData,
+          },
+        }));
+      } else {
+        if (sort.field) {
+          setParamsData((o) => ({
+            ...o,
+            sortData: {
+              orderCode: sort.column.sortKey || (_.isArray(sort.field) ? sort.field.join('.') : sort.field),
+              isAsc: sort.order === 'ascend',
+            },
+          }));
+        } else {
+          setParamsData((o) => ({
+            ...o,
+            sortData: defaultSort,
+          }));
+        }
+      }
+    }
+  }, []);
 
   return {
     setLoading,
@@ -224,11 +274,14 @@ const usePagination = <T>({
     setSearchParams,
     setPagination,
     clearData,
+    hasMore: !data.length || data.length < totalRef.current,
     rowSelection: {
       selectedRowKeys,
       onChange: rowSelectionChange,
     },
     selectedRows,
+    // 	排序、筛选变化时触发
+    onChange,
   };
 };
 

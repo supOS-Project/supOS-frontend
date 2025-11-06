@@ -71,7 +71,7 @@ const OverviewList: FC<MenuListProps> = ({ list, type, customOptRender, loadingV
                       }}
                       onClick={() => handleClickItem(c)}
                       description={{
-                        content: c.showDescription || ' ',
+                        content: c.showDescription,
                         rows: type === 'example' ? 2 : 2,
                       }}
                       actions={type === 'example' ? ([customOptRender?.(c)] as any) : undefined}

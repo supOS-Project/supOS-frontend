@@ -1,4 +1,4 @@
-import { FC, useMemo, useRef, useState } from 'react';
+import { CSSProperties, FC, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { Col, Row, Tabs, TabsProps } from 'antd';
 import StickyBox from 'react-sticky-box';
@@ -18,6 +18,7 @@ interface ItemChildTypes {
   maxCollapsedNumberOfRows?: number; // 最大行数，仅对type为codeSnippet生效
   isJSON?: boolean; // 是否是json，仅对type为codeSnippet生效
   collapseItems?: any[]; // 折叠项，仅对type为collapse生效
+  style?: CSSProperties;
 }
 
 export interface TabItems {
@@ -82,9 +83,10 @@ const ServerDemo = (props: PropsTypes) => {
       minCollapsedNumberOfRows,
       maxCollapsedNumberOfRows,
       isJSON,
+      style,
     } = item;
     const Comp = components[type] ?? ComCopyContent;
-    const params: { [x: string]: any } = { label, subTitle, labelClassName };
+    const params: { [x: string]: any } = { label, subTitle, labelClassName, style };
 
     switch (type) {
       case 'copyContent':

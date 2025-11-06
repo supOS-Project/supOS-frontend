@@ -10,7 +10,7 @@ export { default as useTemplateModal } from './template-modal';
 export { default as useLabelModal } from './label-modal';
 export { default as useViewLabelModal } from './view-label-modal';
 export { default as EmptyDetail } from './empty-detail';
-export { default as Dashboard } from './Dashboard';
 export { default as Tree } from './uns-tree';
 export { default as UnusedTopicTree } from './uns-tree/UnusedTopicTree';
 export { default as RealTimeData } from './RealTimeData';
+export { default as UnsDashboard } from './uns-dashboard';

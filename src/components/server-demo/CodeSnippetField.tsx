@@ -2,7 +2,7 @@ import { Flex } from 'antd';
 import classNames from 'classnames';
 import ComCodeSnippet from '../com-code-snippet';
 import styles from './CodeSnippetField.module.scss';
-import { useEffect, useMemo, useRef } from 'react';
+import { CSSProperties, useEffect, useMemo, useRef } from 'react';
 import { useSize } from 'ahooks';
 
 interface PropsTypes {
@@ -15,6 +15,7 @@ interface PropsTypes {
   maxCollapsedNumberOfRows?: number;
   isJSON?: boolean;
   onSizeChange: (arg0: any) => void;
+  style?: CSSProperties;
 }
 
 const CodeSnippetField = (props: PropsTypes) => {
@@ -28,6 +29,7 @@ const CodeSnippetField = (props: PropsTypes) => {
     maxCollapsedNumberOfRows,
     isJSON,
     onSizeChange,
+    style: _style,
   } = props;
 
   const ref = useRef<HTMLDivElement>(null);
@@ -37,10 +39,9 @@ const CodeSnippetField = (props: PropsTypes) => {
     if (!isJSON) return {};
 
     return {
-      '--supos-switchwrap-active-bg-color': 'var(--supos-charttop-bg-color)',
+      // '--supos-switchwrap-active-bg-color': 'var(--supos-charttop-bg-color)',
     };
   }, [isJSON]);
-
   const content = useMemo(() => {
     if (!isJSON) return value;
 
@@ -66,6 +67,7 @@ const CodeSnippetField = (props: PropsTypes) => {
     <Flex
       vertical
       ref={ref}
+      style={_style}
       className={classNames('com-copy-content', styles.container, { [styles.hasLabel]: !!label }, className)}
     >
       {label && <div className={classNames('label', labelClassName)}>{label}</div>}

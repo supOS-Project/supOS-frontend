@@ -74,6 +74,7 @@ const Module = ({ successCallBack, currentNode, lazyTree }: DeleteModalProps) =>
               key: sourceId ? sourceId : ROOT_NODE_ID,
               newNodeKey: deleteDetail?.preId || deleteDetail?.nextId,
               nodeDetail: deleteDetail,
+              reset: !sourceId,
             }
           : { clearSelect };
         successCallBack(config);

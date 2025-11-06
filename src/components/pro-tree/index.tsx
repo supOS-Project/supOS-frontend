@@ -53,6 +53,7 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
     drapOverChanges,
     /** 自己实现，不使用antd Tree方案（默认false） */
     dndDraggable,
+    renderTitleStyle,
     ...restProps
   } = props;
   const treeContentRef = useRef<HTMLDivElement | null>(null);
@@ -84,7 +85,7 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
     if ((_node as DataNodeProps).isLoadMoreNode && lazy) return;
     if (rightClickMenuItems) {
       const items = typeof rightClickMenuItems === 'function' ? rightClickMenuItems(info) : rightClickMenuItems;
-      if (items?.length) {
+      if (_node && items?.length) {
         setRightClickNode(_node.key);
       }
       dropdownRef?.current?.showDropdown(event, items);
@@ -100,6 +101,7 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
     const Icon = typeof treeNodeIcon === 'function' ? treeNodeIcon(node) : treeNodeIcon;
     const Extra = typeof treeNodeExtra === 'function' ? treeNodeExtra(node) : treeNodeExtra;
     const Count = typeof treeNodeCount === 'function' ? treeNodeCount(node) : treeNodeCount;
+    const titleStyle = typeof renderTitleStyle === 'function' ? renderTitleStyle(node) : renderTitleStyle;
     if (node.isLoadMoreNode && loadMoreData && lazy) {
       loadMoreData?.(node);
       return title;
@@ -122,20 +124,23 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
           draggable={dndDraggable}
         >
           <Flex className={cx('treeNodeClassName', 'custom-tree-node')} align="center" gap={8}>
-            {Icon && <div className="custom-tree-node-icon">{Icon}</div>}
-            <Flex style={{ flex: 1, overflow: 'hidden' }} align="center" gap={8}>
-              <div style={{ flex: 1, overflow: 'hidden' }}>
+            <Flex style={{ height: '32px', flex: 1, overflow: 'hidden' }} align="center" gap={8}>
+              <Flex
+                style={{
+                  maxWidth: '100%',
+                  ...titleStyle,
+                }}
+                align="center"
+                gap={4}
+              >
+                {Icon && <div className="custom-tree-node-icon">{Icon}</div>}
                 <div className="custom-tree-node-title">
                   {Dom}
                   {Count}
                 </div>
-              </div>
-              {Extra && (
-                <div className="custom-tree-node-extra" style={{ flexShrink: 0 }}>
-                  {Extra}
-                </div>
-              )}
+              </Flex>
             </Flex>
+            {Extra && <div className="custom-tree-node-extra">{Extra}</div>}
           </Flex>
         </SortableTreeNode>
       );
@@ -183,6 +188,15 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
           'pro-tree-expend': !showSwitcherIcon,
         })}
         style={wrapperStyle}
+        onContextMenu={(event) => {
+          if (event.target instanceof Element) {
+            const inModal = event.target.closest?.('.ant-modal-root') !== null;
+            if (inModal) {
+              return;
+            }
+          }
+          onRightClickHandle({ event } as any);
+        }}
       >
         {header && <div className="pro-tree-header">{header}</div>}
         <div className="pro-tree-content" ref={treeContentRef}>
@@ -223,7 +237,10 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
                   ref={treeRef}
                   blockNode
                   {...restProps}
-                  onRightClick={onRightClickHandle}
+                  onRightClick={(info) => {
+                    info.event.stopPropagation();
+                    onRightClickHandle(info);
+                  }}
                   titleRender={_titleRender}
                   treeData={treeData}
                   height={treeHeight}
@@ -250,7 +267,10 @@ const ProTree = forwardRef<ProTreeRef, ProTreeProps>((props, ref) => {
               ref={treeRef}
               blockNode
               {...restProps}
-              onRightClick={onRightClickHandle}
+              onRightClick={(info) => {
+                info.event.stopPropagation();
+                onRightClickHandle(info);
+              }}
               titleRender={_titleRender}
               treeData={treeData}
               height={treeHeight}

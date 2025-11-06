@@ -1,4 +1,4 @@
-import { FC, useEffect, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState, useCallback } from 'react';
 import md5 from 'blueimp-md5';
 import { ResizableBox } from 'react-resizable';
 import '@/components/resizable-container/index.scss';
@@ -10,7 +10,6 @@ import type { Dayjs } from 'dayjs';
 import { useTranslate } from '@/hooks';
 import IframeMask from '@/components/iframe-mask';
 import { useBaseStore } from '@/stores/base';
-import { useSize } from 'ahooks';
 
 const { RangePicker } = DatePicker;
 
@@ -27,7 +26,6 @@ const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
   const newAlias = dataType === 7 ? refers?.[0]?.alias : alias;
   const aliasHash = md5(newAlias).slice(8, 24);
   const iframeName = `${newAlias?.replaceAll('_', '-')}`;
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const [iframeUrl, setIframeUrl] = useState(
     `/grafana/home/d-solo/${aliasHash}/${iframeName}?orgId=1&panelId=1&__feature.dashboardSceneSolo`
@@ -44,79 +42,97 @@ const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
       `/grafana/home/d-solo/${aliasHash}/${iframeName}?orgId=1&panelId=1&__feature.dashboardSceneSolo${timeFrame}`
     );
   }, [dates]);
-  const containerSize = useSize(containerRef);
 
-  useEffect(() => {
-    const iframe = document.getElementById('dashboardIframe') as HTMLIFrameElement | null;
-
-    if (iframe) {
-      interface CustomHTMLElement extends HTMLElement {
-        __handled__?: boolean;
+  const iframeCallbackRef = useCallback(
+    (iframe: HTMLIFrameElement | null) => {
+      // ===== 清理阶段（iframe 卸载时）=====
+      if (observer.current) {
+        observer.current.disconnect();
+        observer.current = null;
       }
+
+      // ===== 挂载阶段 =====
+      if (!iframe) return;
       const handleMutation = (mutationsList: MutationRecord[]) => {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) return;
+
         for (const mutation of mutationsList) {
           if (mutation.type === 'childList') {
+            // 遍历新增的节点
             // 使用 querySelectorAll 获取所有匹配的元素，并遍历它们
-            const showOnHoverBtns = Array.from(
-              iframe?.contentWindow?.document?.querySelectorAll('.show-on-hover') || []
-            ) as CustomHTMLElement[];
-            showOnHoverBtns.forEach((btn: CustomHTMLElement) => {
-              // 如果按钮还没有被处理过，则进行处理
-              if (!btn.__handled__) {
-                btn.style.display = 'none';
+            iframeDoc.querySelectorAll<HTMLElement>('.show-on-hover').forEach(handleButton);
+            // mutation.addedNodes.forEach((node) => {
+            //   // 如果新增的是 Element 节点
+            //   if (node.nodeType === Node.ELEMENT_NODE) {
+            //     const element = node as HTMLElement;
 
-                // 禁用事件监听器
-                btn.addEventListener('click', function handleClick(event: Event) {
-                  event.stopPropagation();
-                  event.preventDefault();
-                  // 移除事件监听器，防止多次添加
-                  btn.removeEventListener('click', handleClick);
-                });
+            //     // 检查自身是否是目标按钮
+            //     if (element.classList.contains('show-on-hover')) {
+            //       handleButton(element);
+            //     }
 
-                // 标记为已处理
-                btn.__handled__ = true;
-              }
-            });
+            //     // 检查子树中是否有目标按钮（因为 subtree: true）
+            //     const buttons = element.querySelectorAll<HTMLElement>('.show-on-hover');
+            //     buttons.forEach(handleButton);
+            //   }
+            // });
           }
         }
       };
 
-      const startObserving = () => {
-        // 创建一个 MutationObserver 实例并定义其回调函数
-        observer.current = new MutationObserver(handleMutation);
+      // 抽离处理逻辑，避免重复
+      const handleButton = (btn: HTMLElement) => {
+        if (!(btn as any).__handled__) {
+          btn.style.display = 'none';
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          });
+          (btn as any).__handled__ = true;
+        }
+      };
 
-        // 开始观察 iframe 内的内容变化
-        observer.current.observe(iframe.contentWindow?.document.body || document.body, {
+      // 注入滚动条样式
+      const injectStyles = (doc: Document) => {
+        const style = doc.createElement('style');
+        style.textContent = `
+      body::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
+      body::-webkit-scrollbar-track { margin: 4px 0; border-radius: 8px; }
+      body::-webkit-scrollbar-thumb { border-radius: 8px; background: #d3d3d3; cursor: pointer; }
+      body::-webkit-scrollbar-thumb:hover { background: #a5a5a5; }
+    `;
+        doc.head.appendChild(style);
+      };
+
+      // onload 处理
+      const onLoad = () => {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) return;
+
+        injectStyles(iframeDoc);
+
+        // 创建并启动 observer
+        observer.current = new MutationObserver(handleMutation);
+        observer.current.observe(iframeDoc.body, {
           childList: true,
           subtree: true,
         });
+
+        // 立即处理已有元素（防止 missed）
+        handleMutation([{ type: 'childList', addedNodes: iframeDoc.body.childNodes } as any]);
       };
 
-      // 当 iframe 加载完成后开始观察
-      iframe.onload = function () {
-        const iframeDocument: Document | undefined = iframe.contentDocument || iframe.contentWindow?.document;
-        if (!iframeDocument) return;
-        // 创建style元素
-        const style = iframeDocument.createElement('style');
-        style.type = 'text/css';
-        style.innerHTML =
-          'body::-webkit-scrollbar { width: 8px; height: 8px; z-index: 99; background: transparent; }' +
-          'body::-webkit-scrollbar-track { margin: 4px 0; border-radius: 8px; }' +
-          'body::-webkit-scrollbar-thumb { border-radius: 8px; background: #d3d3d3; cursor: pointer; }' +
-          'body::-webkit-scrollbar-thumb:hover { background: #a5a5a5; }';
+      // 绑定 onload
+      iframe.onload = onLoad;
 
-        // 将style元素添加到iframe的head标签中
-        iframeDocument.head.appendChild(style);
-        console.log('iframe加载完成');
-        startObserving();
-      };
-
-      // 清理函数，在组件卸载时停止观察以避免内存泄漏
-      return () => {
-        if (observer.current) observer.current.disconnect();
-      };
-    }
-  }, [iframeUrl]);
+      // 注意：如果 iframe 已经加载完成（比如从缓存），可能需要手动触发
+      if (iframe.contentDocument?.readyState === 'complete') {
+        setTimeout(onLoad, 0); // 确保在下一 tick 执行
+      }
+    },
+    [iframeUrl]
+  ); // 依赖 iframeUrl，确保 URL 变化时重新绑定
 
   const [isResizing, setIsResizing] = useState(false);
 
@@ -194,26 +210,22 @@ const DetailDashboard: FC<DetailDashboardProps> = ({ instanceInfo }) => {
         />
       </Flex>
 
-      <div ref={containerRef}>
-        {containerSize?.width && (
-          <ResizableBox
-            className="resizable-container resizable-hover-handles"
-            width={containerSize?.width}
-            height={300}
-            minConstraints={[200, 200]}
-            maxConstraints={[containerSize?.width, 500]}
-            axis="both"
-            resizeHandles={['se']} // 只允许右下角拖拽
-            onResizeStart={() => setIsResizing(true)}
-            onResizeStop={() => setIsResizing(false)}
-          >
-            <>
-              <iframe height="100%" width="100%" id="dashboardIframe" src={iframeUrl} />
-              <IframeMask style={{ display: isResizing ? 'block' : 'none' }} />
-            </>
-          </ResizableBox>
-        )}
-      </div>
+      <ResizableBox
+        className="resizable-container resizable-hover-handles"
+        width={900}
+        height={300}
+        minConstraints={[200, 200]}
+        maxConstraints={[1280, 500]}
+        axis="both"
+        resizeHandles={['se']} // 只允许右下角拖拽
+        onResizeStart={() => setIsResizing(true)}
+        onResizeStop={() => setIsResizing(false)}
+      >
+        <>
+          <iframe ref={iframeCallbackRef} height="100%" width="100%" id="dashboardIframe" src={iframeUrl} />
+          <IframeMask style={{ display: isResizing ? 'block' : 'none' }} />
+        </>
+      </ResizableBox>
     </>
   ) : (
     <Result

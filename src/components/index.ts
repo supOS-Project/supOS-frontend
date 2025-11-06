@@ -1,5 +1,4 @@
 export * from './auth';
-export * from './com-card-list';
 export * from './com-code-snippet';
 export * from './com-copy';
 export * from './com-detail-list';
@@ -44,11 +43,6 @@ export * from './pro-card';
 export * from './com-button';
 
 export { default as withAuth } from './auth';
-export { default as ComCardList } from './com-card-list';
-export { default as ViewList } from './com-card-list/ViewList';
-export { default as FooterOperation } from './com-card-list/FooterOperation';
-export { default as ComCardListVertical } from './com-card-list-vertical';
-export { default as ComTableList } from './com-table-list';
 export { default as ComCodeSnippet } from './com-code-snippet';
 export { default as ComCopy } from './com-copy';
 export { default as ComCopyContent } from './com-copy/ComCopyContent';
@@ -107,3 +101,5 @@ export { default as MqttDemo } from './server-demo/MqttDemo';
 export { default as demoData } from './server-demo/data';
 export { default as ComInput } from './com-input';
 export { default as ComButton } from './com-button';
+export { default as ComEllipsis } from './com-ellipsis';
+export { default as ComSegmented } from './com-segmented';

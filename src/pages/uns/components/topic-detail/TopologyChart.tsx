@@ -1,3 +1,8 @@
+/**
+ * @deprecated 废弃，请看topology文件夹代码
+ * @description 备份
+ */
+
 import { useRef, useEffect, useState, FC } from 'react';
 import { Graph, Markup } from '@antv/x6';
 import { register } from '@antv/x6-react-shape';
@@ -8,23 +13,24 @@ import nodeRed from '@/assets/home-icons/node-red.svg';
 import { useNavigate } from 'react-router-dom';
 import { useTranslate } from '@/hooks';
 import styles from './TopologyChart.module.scss';
-import { goFlow, createFlow } from '@/apis/inter-api/flow';
-import { Tooltip } from 'antd';
-import { getTopologyStatus } from '@/apis/inter-api/uns';
+import { goFlow, createFlow, flowPage, bindFlowForUns } from '@/apis/inter-api/flow';
+import { App, Tooltip } from 'antd';
+import { bindDashboardForUns, getDashboardList, getTopologyStatus } from '@/apis/inter-api/uns';
 import c2 from '@/assets/uns/cw.svg';
 import error from '@/assets/uns/error.svg';
 import ReactDOM from 'react-dom/client'; // React 18 使用 'react-dom/client'
 import { debounce } from 'lodash';
-import md5 from 'blueimp-md5';
 import { useDeepCompareEffect } from 'ahooks';
 import classNames from 'classnames';
 import { getRefreshList, getSourceList } from '@/apis/chat2db';
 import timescaleDB from '@/assets/home-icons/timescaleDB.svg';
 import ComFormula from '@/components/com-formula';
 import ProTable from '@/components/pro-table';
-import { simpleFormat, formatTimestamp } from '@/utils/format';
 import { getSearchParamsString } from '@/utils/url-util';
 import { useBaseStore } from '@/stores/base';
+import ComCodeSnippet from '@/components/com-code-snippet';
+import Binding from '@/pages/uns/components/topic-detail/binding/DashboardBinding.tsx';
+import { useActivate } from '@/contexts/tabs-lifecycle-context.ts';
 
 const NodeRed: FC<any> = (data) => {
   const [mounted, setMounted] = useState(false);
@@ -35,6 +41,7 @@ const NodeRed: FC<any> = (data) => {
     };
   }, []);
   const configured = data.node.data.id || data.node.data.flowId || data.node.data.flowName;
+  const loading = data.node.data.loading;
   const statusColor = configured ? '#4CAF50' : '#B1973B';
   const formatMessage = useTranslate();
   const tooltipContent = () => {
@@ -62,6 +69,9 @@ const NodeRed: FC<any> = (data) => {
           open={data.node && !configured}
           placement="topRight"
           color="var(--supos-bg-color)"
+          align={{
+            offset: [-33, -10],
+          }}
           styles={{
             body: {
               position: 'relative',
@@ -88,7 +98,11 @@ const NodeRed: FC<any> = (data) => {
                 {formatMessage('home.sourceFlow')}
               </span>
             </div>
-            {configured ? (
+            {loading ? (
+              <div className={styles['common-node-btn']} data-action="navigate">
+                <div className={styles['loading-spinner']} />
+              </div>
+            ) : configured ? (
               <div className={styles['common-node-btn']} data-action="navigate">
                 <Launch size={20} />
               </div>
@@ -97,6 +111,15 @@ const NodeRed: FC<any> = (data) => {
                 <Add size={20} />
               </div>
             )}
+            <div data-action="noNavigate">
+              <Binding
+                selectValue={data.node.data.bindId}
+                api={flowPage}
+                onBinding={(item: any) => {
+                  return data.node.data.onBindingChange?.('nodeRed1', item);
+                }}
+              />
+            </div>
             <div className={styles['status-indicator']}>
               <span className={styles['status-dot']} style={{ background: statusColor }} />
               <span
@@ -133,7 +156,6 @@ const TDEngine = (data: any) => {
     dataBaseType: state.dataBaseType,
     systemInfo: state.systemInfo,
   }));
-  console.log(systemInfo?.containerMap?.chat2db);
   return (
     <div
       className={classNames(styles['common-node'], styles['common-node-hover'], {
@@ -186,6 +208,15 @@ const Apps = (data: any) => {
       </div>
       <div className={styles['common-node-btn']} data-action="navigate">
         <Launch size={20} />
+      </div>
+      <div data-action="noNavigate">
+        <Binding
+          selectValue={data.node.data.bindId}
+          api={getDashboardList}
+          onBinding={(item: any) => {
+            return data.node.data.onBindingChange?.('apps1', item);
+          }}
+        />
       </div>
     </div>
   );
@@ -247,87 +278,25 @@ const NodeRedTable: FC<any> = ({ flowList }) => {
     </div>
   );
 };
-const TdEngine1: FC<any> = ({ payload, dt = {}, instanceInfo }) => {
-  // const systemInfo = useBaseStore((state) => state.systemInfo);
-  console.log(instanceInfo);
-  const formatMessage = useTranslate();
-  // const navigate = useNavigate();
-  const columns: any = [
-    {
-      title: formatMessage('uns.attribute'),
-      dataIndex: 'key',
-      width: '30%',
-      render: (text: any) => <span className="payloadFirstTd">{text}</span>,
-    },
-    {
-      title: formatMessage('uns.value'),
-      dataIndex: 'value',
-      width: '30%',
-      render: (text: any) => simpleFormat(text),
-    },
-    {
-      title: formatMessage('common.latestUpdate'),
-      width: '35%',
-      dataIndex: 'updateTime',
-      render: (text: any) => formatTimestamp(text),
-    },
-  ];
-
-  const dataSource = payload
-    ? Object.keys(payload).map((key) => ({
-        key,
-        value: payload[key],
-        updateTime: dt?.[key],
-      }))
-    : [];
+const TdEngine1: FC<any> = ({ instanceInfo }) => {
+  const fieldList = instanceInfo?.fields?.map((field: any) => `"${field.name}"`).join(', ') || '"*"';
+  const sql = !instanceInfo?.tbFieldName
+    ? `SELECT ${fieldList} FROM "public"."${instanceInfo?.table}" LIMIT 10`
+    : `SELECT ${fieldList} FROM "public"."${instanceInfo?.table}" WHERE tag=${instanceInfo?.id} LIMIT 10`;
   return (
     <>
       <div style={{ width: '100%', marginBottom: 12 }} className={styles['name']}>
-        Database
+        SQL
       </div>
-      <ProTable
-        className={styles.customTable}
-        columns={columns}
-        dataSource={dataSource}
-        pagination={false}
-        rowKey="key"
-        hiddenEmpty
-        bordered
-        rowHoverable={false}
-      />
-      {/*{systemInfo?.containerMap?.chat2db && instanceInfo?.dataType === 2 && instanceInfo?.alias && (*/}
-      {/*  <div className={styles['btn']}>*/}
-      {/*    <Button*/}
-      {/*      color="default"*/}
-      {/*      variant="filled"*/}
-      {/*      style={{ marginTop: '10px', width: '100px' }}*/}
-      {/*      icon={<Launch />}*/}
-      {/*      iconPosition="end"*/}
-      {/*      onClick={() => {*/}
-      {/*        getSourceList().then((data: any) => {*/}
-      {/*          const sourceData = data?.data?.data?.find((i: any) => i.alias === '@postgresql');*/}
-      {/*          const loadData = (params: any) => {*/}
-      {/*            getRefreshList(params).then((res: any) => {*/}
-      {/*              if (res.hasNextPage) {*/}
-      {/*                loadData({*/}
-      {/*                  dataSourceId: sourceData?.id,*/}
-      {/*                  pageNo: res.data?.pageNo + 1,*/}
-      {/*                });*/}
-      {/*              } else {*/}
-      {/*                navigate(*/}
-      {/*                  `/SQLEditor?dataSourceName=@postgresql&databaseName=postgres&databaseType=POSTGRESQL&schemaName=public&tableName=${instanceInfo?.alias}`*/}
-      {/*                );*/}
-      {/*              }*/}
-      {/*            });*/}
-      {/*          };*/}
-      {/*          loadData({ dataSourceId: sourceData?.id });*/}
-      {/*        });*/}
-      {/*      }}*/}
-      {/*    >*/}
-      {/*      {formatMessage('uns.sqlEditor')}*/}
-      {/*    </Button>*/}
-      {/*  </div>*/}
-      {/*)}*/}
+      <ComCodeSnippet
+        style={{ border: '1px solid var(--supos-table-tr-color)' }}
+        minCollapsedNumberOfRows={4}
+        maxCollapsedNumberOfRows={4}
+        copyPosition={true}
+        copyText={sql}
+      >
+        {sql}
+      </ComCodeSnippet>
     </>
   );
 };
@@ -469,7 +438,7 @@ const ButtonError: FC<any> = () => {
 };
 register({
   shape: 'nodeRed1',
-  width: 190,
+  width: 220,
   height: 50,
   component: NodeRed,
 });
@@ -487,7 +456,7 @@ register({
 });
 register({
   shape: 'apps1',
-  width: 180,
+  width: 210,
   height: 50,
   component: Apps,
 });
@@ -527,12 +496,16 @@ const data = {
         flowId: '',
         flowStatus: '',
         flowName: '',
+        bindId: '',
+        onBindingChange: (type: string, item: any) => {
+          console.log(type, item);
+        },
       },
     },
     {
       id: 'mqtt1',
       shape: 'mqtt1',
-      x: 480,
+      x: 510,
       y: 0,
       data: {
         active: false,
@@ -541,7 +514,7 @@ const data = {
     {
       id: 'tdEngine1',
       shape: 'tdEngine1',
-      x: 680,
+      x: 700,
       y: 0,
       data: {
         dataType: 1,
@@ -552,10 +525,14 @@ const data = {
     {
       id: 'apps1',
       shape: 'apps1',
-      x: 910,
+      x: 930,
       y: 0,
       data: {
         active: false,
+        bindId: '',
+        onBindingChange: (type: string, item: any) => {
+          console.log(type, item);
+        },
       },
     },
   ],
@@ -599,8 +576,10 @@ const data = {
   ],
 };
 
-const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
+const TopologyChart = ({ instanceInfo, payload, dt, dashboardInfo, getFileDetail }: any) => {
   const graphRef = useRef<any>(null);
+  const formatMessage = useTranslate();
+  const { message } = App.useApp();
   const dashboardType = useBaseStore((state) => state.dashboardType);
   const [active, setActive] = useState<any>('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -624,10 +603,18 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
       });
     }
     if (!withSave2db) {
-      return Object.assign({}, _data, {
-        nodes: _data.nodes.slice(0, -2),
-        edges: _data.edges.slice(0, -2),
-      });
+      if (!withDashboard) {
+        return Object.assign({}, _data, {
+          nodes: _data.nodes.slice(0, -2),
+          edges: _data.edges.slice(0, -2),
+        });
+      } else {
+        // 这里我要删除apps1节点
+        return Object.assign({}, _data, {
+          nodes: [_data.nodes[0], _data.nodes[1], { ..._data.nodes[3], x: 700 }],
+          edges: [_data.edges[0], { ..._data.edges[1], target: 'apps1' }],
+        });
+      }
     }
     if (withSave2db && (!dashboardType?.includes('grafana') || !withDashboard)) {
       return Object.assign({}, _data, {
@@ -734,6 +721,10 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
     const target = e.target as HTMLElement;
     const launchButton = target.closest('[data-action="navigate"]');
 
+    if (target.closest('[data-action="noNavigate"]')) {
+      e.stopPropagation();
+      return;
+    }
     if (cell?.id === 'nodeRed1' && launchButton) {
       if (cell.data.id || cell.data.flowId || cell.data.flowName) {
         navigate(
@@ -746,15 +737,37 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
           })}`
         );
       } else {
+        if (cell.data.loading) {
+          return;
+        }
         if (instanceInfo?.alias && instanceInfo?.path) {
-          createFlow({ unsAlias: instanceInfo?.alias, path: instanceInfo?.path }).then((res: any) => {
-            if (res) {
-              setDatas(res || {});
-              // 保存待跳转的数据
-              pendingNavigationRef.current = { res };
-            }
-            return res;
+          // 设置节点loading状态
+          const node = graphRef.current.getCellById(cell.id);
+          node.setData({
+            ...node.data,
+            loading: true,
           });
+          createFlow({ unsAlias: instanceInfo?.alias, path: instanceInfo?.path })
+            .then((res: any) => {
+              if (res) {
+                setDatas(res || {});
+                // 保存待跳转的数据
+                pendingNavigationRef.current = { res };
+              }
+              // 清除节点loading状态
+              node.setData({
+                ...node.data,
+                loading: false,
+              });
+              return res;
+            })
+            .catch(() => {
+              // 清除节点loading状态
+              node.setData({
+                ...node.data,
+                loading: false,
+              });
+            });
         }
       }
       return;
@@ -785,7 +798,10 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
       return;
     }
     if (cell?.id === 'apps1' && dashboardType?.includes('grafana') && launchButton) {
-      navigate('/grafana-design', { state: { url: getAppsLink(instanceInfo), name: 'GrafanaDesign' } });
+      // navigate('/grafana-design', { state: { url: getAppsLink(dashboardInfo), name: 'GrafanaDesign' } });
+      navigate(
+        `/dashboards/preview?${getSearchParamsString({ id: dashboardInfo.id, type: dashboardInfo.type, status: 'preview', name: dashboardInfo.name })}`
+      );
       return;
     }
     setActive((active: any) => (active === cell.id ? '' : cell.id));
@@ -829,16 +845,36 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
     try {
       const result = await goFlow(alias);
       setDatas(result || {});
+      return result;
     } catch (error) {
       console.error('Error fetching topology data:', error);
+      return null;
     }
   };
-  const getAppsLink = (data: any) => {
-    const { alias } = data || {};
-    const aliasHash = md5(instanceInfo?.alias).slice(8, 24);
-    return `/grafana/home/d/${aliasHash}/${alias.replaceAll('_', '-')}`;
-  };
+  // const getAppsLink = (data: any) => {
+  //   return `/grafana/home/d/${data.id}`;
+  // };
 
+  const onBindingChange = (type: string, item: any) => {
+    if (type === 'apps1') {
+      return bindDashboardForUns({
+        dashboardId: item.id,
+        unsAlias: instanceInfo.alias,
+      }).then(() => {
+        message.success(formatMessage('common.optsuccess'));
+        getFileDetail(instanceInfo.id);
+      });
+    } else {
+      return bindFlowForUns({
+        flowId: item.id,
+        unsAlias: instanceInfo.alias,
+      }).then(() => {
+        message.success(formatMessage('common.optsuccess'));
+        getFileDetail(instanceInfo.id);
+        fetchTopologyData(instanceInfo.alias);
+      });
+    }
+  };
   // 获取并更新图表数据
   const updateGraphData = (instanceInfo: any, flowList?: any) => {
     const { nodes, edges } = findDate(instanceInfo) || { nodes: [], edges: [] };
@@ -891,11 +927,16 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
             node.data.flowStatus = flowList?.flowStatus || '';
             node.data.flowId = flowList?.flowId || '';
             node.data.flowName = flowList?.flowName || '';
+            node.data.bindId = flowList?.id || '';
+            node.data.onBindingChange = onBindingChange;
             node.data.active = true;
             setActive('nodeRed1');
           } else if (node.id === 'tdEngine1') {
             node.data.dataType = instanceInfo?.dataType;
             node.data.alias = instanceInfo?.alias;
+          } else if (node.id === 'apps1') {
+            node.data.onBindingChange = onBindingChange;
+            node.data.bindId = dashboardInfo?.id;
           }
           graphRef.current.addNode(node);
         });
@@ -906,6 +947,39 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
     }, 100);
   };
 
+  useActivate(() => {
+    if (!graphRef.current) return;
+    const edges = graphRef.current.getEdges();
+
+    edges.forEach((edge: any) => {
+      // 3. 获取源节点和目标节点
+      const sourceCell = edge.getSourceCell();
+      const targetCell = edge.getTargetCell();
+
+      if (sourceCell && targetCell) {
+        const sourceBBox = sourceCell.getBBox();
+        const targetBBox = targetCell.getBBox();
+        const sourcePoint = {
+          x: sourceBBox.x + sourceBBox.width,
+          y: sourceBBox.y + sourceBBox.height / 2,
+        };
+        const targetPoint = {
+          x: targetBBox.x,
+          y: targetBBox.y + targetBBox.height / 2,
+        };
+        // 使用绝对坐标设置连接点
+        edge.setSource({
+          x: sourcePoint.x,
+          y: sourcePoint.y,
+        });
+
+        edge.setTarget({
+          x: targetPoint.x,
+          y: targetPoint.y,
+        });
+      }
+    });
+  });
   // 初始化图表
   const initGraph = () => {
     if (graphRef.current) return graphRef.current;
@@ -994,7 +1068,7 @@ const TopologyChart = ({ instanceInfo, payload, dt }: any) => {
       clearInterval(interls.current);
       interls.current = null;
     };
-  }, [instanceInfo, datas]);
+  }, [instanceInfo, datas, dashboardInfo?.id]);
 
   return (
     <div className={styles['detailTopologyWrap']}>

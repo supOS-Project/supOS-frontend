@@ -16,6 +16,7 @@ import './index.scss';
 import ComLayout from '@/components/com-layout';
 import ComContent from '@/components/com-layout/ComContent';
 import { setAiResult, useAiStore } from '@/stores/ai-store.ts';
+import { UnsContextProvider } from './UnsContext';
 
 const initNode = {
   key: '',
@@ -83,7 +84,14 @@ const Module = () => {
           content: formatMessage('common.deleteTemplateConfirm'),
           onOk() {
             deleteTemplate(id as string).then(() => {
-              loadData({ clearSelect: id === selectedNode?.id });
+              loadData(
+                id === selectedNode?.id
+                  ? { clearSelect: id === selectedNode?.id }
+                  : {
+                      queryType: 'deleteTemplate',
+                      newNodeKey: selectedNode?.id,
+                    }
+              );
               message.success(formatMessage('common.deleteSuccessfully'));
             });
           },
@@ -150,7 +158,9 @@ const Module = () => {
 const WrapperModule = () => {
   return (
     <TreeStoreProvider>
-      <Module />
+      <UnsContextProvider>
+        <Module />
+      </UnsContextProvider>
     </TreeStoreProvider>
   );
 };

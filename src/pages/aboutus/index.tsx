@@ -80,6 +80,7 @@ const Index = () => {
                     title: item?.name,
                     titleDescription: `${formatMessage('common.version')} ${item.version || ''}`,
                   }}
+                  description={false}
                 />
               );
             })}

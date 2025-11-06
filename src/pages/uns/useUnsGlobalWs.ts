@@ -22,10 +22,11 @@ const useUnsGlobalWs = () => {
       onError: (error) => console.error('WebSocket error:', error),
     }
   );
-  const { icmpStates, ...topologyData } = data;
+  const { icmpStates, mountStatus, ...topologyData } = data;
   return {
     topologyData,
     icmpStates: icmpStates || [],
+    mountStatus: mountStatus || {},
   };
 };
 

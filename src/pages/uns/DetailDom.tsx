@@ -1,11 +1,11 @@
 import {
-  Dashboard,
   LabelDetail,
   ModelDetail,
   RealTimeData,
   TemplateDetail,
   TopicDetail,
   EmptyDetail,
+  UnsDashboard,
 } from '@/pages/uns/components';
 import { getTreeStoreSnapshot, useTreeStore, useTreeStoreRef } from './store/treeStore';
 import { FC } from 'react';
@@ -44,7 +44,7 @@ const DetailDom: FC<DetailDomProps> = ({ handleDelete, currentUnusedTopicNode })
     }
   };
   return treeMap ? (
-    <Dashboard />
+    <UnsDashboard />
   ) : currentTreeMapType === 'all' ? (
     getDetailDom(selectedNode)
   ) : (

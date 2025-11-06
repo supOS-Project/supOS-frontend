@@ -5,10 +5,7 @@ import { createHtmlPlugin } from 'vite-plugin-html';
 import packageJson from './package.json';
 import legacy from '@vitejs/plugin-legacy';
 import { federation } from '@module-federation/vite';
-
 import { getDevInfo, getProxy, logDevInfo } from './supos.dev';
-// import { HttpsProxyAgent } from 'https-proxy-agent';
-// import { AuthButton } from './src/components';
 
 const devInfo = getDevInfo();
 const proxy = getProxy(devInfo.API_PROXY_URL, devInfo.SINGLE_API_PROXY_LIST, devInfo.SINGLE_API_PROXY_URL);
@@ -111,15 +108,15 @@ export default defineConfig({
       },
     }),
   ],
-  css: {
-    preprocessorOptions: {
-      scss: {
-        includePaths: ['node_modules'],
-        // javascriptEnabled: true,
-        quietDeps: true,
-      },
-    },
-  },
+  // css: {
+  //   preprocessorOptions: {
+  //     scss: {
+  //       includePaths: ['node_modules'],
+  //       // javascriptEnabled: true,
+  //       quietDeps: true,
+  //     },
+  //   },
+  // },
   assetsInclude: ['**/*.woff2', '**/*.woff', '**/*.ttf'],
   resolve: {
     alias: {

@@ -1,19 +1,22 @@
-import { useRef, useEffect } from 'react';
-import { Graph } from '@antv/x6';
-import { register } from '@antv/x6-react-shape';
-import { ApplicationWeb } from '@carbon/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { Flex } from 'antd';
+import styles from './Topology.module.scss';
+import useTranslate from '@/hooks/useTranslate.ts';
+import cx from 'classnames';
+import ComEllipsis from '@/components/com-ellipsis';
+import classNames from 'classnames';
 import nodeRed from '@/assets/home-icons/node-red.svg';
-import postgresql from '@/assets/home-icons/postgresql.svg';
+import { useBaseStore } from '@/stores/base';
 import tdengine from '@/assets/home-icons/tdengine.png';
 import timescaleDB from '@/assets/home-icons/timescaleDB.svg';
-import { useTranslate } from '@/hooks';
-import styles from './index.module.scss';
-import { useDeepCompareEffect, useMemoizedFn } from 'ahooks';
-import { data } from '@/pages/uns/components/uns-topology/data.ts';
-import classNames from 'classnames';
-import { useSize } from 'ahooks';
-import { useBaseStore } from '@/stores/base';
+import postgresql from '@/assets/home-icons/postgresql.svg';
+import { register } from '@antv/x6-react-shape';
+import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useDeepCompareEffect, useMemoizedFn, useSize } from 'ahooks';
+import { data } from './data.ts';
+import { Graph } from '@antv/x6';
+import { ApplicationWeb, Launch } from '@carbon/icons-react';
+import MQTT from './MQTT.tsx';
 
 const Modbus = (nodes: any) => {
   return (
@@ -87,7 +90,6 @@ const Opcda = (nodes: any) => {
     </div>
   );
 };
-
 const ICMP = (nodes: any) => {
   return (
     <div
@@ -149,6 +151,7 @@ const NodeRed = () => {
       <img src={nodeRed} alt="" width="28px" />
       {/*{formatMessage('common.nodeRed')}*/}
       Node-Red
+      <Launch size={16} />
     </div>
   );
 };
@@ -175,13 +178,13 @@ const PostgreSQL = () => {
     </div>
   );
 };
-
 const Grafana = () => {
   const formatMessage = useTranslate();
   return (
     <div className={classNames(styles['common-node'], styles['common-node-hover'])}>
       <ApplicationWeb size={28} />
       {formatMessage('dashboards.dashboard')}
+      <Launch size={16} />
     </div>
   );
 };
@@ -299,22 +302,21 @@ register({
 //   component: Gui,
 // });
 
-const TopologyChart = (datas: any) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const outerContainerRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<any>(null);
-  const navigate = useNavigate();
+const Topology = ({ datas }: any) => {
   const formatMessage = useTranslate();
+  const navigate = useNavigate();
+  const graphRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const outerContainerRef = useRef<HTMLDivElement>(null);
 
   const datahandle = useMemoizedFn(() => {
     if (!datas) return;
     const edges = graphRef.current.getEdges();
     data.nodes.forEach((node: any) => {
       const nodeId = node.id;
-      if (nodeId in (datas.datas as Record<string, any>)) {
+      if (nodeId in (datas as Record<string, any>)) {
         // ws获取过来的数据
-        const valueFromDatas = (datas.datas as Record<string, any>)[nodeId];
+        const valueFromDatas = (datas as Record<string, any>)[nodeId];
         const graphNode = graphRef.current.getCellById(nodeId);
 
         if (graphNode) {
@@ -347,7 +349,7 @@ const TopologyChart = (datas: any) => {
     graphRef.current = new Graph({
       container: containerRef.current,
       background: {
-        color: 'var(--supos-gray-color-10-message)',
+        color: 'var(--supos-card-bg)',
       },
       interacting: false,
       panning: true,
@@ -397,16 +399,11 @@ const TopologyChart = (datas: any) => {
   useDeepCompareEffect(() => {
     datahandle();
   }, [datahandle, datas]);
-
   const size = useSize(outerContainerRef);
 
   useEffect(() => {
-    if (size && containerRef.current && wrapperRef.current) {
-      const height = Math.max(size.height - 80, 400);
-      wrapperRef.current.style.height = `${height + 20}px`;
-
-      containerRef.current.style.height = `${height + 20}px`;
-
+    if (size && containerRef.current) {
+      const height = Math.max(size.height, 400);
       if (graphRef.current) {
         setTimeout(() => {
           graphRef.current.resize(size.width, height);
@@ -417,12 +414,14 @@ const TopologyChart = (datas: any) => {
   }, [size]);
 
   return (
-    <div ref={outerContainerRef} style={{ height: '100%' }}>
-      <div className={styles['unsTopologyTitle']}>{formatMessage('uns.topologyMap')}</div>
-      <div className={styles['unsTopologyWrap']} ref={wrapperRef}>
-        <div className={styles['unsTopologyContent']} ref={containerRef} />
-      </div>
-    </div>
+    <Flex gap={16} className={styles['item-wrapper']} style={{ height: '100%' }} ref={outerContainerRef}>
+      <Flex vertical className={cx(styles['item'], styles['item-left'])} gap={16} style={{ overflow: 'hidden' }}>
+        <ComEllipsis className={styles['title']}>{formatMessage('uns.topologyMap')}</ComEllipsis>
+        <div ref={containerRef} style={{ minHeight: 400, flex: 1 }} />
+      </Flex>
+      <MQTT />
+    </Flex>
   );
 };
-export default TopologyChart;
+
+export default Topology;
