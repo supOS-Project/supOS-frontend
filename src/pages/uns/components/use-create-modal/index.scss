@@ -1,4 +1,8 @@
 .optionDrawerWrap {
+  .antd-form-item-no-colon {
+    font-weight: 500;
+  }
+
   .ant-drawer-header {
     border: none;
     padding-left: 40px;
@@ -37,6 +41,10 @@
         }
       }
 
+      .ant-form-item {
+        margin-bottom: 16px;
+      }
+
       .customLabelStyle {
         .ant-form-item-no-colon {
           width: min-content;
@@ -62,5 +70,12 @@
         margin-top: -24px;
       }
     }
+  }
+}
+
+.opt-checkbox {
+  .ant-checkbox-wrapper,
+  .ant-checkbox-label {
+    width: 100%;
   }
 }

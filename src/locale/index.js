@@ -524,6 +524,7 @@ const messages = {
   'uns.theFileFormatOnlySupportsXlsx': '文件格式仅支持.xlsx和.json！',
   'uns.theFileFormatOnlySupportsZip': '文件格式仅支持.zip！',
   'uns.pleaseUploadTheFile': '请上传文件！',
+  'uns.pleaseJSON': '请输入JSON！',
   'uns.PartialDataImportFailed': '部分数据导入失败！您确定要下载失败的数据吗？',
   'uns.totalModel': '文件夹总数',
   'uns.totalInstance': '文件总数',
@@ -742,6 +743,9 @@ const messages = {
   'uns.briefAnnotationExample':
     "倒数第二层被自动分配为'状态'、'操作'或'指标'，根据系统状态、操作或时间序列数据对主题进行分类。",
   'uns.awaitingDataInput': '等待数据输入...',
+  'uns.additionalSettings': '额外设置',
+  'uns.optionalBehaviors': '可选行为',
+  'uns.pleaseSelectForExport': '请选择UNS的文件或者文件夹。',
   //公共通用模块
   'common.url': '地址',
   'common.usage': '用法',
@@ -954,6 +958,8 @@ const messages = {
   'common.pin': '置顶',
   'common.unPin': '取消置顶',
   'common.noDescription': '暂无描述',
+  'common.clickOrDragForUpload': '点击或者拖拽文件在这个区域进行上传',
+  'common.uploadFile': '上传文件',
 
   // 按钮国际化
   'Namespace.uns_import': 'UNS-导入',

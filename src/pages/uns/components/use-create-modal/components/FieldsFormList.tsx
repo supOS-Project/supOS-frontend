@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react';
+import { CSSProperties, FC, useEffect } from 'react';
 import { Form, Flex, Input, Select, Button, InputNumber, Divider, ConfigProvider } from 'antd';
 import { SubtractAlt, AddAlt } from '@carbon/icons-react';
 import { useTranslate, useFormValue } from '@/hooks';
@@ -29,6 +29,7 @@ export interface FieldsFormListProps {
   mainKeyName?: string | (string | number)[];
   hasDefaultVal?: boolean;
   showMoreBtn?: boolean;
+  style?: CSSProperties;
 }
 
 const FieldsFormList: FC<FieldsFormListProps> = ({
@@ -44,6 +45,7 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
   fieldsName = 'fields',
   mainKeyName = 'mainKey',
   showMoreBtn = false,
+  style,
 }) => {
   const formatMessage = useTranslate();
   const form = Form.useFormInstance();
@@ -509,6 +511,12 @@ const FieldsFormList: FC<FieldsFormListProps> = ({
     </>
   );
 
-  return showWrap ? <div className="dashedWrap">{content}</div> : content;
+  return showWrap ? (
+    <div className="dashedWrap" style={style}>
+      {content}
+    </div>
+  ) : (
+    content
+  );
 };
 export default FieldsFormList;

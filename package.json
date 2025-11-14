@@ -43,6 +43,7 @@
     "@carbon/icons-react": "11.60.0",
     "@codemirror/lang-html": "^6.4.9",
     "@codemirror/lang-javascript": "^6.2.2",
+    "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-sql": "^6.8.0",
     "@codemirror/lang-xml": "^6.1.0",
     "@copilotkit/react-core": "1.8.13",
@@ -54,10 +55,12 @@
     "@ibm/plex-sans": "^1.1.0",
     "@module-federation/enhanced": "^0.19.1",
     "@module-federation/vite": "^1.8.1",
+    "@uiw/codemirror-themes": "^4.25.3",
     "@uiw/react-codemirror": "^4.23.7",
     "ahooks": "3.8.5",
     "antd": "5.27.1",
     "axios": "1.8.2",
+    "blueimp-md5": "^2.19.0",
     "braft-editor": "^2.3.9",
     "classnames": "^2.5.1",
     "clipboard": "^2.0.11",
@@ -87,8 +90,7 @@
     "use-immer": "^0.11.0",
     "uuid": "^11.0.3",
     "vite-plugin-top-level-await": "^1.5.0",
-    "zustand": "^5.0.5",
-    "blueimp-md5": "^2.19.0"
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",

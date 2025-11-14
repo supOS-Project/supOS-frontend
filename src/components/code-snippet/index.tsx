@@ -1,4 +1,4 @@
-import { FC, ReactNode, useRef, useEffect, useState, useCallback, MouseEvent } from 'react';
+import { FC, ReactNode, useRef, useEffect, useState, useCallback, MouseEvent, useMemo, Children } from 'react';
 import { Tooltip } from 'antd';
 import { ChevronDown, Copy } from '@carbon/icons-react';
 import classNames from 'classnames';
@@ -33,6 +33,9 @@ export type NewCodeSnippetAlignment =
   | 'right-start';
 
 export type CodeSnippetAlignment = DeprecatedCodeSnippetAlignment | NewCodeSnippetAlignment;
+type stylesType = { maxHeight?: number | string; minHeight?: number | string; height?: string };
+type containerStyleType = { style?: stylesType };
+
 export interface CodeSnippetProps {
   /**
    * 指定触发器与工具提示的对齐方式
@@ -130,10 +133,23 @@ export interface CodeSnippetProps {
   type?: 'single' | 'inline' | 'multi';
 
   /**
+   * 指定是否显示行号
+   */
+  showLineNumbers?: boolean;
+
+  /**
    * 指定是否自动换行
    */
   wrapText?: boolean;
   children?: ReactNode;
+  /**
+   * 当 type 为 'multi' 时，设置高度为 100%
+   */
+  fullHeight?: boolean;
+  /**
+   * 当代码内容为空时显示的占位符
+   */
+  placeholder?: ReactNode;
 }
 
 const rowHeightInPixels = 16;
@@ -165,10 +181,13 @@ const CodeSnippet: FC<CodeSnippetProps> = ({
   showLessText,
   hideCopyButton,
   wrapText = false,
+  showLineNumbers = false,
   maxCollapsedNumberOfRows = defaultMaxCollapsedNumberOfRows,
   maxExpandedNumberOfRows = defaultMaxExpandedNumberOfRows,
   minCollapsedNumberOfRows = defaultMinCollapsedNumberOfRows,
   minExpandedNumberOfRows = defaultMinExpandedNumberOfRows,
+  fullHeight = false,
+  placeholder,
   ...rest
 }) => {
   const [expandedCode, setExpandedCode] = useState(false);
@@ -231,7 +250,7 @@ const CodeSnippet: FC<CodeSnippetProps> = ({
   const size = useSize(getCodeRef());
 
   useEffect(() => {
-    if (codeContentRef?.current && type === 'multi') {
+    if (codeContentRef?.current && type === 'multi' && !fullHeight) {
       const { height } = codeContentRef.current.getBoundingClientRect();
 
       if (
@@ -246,6 +265,8 @@ const CodeSnippet: FC<CodeSnippetProps> = ({
       if (expandedCode && minExpandedNumberOfRows > 0 && height <= minExpandedNumberOfRows * rowHeightInPixels) {
         setExpandedCode(false);
       }
+    } else {
+      setShouldShowMoreLessBtn(false);
     }
     if ((codeContentRef?.current && type === 'multi') || (codeContainerRef?.current && type === 'single')) {
       handleScroll();
@@ -259,9 +280,15 @@ const CodeSnippet: FC<CodeSnippetProps> = ({
     minExpandedNumberOfRows,
     minCollapsedNumberOfRows,
     handleScroll,
+    fullHeight,
   ]);
 
   const handleCopyClick = (evt: MouseEvent) => {
+    // 如果内容为空（即显示占位符），则不执行任何复制操作
+    if (isEmpty) {
+      return;
+    }
+
     if (copyText || innerCodeRef?.current) {
       const textToCopy = copyText ?? innerCodeRef?.current?.innerText ?? '';
       copy(textToCopy);
@@ -272,22 +299,64 @@ const CodeSnippet: FC<CodeSnippetProps> = ({
     }
   };
 
+  const getChildrenString = useCallback((node: ReactNode): string => {
+    let text = '';
+    Children.forEach(node, (child) => {
+      if (typeof child === 'string' || typeof child === 'number') {
+        text += child;
+      } else if (child && typeof child === 'object' && 'props' in child && child.props.children) {
+        text += getChildrenString(child.props.children);
+      }
+    });
+    return text;
+  }, []);
+
+  const childrenString = useMemo(() => getChildrenString(children), [children, getChildrenString]);
+  const isEmpty = !childrenString;
+
   const codeSnippetClasses = classNames(className, 'code-snippet', {
     [`code-snippet--${type}`]: type,
-    'code-snippet--disabled': type !== 'inline' && disabled,
+    'code-snippet--disabled': type !== 'inline' && (disabled || isEmpty),
+    'code-snippet--empty': isEmpty,
     'code-snippet--expand': expandedCode,
     'code-snippet--light': light,
     'code-snippet--no-copy': hideCopyButton,
     'code-snippet--wraptext': wrapText,
     'code-snippet--has-right-overflow': type === 'multi' && hasRightOverflow,
     'code-snippet--copy-button': !hideCopyButton,
+    'code-snippet--with-line-numbers': showLineNumbers && type === 'multi',
+    'code-snippet--full-height': fullHeight && type === 'multi',
   });
+
+  const processedContent = useMemo(() => {
+    const content = isEmpty ? placeholder : children;
+
+    if (showLineNumbers && type === 'multi') {
+      const textContent = getChildrenString(content);
+      const lines = textContent.split('\n');
+
+      if (lines.length > 0 && lines[lines.length - 1] === '') {
+        lines.pop();
+      }
+
+      return lines.length > 0
+        ? lines.map((line, index) => (
+            <span className="code-snippet__line" key={index}>
+              {line === '' ? '\u00A0' : line}
+            </span>
+          ))
+        : (content as ReactNode);
+    }
+    return content;
+  }, [isEmpty, placeholder, children, showLineNumbers, type, getChildrenString]);
 
   const expandCodeBtnText = expandedCode
     ? (showLessText ?? formatMessage('uns.showLess'))
     : (showMoreText ?? formatMessage('uns.showMore'));
 
   if (type === 'inline') {
+    // 内联模式下，如果为空则不渲染任何内容
+    if (isEmpty) return null;
     if (hideCopyButton) {
       return (
         <span className={codeSnippetClasses}>
@@ -304,13 +373,13 @@ const CodeSnippet: FC<CodeSnippetProps> = ({
     );
   }
 
-  type stylesType = { maxHeight?: number; minHeight?: number };
-  type containerStyleType = { style?: stylesType };
   const containerStyle: containerStyleType = {};
   if (type === 'multi') {
     const styles: stylesType = {};
 
-    if (expandedCode) {
+    if (fullHeight) {
+      styles.height = '100%';
+    } else if (expandedCode) {
       if (maxExpandedNumberOfRows > 0) {
         styles.maxHeight = maxExpandedNumberOfRows * rowHeightInPixels;
       }
@@ -344,19 +413,21 @@ const CodeSnippet: FC<CodeSnippetProps> = ({
         {...containerStyle}
       >
         <pre ref={codeContentRef} onScroll={(type === 'multi' && handleScroll) || undefined}>
-          <code ref={innerCodeRef}>{children}</code>
+          <code ref={innerCodeRef} data-placeholder-active={isEmpty}>
+            {processedContent}
+          </code>
         </pre>
       </div>
       {/* 左侧溢出指示器 */}
       {hasLeftOverflow && <div className="code-snippet-overflow-indicator--left" />}
       {/* 右侧溢出指示器 */}
       {hasRightOverflow && type !== 'multi' && <div className="code-snippet-overflow-indicator--right" />}
-      {!hideCopyButton && (
+      {!hideCopyButton && !isEmpty && (
         <Tooltip title={feedback || formatMessage('common.copy')} trigger="hover" placement={align as any}>
           <button
             className="code-snippet-copy-btn"
             ref={copyButtonRef}
-            disabled={disabled}
+            disabled={disabled || isEmpty}
             onClick={handleCopyClick}
             aria-label={copyButtonDescription || formatMessage('common.copy')}
           >
@@ -364,7 +435,7 @@ const CodeSnippet: FC<CodeSnippetProps> = ({
           </button>
         </Tooltip>
       )}
-      {shouldShowMoreLessBtn && (
+      {shouldShowMoreLessBtn && !isEmpty && (
         <button className="code-snippet-btn--expand" disabled={disabled} onClick={() => setExpandedCode(!expandedCode)}>
           <span className="code-snippet-btn--text">{expandCodeBtnText}</span>
           <ChevronDown className="code-snippet-icon-chevron--down code-snippet-icon" role="img" />
