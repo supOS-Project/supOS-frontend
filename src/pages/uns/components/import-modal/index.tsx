@@ -74,11 +74,26 @@ const placeholder = `{
                                   "enableHistory": "TRUE",
                                   "mockData": "FALSE",
                                   "fields": [
-                                    { "name": "job_id", "type": "LONG" },
-                                    { "name": "product_id", "type": "LONG" },
-                                    { "name": "planned_quantity", "type": "LONG" },
-                                    { "name": "completed_quantity", "type": "LONG" },
-                                    { "name": "status", "type": "LONG" }
+                                    {
+                                      "name": "job_id",
+                                      "type": "LONG"
+                                    },
+                                    {
+                                      "name": "product_id",
+                                      "type": "LONG"
+                                    },
+                                    {
+                                      "name": "planned_quantity",
+                                      "type": "LONG"
+                                    },
+                                    {
+                                      "name": "completed_quantity",
+                                      "type": "LONG"
+                                    },
+                                    {
+                                      "name": "status",
+                                      "type": "LONG"
+                                    }
                                   ]
                                 },
                                 {
@@ -120,31 +135,40 @@ const placeholder = `{
                             {
                               "name": "Metric",
                               "type": "folder",
-                              "topicType": "METRICS",
+                              "topicType": "METRIC",
                               "children": [
                                 {
                                   "name": "board_cycle_time",
                                   "type": "file",
-                                  "topicType": "METRICS",
+                                  "topicType": "METRIC",
                                   "dataType": "TIME_SEQUENCE_TYPE",
                                   "generateDashboard": "TRUE",
                                   "enableHistory": "TRUE",
                                   "mockData": "FALSE",
                                   "fields": [
-                                    { "name": "cycle_time_ms", "type": "LONG" }
+                                    {
+                                      "name": "cycle_time_ms",
+                                      "type": "LONG"
+                                    }
                                   ]
                                 },
                                 {
                                   "name": "boards_count",
                                   "type": "file",
-                                  "topicType": "METRICS",
+                                  "topicType": "METRIC",
                                   "dataType": "TIME_SEQUENCE_TYPE",
                                   "generateDashboard": "TRUE",
                                   "enableHistory": "TRUE",
                                   "mockData": "FALSE",
                                   "fields": [
-                                    { "name": "good_count", "type": "LONG" },
-                                    { "name": "ng_count", "type": "LONG" }
+                                    {
+                                      "name": "good_count",
+                                      "type": "LONG"
+                                    },
+                                    {
+                                      "name": "ng_count",
+                                      "type": "LONG"
+                                    }
                                   ]
                                 }
                               ]
@@ -162,8 +186,7 @@ const placeholder = `{
       ]
     }
   ]
-}
-`;
+}`;
 const Module: FC<ImportModalProps> = (props) => {
   const { importRef, initTreeData } = props;
   const [open, setOpen] = useState(false);
