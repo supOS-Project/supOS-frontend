@@ -418,16 +418,34 @@ const Module: FC<ImportModalProps> = (props) => {
                     style={{
                       position: 'absolute',
                       right: 4,
-                      top: 4,
+                      top: 0,
                       color: 'var(--supos-text-color)',
                       zIndex: 1,
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => {
-                      copy(jsonValue || JSON.stringify(JSON.parse(placeholder), null, 2));
                     }}
                   >
-                    <Copy />
+                    {jsonValue ? (
+                      <Copy
+                        style={{
+                          cursor: 'pointer',
+                          marginTop: 4,
+                        }}
+                        onClick={() => {
+                          copy(jsonValue || JSON.stringify(JSON.parse(placeholder), null, 2));
+                        }}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          marginRight: 14,
+                          fontSize: '12px',
+                          pointerEvents: 'none',
+                          zIndex: 10,
+                          color: '#c6c6c6',
+                        }}
+                      >
+                        {formatMessage('uns.ctrlPQuickApplyExample')}
+                      </span>
+                    )}
                   </div>
                   <CodeMirror
                     theme={codemirrorTheme}
@@ -436,6 +454,12 @@ const Module: FC<ImportModalProps> = (props) => {
                     value={jsonValue}
                     height={(size?.height || 32) - 32 + 'px'}
                     extensions={[json()]}
+                    onKeyDown={(e) => {
+                      if (e.ctrlKey && e.key === 'p') {
+                        e.preventDefault();
+                        setJsonValue(placeholder);
+                      }
+                    }}
                   />
                 </div>
               ) : (

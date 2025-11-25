@@ -62,7 +62,7 @@ const LeftDom: FC<{
     setCurrentTreeMapType: state.setCurrentTreeMapType,
   }));
   const [unusedTopicLoading, setUnusedTopicLoading] = useState(false);
-  const [unusedTopicPanelSize, setUnusedTopicPanelSize] = useState([0, panelCloseSize]);
+  const [unusedTopicPanelSize, setUnusedTopicPanelSize] = useState([120, panelCloseSize]);
 
   const splitterWrapRef = useRef<any>(null);
   const unusedTopicTreeRef = useRef<any>(null);
